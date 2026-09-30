@@ -1,5 +1,5 @@
 import React from 'react';
-import { Database, Cpu, Eye, Sliders, ArrowRight, ShieldCheck, HeartPulse } from 'lucide-react';
+import { Database, Cpu, Eye, Sliders, ArrowRight, HeartPulse } from 'lucide-react';
 
 const WORKFLOW_STEPS = [
   {

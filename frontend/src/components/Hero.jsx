@@ -1,7 +1,7 @@
 import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { ArrowRight, ShieldCheck, Sparkles, Activity, FileCheck, Stethoscope, HeartPulse } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Stethoscope } from 'lucide-react';
 import HeartCanvas from './HeartCanvas';
 
 gsap.registerPlugin(useGSAP);

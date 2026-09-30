@@ -1,5 +1,5 @@
 import React from 'react';
-import { AlertCircle, ShieldAlert, Check } from 'lucide-react';
+import { ShieldAlert, Check } from 'lucide-react';
 
 export default function SafetyDisclaimer() {
   return (

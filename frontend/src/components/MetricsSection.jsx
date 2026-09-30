@@ -1,5 +1,5 @@
 import React from 'react';
-import { BarChart3, ShieldCheck, CheckCircle2, TrendingUp, Award, Zap } from 'lucide-react';
+import { ShieldCheck, CheckCircle2, Award, Zap } from 'lucide-react';
 
 const METRIC_CARDS = [
   {

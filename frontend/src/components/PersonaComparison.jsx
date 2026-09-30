@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Stethoscope, Heart, Users, FileText, ArrowRight, Activity, Sparkles, CheckCircle } from 'lucide-react';
+import { Stethoscope, Heart, Users, ArrowRight } from 'lucide-react';
 
 const COMPARISON_DIMENSIONS = [
   {

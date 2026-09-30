@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { AlertTriangle, CheckCircle2, Info, Sparkles, Sliders, ArrowUpRight, Flame } from 'lucide-react';
+import { CheckCircle2, Sliders, Flame } from 'lucide-react';
 
 const VESSEL_INFO = {
   LAD: {
