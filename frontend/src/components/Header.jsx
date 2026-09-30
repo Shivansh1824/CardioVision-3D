@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Activity, ShieldCheck, Heart, User, LogIn, Menu, X, Stethoscope } from 'lucide-react';
+import { Activity, Heart, LogIn, Menu, X } from 'lucide-react';
 
 export default function Header({ onOpenSignIn, onScrollToSection }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
