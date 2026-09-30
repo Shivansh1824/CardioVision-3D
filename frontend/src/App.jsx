@@ -58,7 +58,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-luminous-mesh text-slate-100 flex flex-col font-body selection:bg-rose-500/30 selection:text-rose-200">
+    <div className="min-h-screen bg-clinical-void text-slate-100 flex flex-col font-body selection:bg-rose-500/30 selection:text-rose-200">
       
       {/* Top Sticky Navigation Header */}
       <Header
@@ -73,8 +73,9 @@ export default function App() {
           onOpenSignIn={handleOpenSignIn}
           onScrollToSection={handleScrollToSection}
           vesselStates={vesselStates}
-          selectedArtery={selectedArtery}
-          onSelectArtery={setSelectedArtery}
+          onSelectArtery={(key) => {
+            setSelectedArtery(key);
+          }}
         />
 
         {/* Live Multi-Vessel Staging & What-If Simulator */}
@@ -101,10 +102,7 @@ export default function App() {
       </main>
 
       {/* Footer */}
-      <Footer
-        onOpenSignIn={handleOpenSignIn}
-        onScrollToSection={handleScrollToSection}
-      />
+      <Footer />
 
       {/* Sign In / Role Selection Modal */}
       <SignInModal

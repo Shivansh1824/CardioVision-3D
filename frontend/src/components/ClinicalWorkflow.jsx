@@ -2,140 +2,115 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Database, Cpu, Eye, Sliders, ArrowRight, HeartPulse } from 'lucide-react';
+import { Database, Cpu, Eye, Sliders } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const WORKFLOW_STEPS = [
+const STEPS = [
   {
-    step: '01',
-    icon: Database,
-    title: 'Multimodal Clinical Intake',
-    subtitle: 'Labs, ECG & Echocardiogram',
-    desc: 'Ingests standard hospital data without requiring invasive catheterization: 12-lead ECG waveforms, Echo Regional Wall Motion Abnormalities (RWMA), and lipid biomarker panels.',
-    badge: 'Non-Invasive Input',
-    badgeColor: 'text-cyan-400 bg-cyan-950/70 border-cyan-800',
+    n: '01',
+    Icon: Database,
+    title: 'Multimodal Intake',
+    sub: 'Non-invasive only',
+    desc: '12-lead ECG waveforms, echo RWMA, and lipid biomarkers — no catheterisation required.',
+    accent: '#00e5ff',
   },
   {
-    step: '02',
-    icon: Cpu,
-    title: 'Anti-Leakage AI Ensemble',
-    subtitle: 'XGBoost + LightGBM + SHAP',
-    desc: 'Calibrated soft-voting classifiers evaluate multi-vessel CAD risk and individual LAD, LCX, and RCA stenosis status with SHAP local feature attribution in under 30 milliseconds.',
-    badge: '0.912 ROC-AUC',
-    badgeColor: 'text-emerald-400 bg-emerald-950/70 border-emerald-800',
+    n: '02',
+    Icon: Cpu,
+    title: 'AI Ensemble',
+    sub: 'XGBoost · LightGBM · SHAP',
+    desc: 'Calibrated soft-voting classifiers evaluate LAD, LCX, and RCA stenosis risk with local feature attribution in <30ms.',
+    accent: '#00d68f',
   },
   {
-    step: '03',
-    icon: Eye,
-    title: '3D Spatial Heart Twin',
-    subtitle: 'Anatomical Coronary Mapping',
-    desc: 'Translates abstract numbers into spatial anatomical intuition. Coronary vessels pulse in real-time with physiological systolic/diastolic motion and color-coded stenosis alerts.',
-    badge: '3D WebGL / R3F',
-    badgeColor: 'text-red-400 bg-red-950/70 border-red-800',
+    n: '03',
+    Icon: Eye,
+    title: '3D Heart Twin',
+    sub: 'WebGL / React Three Fiber',
+    desc: 'Abstract numbers become spatial anatomy. Coronary vessels pulse in real time, colour-coded by stenosis severity.',
+    accent: '#f0a500',
   },
   {
-    step: '04',
-    icon: Sliders,
-    title: 'Interactive "What-If" Engine',
-    subtitle: 'Treatment & Habit Simulator',
-    desc: 'Clinicians adjust pharmacotherapy; patients simulate daily walking and dietary changes. The 3D heart dynamically cools from high-risk crimson to healthy emerald in real time.',
-    badge: 'Real-Time Dynamic',
-    badgeColor: 'text-amber-400 bg-amber-950/70 border-amber-800',
+    n: '04',
+    Icon: Sliders,
+    title: 'What-If Engine',
+    sub: 'Real-time dynamic simulation',
+    desc: 'Clinicians adjust pharmacotherapy. Patients simulate lifestyle changes. The 3D heart updates instantly.',
+    accent: '#f43f5e',
   },
 ];
 
 export default function ClinicalWorkflow() {
   const sectionRef = useRef(null);
 
-  useGSAP(
-    () => {
-      // Header reveal
-      gsap.from('.workflow-header', {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.workflow-header',
-          start: 'top 85%',
-        },
-      });
-
-      // Step cards staggered cascade
-      gsap.from('.workflow-card', {
-        y: 50,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.workflow-cards-grid',
-          start: 'top 80%',
-        },
-      });
-    },
-    { scope: sectionRef }
-  );
+  useGSAP(() => {
+    gsap.from('.cw-header', {
+      y: 32, autoAlpha: 0, duration: 0.8, ease: 'power3.out',
+      scrollTrigger: { trigger: '.cw-header', start: 'top 85%' },
+    });
+    gsap.from('.cw-step', {
+      y: 36, autoAlpha: 0, duration: 0.65, stagger: 0.11, ease: 'power3.out',
+      scrollTrigger: { trigger: '.cw-steps', start: 'top 78%' },
+    });
+  }, { scope: sectionRef });
 
   return (
-    <section id="clinical-workflow" ref={sectionRef} className="py-24 border-t border-white/10 relative">
-      <div className="container-custom">
+    <section id="clinical-workflow" ref={sectionRef} className="section border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+      <div className="container-wide">
 
-        {/* Section Header */}
-        <div className="workflow-header text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-xs font-semibold uppercase">
-            <HeartPulse className="w-3.5 h-3.5" />
-            <span>How CardioVision 3D Works</span>
+        <div className="cw-header mb-14 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
+          <div className="space-y-3">
+            <div className="chip chip-info w-fit">How It Works</div>
+            <h2 className="text-4xl sm:text-5xl font-display font-extrabold text-white">
+              From Raw Records<br />
+              <span style={{
+                background: 'linear-gradient(135deg, #fca5a5 0%, #f43f5e 100%)',
+                WebkitBackgroundClip: 'text',
+                WebkitTextFillColor: 'transparent',
+              }}>to a Living Digital Twin</span>
+            </h2>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white">
-            From Raw Medical Records to a <span className="text-gradient-vital">Living Digital Twin</span>
-          </h2>
-          <p className="text-slate-400 text-base sm:text-lg">
-            A seamless bridge between complex clinical diagnostics and intuitive visual understanding for clinicians and patients alike.
+          <p className="text-slate-500 text-sm max-w-xs leading-relaxed md:text-right">
+            A seamless bridge between complex clinical diagnostics and intuitive visual understanding.
           </p>
         </div>
 
-        {/* 4 Steps Grid */}
-        <div className="workflow-cards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {WORKFLOW_STEPS.map((step, idx) => {
-            const Icon = step.icon;
-            return (
-              <div
-                key={idx}
-                className="workflow-card p-6 rounded-2xl glass-panel relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
-              >
-                <div>
-                  {/* Top Bar with Number & Badge */}
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-mono text-2xl font-black text-slate-600 group-hover:text-red-500/80 transition-colors">
-                      {step.step}
-                    </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono border ${step.badgeColor}`}>
-                      {step.badge}
-                    </span>
+        {/* Horizontal step rail */}
+        <div className="cw-steps relative">
+          {/* Connecting line */}
+          <div className="hidden lg:block absolute top-10 left-10 right-10 h-px"
+            style={{ background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.07) 20%, rgba(255,255,255,0.07) 80%, transparent)' }} />
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+            {STEPS.map((step) => {
+              const { Icon } = step;
+              return (
+                <div key={step.n} className="cw-step group relative">
+                  {/* Step number — large, muted */}
+                  <div className="text-7xl font-display font-extrabold leading-none mb-4 select-none transition-colors duration-300"
+                    style={{ color: 'rgba(255,255,255,0.04)', letterSpacing: '-0.06em' }}>
+                    {step.n}
                   </div>
 
                   {/* Icon */}
-                  <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-200 group-hover:border-red-500/50 group-hover:text-red-400 transition-colors mb-4">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-11 h-11 rounded-2xl flex items-center justify-center mb-4 transition-all duration-300 group-hover:scale-105"
+                    style={{ background: step.accent + '14', border: `1px solid ${step.accent}28` }}>
+                    <Icon className="w-5 h-5" style={{ color: step.accent }} />
                   </div>
 
-                  {/* Content */}
-                  <h3 className="text-lg font-bold font-display text-white mb-1">{step.title}</h3>
-                  <p className="text-xs font-mono text-cyan-400 mb-3">{step.subtitle}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{step.desc}</p>
-                </div>
+                  <h3 className="text-base font-display font-bold text-white mb-0.5">{step.title}</h3>
+                  <div className="font-mono text-[11px] mb-2.5" style={{ color: step.accent }}>{step.sub}</div>
+                  <p className="text-xs text-slate-500 leading-relaxed">{step.desc}</p>
 
-                <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
-                  <span>Verified Architecture</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                  {/* Bottom accent line */}
+                  <div className="mt-5 h-0.5 rounded-full w-8 transition-all duration-300 group-hover:w-16"
+                    style={{ background: step.accent }} />
                 </div>
-              </div>
-            );
-          })}
+              );
+            })}
+          </div>
         </div>
-
       </div>
     </section>
   );
