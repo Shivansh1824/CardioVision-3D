@@ -20,9 +20,6 @@ Multimodal-AI-Hackathon-CardioVision-3D/
 ├── data/
 │   └── raw/
 │       └── extention of Z-Alizadeh sani dataset.xlsx   # UCI 303-patient dataset
-├── docs/
-│   ├── track_a_requirements.txt                       # Official challenge requirements
-│   └── submission_guidelines.txt                      # Submission specifications
 ├── backend/                                           # Python FastAPI + ML + SHAP service
 ├── frontend/                                          # React + React Three Fiber 3D app
 └── ai-context.md                                      # AI and technical context
