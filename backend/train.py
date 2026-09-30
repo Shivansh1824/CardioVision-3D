@@ -3,6 +3,7 @@ import json
 import numpy as np
 import pandas as pd
 import joblib
+from dotenv import load_dotenv
 
 from sklearn.model_selection import StratifiedKFold
 from sklearn.metrics import roc_auc_score, accuracy_score, precision_score, recall_score, f1_score, roc_curve
@@ -16,23 +17,65 @@ import shap
 print("=" * 70)
 print("CardioVision 3D — Advanced Multi-Vessel ML Training Pipeline")
 print("Multimodal AI Hackathon 2026 (Track A: Cardiovascular Risk)")
+print("Dual-Metric Transparency | Hybrid Supabase Sync | Zero Hallucination")
 print("=" * 70)
 
-# 1. Load Dataset
-data_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "extention of Z-Alizadeh sani dataset.xlsx")
-if not os.path.exists(data_path):
-    raise FileNotFoundError(f"Dataset not found at {data_path}")
+# 1. Load Data via Hybrid Supabase Sync (with Local Fallback)
+load_dotenv(os.path.join(os.path.dirname(__file__), "..", ".env"))
+supabase_url = os.environ.get("SUPABASE_URL")
+supabase_key = os.environ.get("SUPABASE_SERVICE_ROLE_KEY") or os.environ.get("SUPABASE_ANON_KEY")
 
-df = pd.read_excel(data_path)
-print(f"Loaded dataset: {df.shape[0]} patients, {df.shape[1]} raw columns.")
+df = None
+if supabase_url and supabase_key:
+    try:
+        from supabase import create_client
+        client = create_client(supabase_url, supabase_key)
+        print("Connecting to Supabase Cloud Database...")
+        # Fetch all patient records (303 rows)
+        res = client.table("patients").select("*").limit(1000).execute()
+        if res.data and len(res.data) > 0:
+            df = pd.DataFrame(res.data)
+            print(f"✓ Successfully loaded {len(df)} patient records from Supabase 'patients' table.")
+    except Exception as e:
+        print(f"Notice: Supabase fetch encountered: {e}. Falling back to local dataset.")
 
-# 2. Define Targets and Strict Anti-Leakage Guards
-target_cols = ['Cath', 'LAD', 'LCX', 'RCA']
+if df is None or len(df) == 0:
+    data_path = os.path.join(os.path.dirname(__file__), "..", "data", "raw", "extention of Z-Alizadeh sani dataset.xlsx")
+    if not os.path.exists(data_path):
+        raise FileNotFoundError(f"Neither Supabase nor local dataset available at {data_path}")
+    df = pd.read_excel(data_path)
+    print(f"✓ Loaded {len(df)} patient records from local master dataset.")
 
-y_cad = (df['Cath'].astype(str).str.strip().str.upper() == 'CAD').astype(int).values
-y_lad = (df['LAD'].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
-y_lcx = (df['LCX'].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
-y_rca = (df['RCA'].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
+# Normalize column names to lowercase stripped strings
+df.columns = [c.strip().lower() for c in df.columns]
+
+# Drop Supabase metadata columns if present
+meta_cols_to_drop = [c for c in ['id', 'patient_code', 'created_at'] if c in df.columns]
+if meta_cols_to_drop:
+    df = df.drop(columns=meta_cols_to_drop)
+
+# Identify Target Columns in dataset
+# Dataset can have 'cath', 'lad' (or 'lad_ground_truth'), 'lcx' ('lcx_ground_truth'), 'rca' ('rca_ground_truth')
+col_cad = 'cath'
+col_lad = 'lad_ground_truth' if 'lad_ground_truth' in df.columns else 'lad'
+col_lcx = 'lcx_ground_truth' if 'lcx_ground_truth' in df.columns else 'lcx'
+col_rca = 'rca_ground_truth' if 'rca_ground_truth' in df.columns else 'rca'
+
+target_cols = [col_cad, col_lad, col_lcx, col_rca]
+
+# 2. Extract Ground Truth Targets
+y_cad = (df[col_cad].astype(str).str.strip().str.upper() == 'CAD').astype(int).values
+y_lad = (df[col_lad].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
+y_lcx = (df[col_lcx].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
+y_rca = (df[col_rca].astype(str).str.strip().str.capitalize() == 'Stenotic').astype(int).values
+
+# Compute Multi-Vessel Disease Burden (0, 1, 2, or 3 blocked arteries)
+vessel_blockage_count = y_lad + y_lcx + y_rca
+print("\nMulti-Vessel Disease Distribution:")
+print(f"  • 0-VD (Normal / No Blockages):   {int(np.sum(vessel_blockage_count == 0))} patients (0.0% vessel ratio)")
+print(f"  • SVD (Single Vessel Blocked):    {int(np.sum(vessel_blockage_count == 1))} patients (33.3% vessel ratio)")
+print(f"  • DVD (Double Vessels Blocked):   {int(np.sum(vessel_blockage_count == 2))} patients (66.7% vessel ratio)")
+print(f"  • TVD (Triple Vessels Blocked):   {int(np.sum(vessel_blockage_count == 3))} patients (100.0% vessel ratio)")
 
 targets = {
     'cad': y_cad,
@@ -45,11 +88,10 @@ for name, y in targets.items():
     pos_count = int(np.sum(y))
     print(f"  Target [{name.upper()}]: {pos_count} positive ({pos_count/len(y)*100:.1f}%), {len(y)-pos_count} negative")
 
-# Strictly drop targets from feature matrix (Hackathon Rule 1d)
+# 3. Clean and Encode Features (Strict Anti-Leakage: All 4 targets dropped from X)
 X_raw = df.drop(columns=target_cols).copy()
-print(f"\nFeature matrix X shape after strictly excluding targets: {X_raw.shape}")
+print(f"\nFeature matrix X shape after strictly excluding all targets: {X_raw.shape}")
 
-# 3. Clean and Encode Features
 binary_map = {
     'y': 1.0, 'yes': 1.0, 'n': 0.0, 'no': 0.0,
     'male': 1.0, 'fmale': 0.0, 'female': 0.0
@@ -60,23 +102,20 @@ feature_meta = {}
 
 for col in X_raw.columns:
     col_data = X_raw[col]
-    # Check if column is string/categorical
     if pd.api.types.is_string_dtype(col_data) or col_data.dtype == 'object':
         cleaned = col_data.astype(str).str.strip().str.lower()
         unique_vals = set(cleaned.unique())
-        # Check if all unique values match binary map
         if unique_vals.issubset(set(binary_map.keys())):
             mapped = cleaned.map(binary_map).astype(float)
             X_processed[col] = mapped
             feature_meta[col] = {"type": "binary", "default": float(mapped.median())}
         else:
-            # Multi-category string (e.g. BBB, VHD)
+            # Multi-category strings (e.g. bbb, vhd)
             dummies = pd.get_dummies(cleaned, prefix=col, drop_first=True, dtype=float)
             for dcol in dummies.columns:
                 X_processed[dcol] = dummies[dcol]
                 feature_meta[dcol] = {"type": "dummy", "default": float(dummies[dcol].median())}
     else:
-        # Numeric column
         num_vals = col_data.astype(float)
         X_processed[col] = num_vals
         feature_meta[col] = {
@@ -90,16 +129,16 @@ for col in X_raw.columns:
         }
 
 feature_names = list(X_processed.columns)
-print(f"Engineered {len(feature_names)} numerical features for model input.")
+print(f"Engineered {len(feature_names)} numerical clinical biomarkers for model input.")
 
-# Baseline profile for 3-tier imputation
+# Baseline profile for progressive imputation
 baseline_profile = {col: meta.get("default", 0.0) for col, meta in feature_meta.items()}
 
 # Fit Standard Scaler
 scaler = StandardScaler()
 X_scaled = pd.DataFrame(scaler.fit_transform(X_processed), columns=feature_names)
 
-# 4. Training Calibrated Multi-Model Ensembles with Sweet-Spot Thresholds
+# 4. Train Calibrated Ensembles with Balanced Cost-Sensitive Weights
 models_dir = os.path.join(os.path.dirname(__file__), "app", "models")
 os.makedirs(models_dir, exist_ok=True)
 
@@ -112,8 +151,12 @@ skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=42)
 
 for target_name, y in targets.items():
     print(f"\n" + "-" * 50)
-    print(f"Training Calibrated Ensemble for: [{target_name.upper()}]")
+    print(f"Training Calibrated Balanced Ensemble: [{target_name.upper()}]")
     print("-" * 50)
+    
+    pos_count = np.sum(y)
+    neg_count = len(y) - pos_count
+    scale_pos = float(neg_count / max(1, pos_count))
     
     oof_preds = np.zeros(len(y))
     oof_probs = np.zeros(len(y))
@@ -124,26 +167,29 @@ for target_name, y in targets.items():
         X_val, y_val = X_scaled.iloc[val_idx], y[val_idx]
         
         xgb = XGBClassifier(
-            n_estimators=100,
+            n_estimators=120,
             max_depth=3,
-            learning_rate=0.05,
+            learning_rate=0.04,
+            scale_pos_weight=scale_pos,
             subsample=0.85,
             colsample_bytree=0.8,
             random_state=42 + fold,
             eval_metric="logloss"
         )
         lgbm = LGBMClassifier(
-            n_estimators=100,
+            n_estimators=120,
             max_depth=3,
-            learning_rate=0.05,
+            learning_rate=0.04,
+            scale_pos_weight=scale_pos,
             subsample=0.85,
             colsample_bytree=0.8,
             random_state=42 + fold,
             verbosity=-1
         )
         rf = RandomForestClassifier(
-            n_estimators=100,
+            n_estimators=150,
             max_depth=4,
+            class_weight="balanced",
             random_state=42 + fold
         )
         
@@ -157,7 +203,6 @@ for target_name, y in targets.items():
         
         probs_val = calibrated_model.predict_proba(X_val)[:, 1]
         oof_probs[val_idx] = probs_val
-        
         fold_auc = roc_auc_score(y_val, probs_val)
         fold_aucs.append(fold_auc)
     
@@ -176,7 +221,7 @@ for target_name, y in targets.items():
     rec = recall_score(y, binary_preds)
     f1 = f1_score(y, binary_preds)
     
-    print(f"  • Cross-Validation ROC-AUC: {overall_auc:.4f} (±{np.std(fold_aucs):.4f})")
+    print(f"  • 5-Fold Cross-Validation ROC-AUC: {overall_auc:.4f} (±{np.std(fold_aucs):.4f})")
     print(f"  • Optimal Sweet-Spot Threshold: {optimal_threshold:.4f}")
     print(f"  • Accuracy: {acc*100:.2f}% | Precision: {prec*100:.2f}% | Recall: {rec*100:.2f}% | F1-Score: {f1:.4f}")
     
@@ -191,9 +236,9 @@ for target_name, y in targets.items():
     }
     
     # Fit final calibrated model on full dataset
-    final_xgb = XGBClassifier(n_estimators=120, max_depth=3, learning_rate=0.04, subsample=0.85, colsample_bytree=0.8, random_state=42, eval_metric="logloss")
-    final_lgbm = LGBMClassifier(n_estimators=120, max_depth=3, learning_rate=0.04, subsample=0.85, colsample_bytree=0.8, random_state=42, verbosity=-1)
-    final_rf = RandomForestClassifier(n_estimators=120, max_depth=4, random_state=42)
+    final_xgb = XGBClassifier(n_estimators=150, max_depth=3, learning_rate=0.03, scale_pos_weight=scale_pos, subsample=0.85, colsample_bytree=0.8, random_state=42, eval_metric="logloss")
+    final_lgbm = LGBMClassifier(n_estimators=150, max_depth=3, learning_rate=0.03, scale_pos_weight=scale_pos, subsample=0.85, colsample_bytree=0.8, random_state=42, verbosity=-1)
+    final_rf = RandomForestClassifier(n_estimators=180, max_depth=4, class_weight="balanced", random_state=42)
     
     final_ensemble = VotingClassifier(
         estimators=[('xgb', final_xgb), ('lgbm', final_lgbm), ('rf', final_rf)],
@@ -202,7 +247,6 @@ for target_name, y in targets.items():
     final_calibrated = CalibratedClassifierCV(estimator=final_ensemble, method='sigmoid', cv=5)
     final_calibrated.fit(X_scaled, y)
     
-    # Save model
     model_save_path = os.path.join(models_dir, f"model_{target_name}.joblib")
     joblib.dump(final_calibrated, model_save_path)
     trained_models[target_name] = final_calibrated
@@ -212,15 +256,21 @@ for target_name, y in targets.items():
     explainer = shap.TreeExplainer(final_xgb)
     shap_save_path = os.path.join(models_dir, f"shap_explainer_{target_name}.joblib")
     joblib.dump(explainer, shap_save_path)
-    print(f"  Saved calibrated model & SHAP explainer to {model_save_path}")
+    print(f"  ✓ Saved calibrated model & SHAP explainer to {model_save_path}")
 
-# 5. Save Preprocessor & Metadata
+# 5. Save Artifacts & Multi-Vessel Threshold Configuration
 preprocessor_payload = {
     "feature_names": feature_names,
     "feature_meta": feature_meta,
     "baseline_profile": baseline_profile,
     "scaler": scaler,
-    "optimal_thresholds": optimal_thresholds
+    "optimal_thresholds": optimal_thresholds,
+    "multi_vessel_stages": {
+        "0": {"name": "0-VD (Normal)", "ratio": 0.0, "severity": "Normal"},
+        "1": {"name": "SVD (Single Vessel Disease)", "ratio": 33.3, "severity": "Moderate Concern"},
+        "2": {"name": "DVD (Double Vessel Disease)", "ratio": 66.7, "severity": "High Alert"},
+        "3": {"name": "TVD (Triple Vessel Disease)", "ratio": 100.0, "severity": "Critical Multi-Vessel Emergency"}
+    }
 }
 joblib.dump(preprocessor_payload, os.path.join(models_dir, "preprocessor.joblib"))
 
@@ -231,6 +281,6 @@ with open(os.path.join(models_dir, "baseline_profile.json"), "w") as f:
     json.dump(baseline_profile, f, indent=2)
 
 print("\n" + "=" * 70)
-print("TRAINING COMPLETE & VERIFIED!")
+print("TRAINING PIPELINE COMPLETE & READY FOR TESTING!")
 print(f"All artifacts saved to: {models_dir}")
 print("=" * 70)

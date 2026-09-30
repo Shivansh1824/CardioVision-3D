@@ -1,38 +1,38 @@
 {
   "cad": {
-    "roc_auc": 0.9122,
+    "roc_auc": 0.9115,
     "roc_auc_std": 0.0538,
     "optimal_threshold": 0.65,
-    "accuracy": 0.8647,
-    "precision": 0.907,
-    "recall": 0.9028,
-    "f1_score": 0.9049
+    "accuracy": 0.8515,
+    "precision": 0.913,
+    "recall": 0.875,
+    "f1_score": 0.8936
   },
   "lad": {
-    "roc_auc": 0.8461,
-    "roc_auc_std": 0.0543,
-    "optimal_threshold": 0.6021,
-    "accuracy": 0.7987,
-    "precision": 0.8372,
-    "recall": 0.8136,
-    "f1_score": 0.8252
+    "roc_auc": 0.8441,
+    "roc_auc_std": 0.0544,
+    "optimal_threshold": 0.5955,
+    "accuracy": 0.7921,
+    "precision": 0.8393,
+    "recall": 0.7966,
+    "f1_score": 0.8174
   },
   "lcx": {
-    "roc_auc": 0.7287,
-    "roc_auc_std": 0.0606,
-    "optimal_threshold": 0.4072,
-    "accuracy": 0.6997,
-    "precision": 0.6111,
-    "recall": 0.6471,
-    "f1_score": 0.6286
+    "roc_auc": 0.7306,
+    "roc_auc_std": 0.0633,
+    "optimal_threshold": 0.4322,
+    "accuracy": 0.7063,
+    "precision": 0.6293,
+    "recall": 0.6134,
+    "f1_score": 0.6213
   },
   "rca": {
-    "roc_auc": 0.7194,
-    "roc_auc_std": 0.0561,
-    "optimal_threshold": 0.3793,
-    "accuracy": 0.6799,
-    "precision": 0.5639,
-    "recall": 0.6579,
-    "f1_score": 0.6073
+    "roc_auc": 0.7212,
+    "roc_auc_std": 0.0515,
+    "optimal_threshold": 0.3759,
+    "accuracy": 0.6733,
+    "precision": 0.5532,
+    "recall": 0.6842,
+    "f1_score": 0.6118
   }
 }
