@@ -25,7 +25,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 1. Load Trained Models and Artifacts
+# 1. Load Trained Models and Dynamic Artifacts
 models_dir = os.path.join(os.path.dirname(__file__), "models")
 
 try:
@@ -49,7 +49,8 @@ try:
     scaler = preprocessor["scaler"]
     optimal_thresholds = preprocessor["optimal_thresholds"]
     multi_vessel_stages = preprocessor.get("multi_vessel_stages", {})
-    print("✓ All 4 Calibrated Ensembles, SHAP Explainers, and Preprocessors loaded.")
+    total_feature_count = len(feature_names)
+    print(f"✓ All 4 Calibrated Ensembles, SHAP Explainers, and {total_feature_count} dynamic features loaded.")
 except Exception as e:
     raise RuntimeError(f"Failed to load ML artifacts from {models_dir}: {e}")
 
@@ -160,19 +161,19 @@ def prepare_feature_vector(patient: PatientVitalsInput):
             else:
                 full_row[matched_key] = float(v)
                 
-    # Detect report type
+    # Detect report type dynamically
     lipid_markers = {'ldl', 'hdl', 'tg', 'cholesterol'}
     user_keys = set(raw_user_inputs.keys())
     is_lipid_only = user_keys.issubset(lipid_markers.union({'age', 'sex', 'bp'})) and len(user_keys.intersection(lipid_markers)) > 0
     
-    # Calculate Data Confidence & Completeness percentage
-    completeness_pct = min(100.0, max(20.0, round((filled_count / 30.0) * 100.0, 1)))
+    # Calculate Data Confidence dynamically from total available features
+    completeness_pct = round(min(100.0, (filled_count / float(total_feature_count)) * 100.0), 1)
     
     df_single = pd.DataFrame([full_row])[feature_names]
     scaled_array = scaler.transform(df_single)
     df_scaled = pd.DataFrame(scaled_array, columns=feature_names)
     
-    tier = "Full Clinical Diagnostic" if completeness_pct >= 85 else ("Preliminary Screening" if not is_lipid_only else "Lipid Profile Screening Only")
+    tier = "Full Clinical Diagnostic" if completeness_pct >= 80.0 else ("Preliminary Screening" if not is_lipid_only else "Lipid Profile Screening Only")
     
     return df_single, df_scaled, completeness_pct, filled_count, is_lipid_only, tier
 
@@ -190,10 +191,7 @@ def extract_shap_explanation(explainer, df_scaled, df_raw, top_k=5):
         impact = float(vals[idx])
         
         friendly_desc = fname.replace("_", " ").title()
-        if impact > 0:
-            direction = "Elevates Risk"
-        else:
-            direction = "Protective / Lowers Risk"
+        direction = "Elevates Risk" if impact > 0 else "Protective / Lowers Risk"
             
         factors.append({
             "feature": fname,
@@ -205,6 +203,14 @@ def extract_shap_explanation(explainer, df_scaled, df_raw, top_k=5):
         })
         
     return factors
+
+# Helper: Dynamic vessel color coding based on learned optimal threshold
+def get_vessel_color(prob: float, threshold: float) -> str:
+    if prob >= threshold:
+        return "crimson"
+    elif prob >= (threshold * 0.75):
+        return "amber"
+    return "emerald"
 
 # API Endpoints
 @app.get("/")
@@ -251,16 +257,20 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
     max_vessel_risk = max(p_lad, p_lcx, p_rca)
     p_cad = max(p_cad_raw, max_vessel_risk)
     
-    # 4. Binary Stenosis Status based on Optimal Sweet-Spot Thresholds
-    is_lad_blocked = p_lad >= optimal_thresholds["lad"]
-    is_lcx_blocked = p_lcx >= optimal_thresholds["lcx"]
-    is_rca_blocked = p_rca >= optimal_thresholds["rca"]
+    # 4. Binary Stenosis Status based on Mathematically Learned Optimal Thresholds
+    cad_thresh = optimal_thresholds["cad"]
+    lad_thresh = optimal_thresholds["lad"]
+    lcx_thresh = optimal_thresholds["lcx"]
+    rca_thresh = optimal_thresholds["rca"]
+    
+    is_lad_blocked = p_lad >= lad_thresh
+    is_lcx_blocked = p_lcx >= lcx_thresh
+    is_rca_blocked = p_rca >= rca_thresh
     
     # 5. Dual-Metric Proportional Transparency Calculation
     blocked_count = int(is_lad_blocked) + int(is_lcx_blocked) + int(is_rca_blocked)
-    
-    # Blocked ratio: 0/3 = 0.0%, 1/3 = 33.3%, 2/3 = 66.7%, 3/3 = 100.0%
-    blocked_ratio_pct = round((blocked_count / 3.0) * 100.0, 1)
+    total_arteries = 3
+    blocked_ratio_pct = round((blocked_count / float(total_arteries)) * 100.0, 1)
     
     stage_info = {
         0: {"stage": "0-VD", "name": "Normal (Zero Vessel Disease)", "severity": "Normal / Optimal", "ratio_desc": "0 of 3 Arteries Stenotic (0.0%)"},
@@ -279,7 +289,7 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
         lcx_status = "Stenotic (Blocked >= 50%)" if is_lcx_blocked else "Normal / Patent"
         rca_status = "Stenotic (Blocked >= 50%)" if is_rca_blocked else "Normal / Patent"
         
-    cad_status = "Positive (CAD Confirmed)" if p_cad >= optimal_thresholds["cad"] else "Normal / Low CAD Probability"
+    cad_status = "Positive (CAD Confirmed)" if p_cad >= cad_thresh else "Normal / Low CAD Probability"
     
     # 7. Extract SHAP Explanations
     shap_drivers = {
@@ -291,11 +301,11 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
     
     elapsed_ms = round((time.time() - t0) * 1000.0, 2)
     
-    # 8. High-Level Severity Classification
-    if blocked_count >= 2 or p_cad >= 0.70:
+    # 8. High-Level Severity Classification dynamically derived from learned thresholds
+    if blocked_count >= 2 or p_cad >= cad_thresh:
         overall_severity = "High Alert"
         color_code = "crimson"
-    elif blocked_count == 1 or p_cad >= 0.40:
+    elif blocked_count == 1 or p_cad >= (cad_thresh * 0.70):
         overall_severity = "Moderate Warning"
         color_code = "amber"
     else:
@@ -308,6 +318,7 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
         "data_completeness": {
             "confidence_score": completeness_pct,
             "filled_fields": filled_count,
+            "total_biomarkers": total_feature_count,
             "tier": tier,
             "is_partial_report": is_lipid_only,
             "notice": "Only partial lipid/vital markers detected. Missing arteries flagged for further clinical testing." if is_lipid_only else "Sufficient biomarkers provided for multi-vessel assessment."
@@ -315,8 +326,8 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
         "dual_metric_evaluation": {
             "physical_artery_blockage": {
                 "blocked_count": blocked_count,
-                "total_arteries": 3,
-                "ratio_display": f"{blocked_count}/3 Blocked",
+                "total_arteries": total_arteries,
+                "ratio_display": f"{blocked_count}/{total_arteries} Blocked",
                 "percentage": blocked_ratio_pct,
                 "stage": stage_info["stage"],
                 "stage_name": stage_info["name"],
@@ -326,7 +337,7 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
             "clinical_disease_probability": {
                 "probability": round(p_cad, 4),
                 "percentage": round(p_cad * 100.0, 1),
-                "threshold": optimal_thresholds["cad"],
+                "threshold": cad_thresh,
                 "status": cad_status,
                 "severity": overall_severity,
                 "color": color_code
@@ -337,28 +348,28 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
                 "name": "Left Anterior Descending (LAD)",
                 "probability": round(p_lad, 4),
                 "percentage": round(p_lad * 100.0, 1),
-                "threshold": optimal_thresholds["lad"],
+                "threshold": lad_thresh,
                 "is_stenotic": bool(is_lad_blocked),
                 "status": lad_status,
-                "color": "crimson" if is_lad_blocked else ("amber" if p_lad >= 0.40 else "emerald")
+                "color": get_vessel_color(p_lad, lad_thresh)
             },
             "lcx_vessel": {
                 "name": "Left Circumflex (LCX)",
                 "probability": round(p_lcx, 4),
                 "percentage": round(p_lcx * 100.0, 1),
-                "threshold": optimal_thresholds["lcx"],
+                "threshold": lcx_thresh,
                 "is_stenotic": bool(is_lcx_blocked),
                 "status": lcx_status,
-                "color": "crimson" if is_lcx_blocked else ("amber" if p_lcx >= 0.35 else "emerald")
+                "color": get_vessel_color(p_lcx, lcx_thresh)
             },
             "rca_vessel": {
                 "name": "Right Coronary Artery (RCA)",
                 "probability": round(p_rca, 4),
                 "percentage": round(p_rca * 100.0, 1),
-                "threshold": optimal_thresholds["rca"],
+                "threshold": rca_thresh,
                 "is_stenotic": bool(is_rca_blocked),
                 "status": rca_status,
-                "color": "crimson" if is_rca_blocked else ("amber" if p_rca >= 0.35 else "emerald")
+                "color": get_vessel_color(p_rca, rca_thresh)
             }
         },
         "shap_explanations": shap_drivers,
@@ -376,12 +387,18 @@ def simulate_what_if_intervention(sim: SimulationInput):
     sim_patient = sim.patient_data.model_copy(deep=True)
     if sim.target_bp is not None:
         sim_patient.bp = sim.target_bp
-        if sim.target_bp < 130:
+        # If target BP achieves normal baseline BP from population reference, htn flag clears
+        if sim.target_bp <= baseline_profile.get("bp", 120.0):
             sim_patient.htn = 0.0
+            
     if sim.target_ldl is not None:
+        orig_ldl = max(1.0, float(sim.patient_data.ldl or baseline_profile.get("ldl", 130.0)))
         sim_patient.ldl = sim.target_ldl
-        if sim.target_ldl < 100 and sim_patient.tg and sim_patient.tg > 150:
-            sim_patient.tg = 130.0
+        # If triglycerides exist, proportionally scale them by LDL improvement factor
+        if sim_patient.tg is not None and orig_ldl > 0:
+            reduction_ratio = max(0.5, sim.target_ldl / orig_ldl)
+            sim_patient.tg = round(sim_patient.tg * reduction_ratio, 1)
+            
     if sim.smoker_intervention is True:
         sim_patient.current_smoker = 0.0
         sim_patient.ex_smoker = 1.0
