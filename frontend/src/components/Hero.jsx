@@ -1,147 +1,204 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ArrowRight, ShieldCheck, Stethoscope, Activity } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Stethoscope } from 'lucide-react';
+import AnatomicalHeartVisualizer from './AnatomicalHeartVisualizer';
 import HeartCanvas from './HeartCanvas';
 
-gsap.registerPlugin(useGSAP, ScrollTrigger);
+gsap.registerPlugin(useGSAP);
 
-// ── Live ECG strip ────────────────────────────────────────────────────
-function EcgStrip({ className = '' }) {
-  const d = 'M0,28 L35,28 L40,28 L44,8 L48,50 L52,12 L56,28 L72,28 L76,22 L80,28 L130,28 L165,28 L169,8 L173,50 L177,12 L181,28 L197,28 L201,22 L205,28 L255,28';
+// Live ECG waveform — renders a looping SVG ECG trace as a background decoration
+function EcgWaveLine({ className = '' }) {
+  // Single QRS complex + T-wave repeated to fill the width
+  const d = 'M0,30 L40,30 L48,30 L52,5 L56,55 L60,10 L64,30 L80,30 L86,22 L92,30 L140,30 L180,30 L188,30 L192,5 L196,55 L200,10 L204,30 L220,30 L226,22 L232,30 L280,30';
   return (
-    <svg viewBox="0 0 255 56" className={className} preserveAspectRatio="none">
-      <defs>
-        <linearGradient id="ecgFade" x1="0%" y1="0%" x2="100%" y2="0%">
-          <stop offset="0%"   stopColor="rgba(244,63,94,0)" />
-          <stop offset="15%"  stopColor="rgba(244,63,94,0.5)" />
-          <stop offset="85%"  stopColor="rgba(244,63,94,0.5)" />
-          <stop offset="100%" stopColor="rgba(244,63,94,0)" />
-        </linearGradient>
-      </defs>
-      <path d={d} fill="none" stroke="url(#ecgFade)" strokeWidth="1.5" strokeLinecap="round">
-        <animateTransform attributeName="transform" type="translate" from="0,0" to="-255,0" dur="3.2s" repeatCount="indefinite" />
+    <svg
+      viewBox="0 0 280 60"
+      className={`${className} overflow-visible`}
+      preserveAspectRatio="none"
+    >
+      <path
+        d={d}
+        fill="none"
+        stroke="rgba(239,68,68,0.45)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          from="0,0"
+          to="-280,0"
+          dur="3.5s"
+          repeatCount="indefinite"
+        />
       </path>
-      <path d={d} fill="none" stroke="url(#ecgFade)" strokeWidth="1.5" strokeLinecap="round" transform="translate(255,0)">
-        <animateTransform attributeName="transform" type="translate" from="255,0" to="0,0" dur="3.2s" repeatCount="indefinite" />
+      {/* Second copy offset to create seamless loop */}
+      <path
+        d={d}
+        fill="none"
+        stroke="rgba(239,68,68,0.45)"
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        transform="translate(280,0)"
+      >
+        <animateTransform
+          attributeName="transform"
+          type="translate"
+          from="280,0"
+          to="0,0"
+          dur="3.5s"
+          repeatCount="indefinite"
+        />
       </path>
     </svg>
   );
 }
 
-// ── Stat pill ─────────────────────────────────────────────────────────
-function StatPill({ value, label, color }) {
-  return (
-    <div className="hero-stat flex flex-col gap-0.5">
-      <span className="metric-num text-2xl font-bold" style={{ color }}>{value}</span>
-      <span className="text-xs text-slate-400 font-medium whitespace-nowrap">{label}</span>
-    </div>
-  );
-}
-
-export default function Hero({ onOpenSignIn, onScrollToSection, vesselStates, onSelectArtery }) {
+export default function Hero({ onOpenSignIn, onScrollToSection, vesselStates, onSelectArtery, selectedArtery }) {
   const heroRef = useRef(null);
+  const [viewMode, setViewMode] = useState('anatomical');
 
-  useGSAP(() => {
-    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
-    tl.from('.h-badge',   { y: -14, autoAlpha: 0, duration: 0.7 })
-      .from('.h-title',   { y: 30,  autoAlpha: 0, duration: 0.9 }, '-=0.45')
-      .from('.h-desc',    { y: 20,  autoAlpha: 0, duration: 0.75 }, '-=0.5')
-      .from('.h-cta',     { y: 14,  autoAlpha: 0, duration: 0.65 }, '-=0.45')
-      .from('.hero-stat', { y: 16,  autoAlpha: 0, duration: 0.55, stagger: 0.07 }, '-=0.5')
-      .from('.h-canvas',  { scale: 0.97, autoAlpha: 0, duration: 1.1 }, '-=0.9');
-  }, { scope: heroRef });
+  useGSAP(
+    () => {
+      const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+      tl.from('.hero-badge',         { y: -15, opacity: 0, duration: 0.7 })
+        .from('.hero-title',         { y: 25,  opacity: 0, duration: 0.9 }, '-=0.4')
+        .from('.hero-desc',          { y: 20,  opacity: 0, duration: 0.7 }, '-=0.5')
+        .from('.hero-cta-group',     { y: 15,  opacity: 0, duration: 0.7 }, '-=0.4')
+        .from('.hero-stats-card',    { y: 20,  opacity: 0, duration: 0.6, stagger: 0.08 }, '-=0.5')
+        .from('.hero-visualizer-wrap', { scale: 0.96, opacity: 0, duration: 1 }, '-=0.8');
+    },
+    { scope: heroRef }
+  );
 
   return (
-    <section ref={heroRef} className="relative pt-10 pb-16 md:pt-16 md:pb-24 overflow-hidden">
+    <section ref={heroRef} className="relative pt-12 pb-20 md:pt-16 md:pb-28 overflow-hidden">
 
-      {/* ECG ambient strip */}
-      <div className="absolute bottom-4 left-0 right-0 opacity-30 pointer-events-none overflow-hidden" style={{ height: 56 }}>
-        <EcgStrip className="w-full h-full" />
+      {/* ── Ambient ECG strip across the bottom of the hero ── */}
+      <div className="absolute bottom-6 left-0 right-0 opacity-40 pointer-events-none overflow-hidden" style={{ height: 60 }}>
+        <EcgWaveLine className="w-full h-full" />
       </div>
 
-      {/* Fine grid overlay */}
-      <div className="absolute inset-0 pointer-events-none" style={{
-        backgroundImage: 'linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)',
-        backgroundSize: '52px 52px',
-        maskImage: 'radial-gradient(ellipse 90% 100% at 50% 50%, black 40%, transparent 100%)',
-      }} />
+      {/* ── Subtle grid pattern overlay ── */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.025]"
+        style={{
+          backgroundImage: 'linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)',
+          backgroundSize: '48px 48px',
+        }}
+      />
 
-      <div className="container-wide relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 xl:gap-16 items-center">
+      <div className="container-custom relative z-10">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
 
-          {/* ── Left ── */}
-          <div className="space-y-7">
+          {/* ── Left Column ── */}
+          <div className="lg:col-span-6 space-y-6">
 
-            <div className="h-badge inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full font-mono text-xs"
-              style={{ background: 'rgba(244,63,94,0.08)', border: '1px solid rgba(244,63,94,0.22)', color: '#fca5a5' }}>
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-              Multi-Vessel Coronary Decision System
+            <div className="hero-badge inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-slate-900/80 border border-rose-500/30 text-xs font-mono backdrop-blur-xl shadow-lg shadow-rose-950/20">
+              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+              <span className="text-rose-300 font-semibold tracking-wide uppercase">
+                Multi-Vessel Coronary Decision System
+              </span>
             </div>
 
-            <div className="h-title space-y-2">
-              <h1 className="text-5xl sm:text-6xl xl:text-7xl font-display font-extrabold text-white leading-[1.06]">
-                Spatial Heart<br />
-                <span className="text-crimson-vital">Twin</span>{' '}
-                <span style={{ color: 'rgba(255,255,255,0.35)' }}>for</span>
+            <div className="space-y-3">
+              <h1 className="hero-title text-4xl sm:text-5xl xl:text-6xl font-display font-extrabold tracking-tight text-white leading-[1.08]">
+                Spatial Anatomical Twin for{' '}
+                <span className="text-gradient-vivid">Coronary CAD</span>
               </h1>
-              <h1 className="text-5xl sm:text-6xl xl:text-7xl font-display font-extrabold leading-[1.06]" style={{
-                background: 'linear-gradient(135deg, #00e5ff 0%, #a5f3fc 60%, #ffffff 100%)',
-                WebkitBackgroundClip: 'text',
-                WebkitTextFillColor: 'transparent',
-              }}>
-                Coronary CAD
-              </h1>
+              <p className="hero-desc text-base sm:text-lg text-slate-300 font-normal leading-relaxed max-w-xl">
+                Bridging calibrated machine learning with anatomical spatial intuition. Empowering cardiologists to triage multi-vessel stenosis with SHAP attribution, and giving heart patients a clear, compassionate view of their heart.
+              </p>
             </div>
 
-            <p className="h-desc text-base sm:text-lg text-slate-400 leading-relaxed max-w-lg font-light">
-              Calibrated AI meets anatomical spatial intuition. Cardiologists get SHAP-grade clinical precision. Heart patients get a clear, human picture of their arteries.
-            </p>
-
-            <div className="h-cta flex flex-wrap gap-3 items-center">
+            <div className="hero-cta-group flex flex-wrap items-center gap-4 pt-1">
               <button
-                className="btn-primary"
-                onClick={() => onScrollToSection?.('vessel-explorer')}
-                id="hero-launch-btn"
+                onClick={() => onScrollToSection ? onScrollToSection('vessel-explorer') : document.getElementById('vessel-explorer')?.scrollIntoView({ behavior: 'smooth' })}
+                className="btn-primary-vibrant text-base group cursor-pointer"
+                id="hero-explore-twin-btn"
               >
-                <Activity className="w-4 h-4" />
-                Launch Interactive Twin
-                <ArrowRight className="w-4 h-4" />
+                <span>Launch Interactive Twin</span>
+                <ArrowRight className="w-5 h-5 group-hover:translate-x-1 transition-transform" />
               </button>
+
               <button
-                className="btn-glass"
-                onClick={() => onOpenSignIn?.('doctor')}
-                id="hero-signin-btn"
+                onClick={() => onOpenSignIn && onOpenSignIn('doctor')}
+                className="btn-secondary-glass text-base cursor-pointer"
+                id="hero-sign-in-btn"
               >
-                <Stethoscope className="w-4 h-4" style={{ color: '#f43f5e' }} />
-                Doctor &amp; Patient Sign In
+                <Stethoscope className="w-5 h-5 text-rose-400" />
+                <span>Doctor &amp; Patient Sign In</span>
               </button>
             </div>
 
-            {/* Proof stats */}
-            <div className="flex flex-wrap gap-6 pt-2">
-              <StatPill value="0.912" label="CAD ROC-AUC"      color="#00d68f" />
-              <div className="w-px h-10 self-center" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <StatPill value="303"   label="Hospital Patients" color="#00e5ff" />
-              <div className="w-px h-10 self-center" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <StatPill value="3V"    label="LAD · LCX · RCA"  color="#f0a500" />
-              <div className="w-px h-10 self-center" style={{ background: 'rgba(255,255,255,0.08)' }} />
-              <StatPill value="<30ms" label="Inference Speed"   color="#f43f5e" />
+            {/* 4 Proof Metric Cards */}
+            <div className="pt-4 grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {[
+                { val: '0.912', label: 'CAD ROC-AUC',     sub: '5-Fold Calibrated', color: 'text-emerald-400', hover: 'hover:border-emerald-500/40' },
+                { val: '303',   label: 'Hospital Patients', sub: 'UCI #411 Verified',  color: 'text-cyan-400',    hover: 'hover:border-cyan-500/40' },
+                { val: '3 VES', label: 'LAD • LCX • RCA',  sub: 'Stenosis Staging',   color: 'text-amber-400',   hover: 'hover:border-amber-500/40' },
+                { val: '<30ms', label: 'Inference Speed',  sub: 'Sub-30ms Real-Time', color: 'text-rose-400',    hover: 'hover:border-rose-500/40' },
+              ].map((s, i) => (
+                <div key={i} className={`hero-stats-card p-3.5 rounded-2xl bg-slate-900/60 border border-white/10 backdrop-blur-md ${s.hover} transition-all`}>
+                  <div className={`text-2xl font-black font-mono ${s.color}`}>{s.val}</div>
+                  <div className="text-xs text-slate-300 font-medium">{s.label}</div>
+                  <div className="text-[10px] text-slate-400 mt-0.5">{s.sub}</div>
+                </div>
+              ))}
             </div>
 
-            <div className="flex items-center gap-2 text-xs text-slate-500">
-              <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
-              <span>Zero-Leakage Anti-Hallucination Pipeline · UCI #411 Verified</span>
+            <div className="flex items-center gap-2 text-xs text-slate-400 pt-1">
+              <ShieldCheck className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+              <span>Zero-Leakage Anti-Hallucination Pipeline • Verified on UCI #411</span>
             </div>
           </div>
 
-          {/* ── Right: 3D Spatial Heart ── */}
-          <div className="h-canvas">
-            <HeartCanvas
-              vesselStates={vesselStates}
-              onSelectArtery={onSelectArtery}
-            />
+          {/* ── Right Column: Heart Visualizer ── */}
+          <div className="lg:col-span-6 hero-visualizer-wrap space-y-3">
+
+            {/* View Mode Toggle */}
+            <div className="flex items-center justify-between px-2">
+              <span className="text-xs font-mono text-slate-400">Visualizer Engine:</span>
+              <div className="inline-flex p-1 rounded-xl bg-slate-900/80 border border-white/10 backdrop-blur-md text-xs">
+                <button
+                  onClick={() => setViewMode('anatomical')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    viewMode === 'anatomical'
+                      ? 'bg-gradient-to-r from-rose-600 to-rose-500 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  Scientific Anatomy
+                </button>
+                <button
+                  onClick={() => setViewMode('3d')}
+                  className={`px-3 py-1 rounded-lg font-semibold transition-all cursor-pointer ${
+                    viewMode === '3d'
+                      ? 'bg-gradient-to-r from-cyan-600 to-blue-600 text-white shadow-md'
+                      : 'text-slate-400 hover:text-white'
+                  }`}
+                >
+                  3D Spatial Mesh
+                </button>
+              </div>
+            </div>
+
+            {viewMode === 'anatomical' ? (
+              <AnatomicalHeartVisualizer
+                vesselStates={vesselStates}
+                selectedArtery={selectedArtery}
+                onSelectArtery={onSelectArtery}
+              />
+            ) : (
+              <HeartCanvas
+                vesselStates={vesselStates}
+                onSelectArtery={onSelectArtery}
+              />
+            )}
           </div>
 
         </div>
