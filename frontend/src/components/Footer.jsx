@@ -3,15 +3,15 @@ import { Heart, Award, ExternalLink, Activity, Code2 } from 'lucide-react';
 
 export default function Footer({ onOpenSignIn, onScrollToSection }) {
   return (
-    <footer className="bg-slate-950 border-t border-slate-900 py-12 text-slate-400 text-xs">
+    <footer className="border-t border-white/10 backdrop-blur-xl py-12 text-slate-400 text-xs">
       <div className="container-custom">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-12">
           
           {/* Brand Info */}
           <div className="md:col-span-2 space-y-4">
-            <div className="flex items-center gap-2 text-white font-display font-bold text-lg">
-              <Heart className="w-5 h-5 text-red-500 fill-red-500/30" />
-              <span>CardioVision <span className="text-red-500">3D</span></span>
+            <div className="flex items-center gap-2 text-white font-display font-extrabold text-xl">
+              <Heart className="w-5 h-5 text-rose-500 fill-rose-500/30" />
+              <span>Cardio<span className="text-gradient-vivid">Vision</span></span>
             </div>
             <p className="text-slate-400 text-xs max-w-sm leading-relaxed">
               Interactive 3D cardiovascular risk visualization & explainable multi-vessel coronary artery stenosis prediction. Bridging the gap between statistical machine learning and spatial anatomical intuition.

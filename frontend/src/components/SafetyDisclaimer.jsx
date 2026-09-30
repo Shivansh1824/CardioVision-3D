@@ -3,7 +3,7 @@ import { ShieldAlert, Check } from 'lucide-react';
 
 export default function SafetyDisclaimer() {
   return (
-    <section id="safety-disclaimer" className="py-14 bg-slate-950/90 border-t border-slate-900">
+    <section id="safety-disclaimer" className="py-16 border-t border-white/10 relative">
       <div className="container-custom">
         <div className="p-6 sm:p-8 rounded-3xl bg-gradient-to-r from-red-950/20 via-slate-900/60 to-slate-900/40 border border-red-500/20 backdrop-blur-md">
           <div className="flex flex-col md:flex-row items-start gap-5">

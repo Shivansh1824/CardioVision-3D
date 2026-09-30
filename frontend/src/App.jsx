@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import Lenis from 'lenis';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import VesselExplorer from './components/VesselExplorer';
@@ -10,9 +11,7 @@ import Footer from './components/Footer';
 import SignInModal from './components/SignInModal';
 
 export default function App() {
-  // Shared state for the 3 coronary vessels across 3D Heart & Explorer
-  // Initial state demonstrates multi-vessel differential glow:
-  // LAD = moderate (amber), LCX = normal (emerald), RCA = critical (crimson)
+  // Shared state for the 3 coronary vessels across Anatomical Heart & Explorer
   const [vesselStates, setVesselStates] = useState({
     LAD: 'moderate',
     LCX: 'normal',
@@ -24,6 +23,27 @@ export default function App() {
   // Sign In modal state
   const [signInOpen, setSignInOpen] = useState(false);
   const [signInRole, setSignInRole] = useState('doctor');
+
+  // Initialize Lenis smooth scrolling (Modern Immersive standard)
+  useEffect(() => {
+    const lenis = new Lenis({
+      duration: 1.2,
+      easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      smoothWheel: true,
+    });
+
+    function raf(time) {
+      lenis.raf(time);
+      requestAnimationFrame(raf);
+    }
+
+    const animId = requestAnimationFrame(raf);
+
+    return () => {
+      cancelAnimationFrame(animId);
+      lenis.destroy();
+    };
+  }, []);
 
   const handleOpenSignIn = (role = 'doctor') => {
     setSignInRole(role);
@@ -38,7 +58,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-body selection:bg-red-500/30 selection:text-red-200">
+    <div className="min-h-screen bg-luminous-mesh text-slate-100 flex flex-col font-body selection:bg-rose-500/30 selection:text-rose-200">
       
       {/* Top Sticky Navigation Header */}
       <Header
@@ -46,13 +66,14 @@ export default function App() {
         onScrollToSection={handleScrollToSection}
       />
 
-      {/* Main Page Sections */}
+      {/* Main Page Content */}
       <main className="flex-1">
-        {/* Hero Section with Interactive 3D Heart Canvas & Proof Metrics */}
+        {/* Hero Section with Anatomical Heart Visualizer & Proof Metrics */}
         <Hero
           onOpenSignIn={handleOpenSignIn}
           onScrollToSection={handleScrollToSection}
           vesselStates={vesselStates}
+          selectedArtery={selectedArtery}
           onSelectArtery={setSelectedArtery}
         />
 
@@ -69,7 +90,7 @@ export default function App() {
           onOpenSignIn={handleOpenSignIn}
         />
 
-        {/* 4-Step Clinical Workflow: Multimodal Diagnostic Intake to 3D Twin */}
+        {/* 4-Step Clinical Workflow */}
         <ClinicalWorkflow />
 
         {/* 5-Fold Cross-Validated AI Accuracy & Benchmarks */}

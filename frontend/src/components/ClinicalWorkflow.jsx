@@ -42,7 +42,7 @@ const WORKFLOW_STEPS = [
 
 export default function ClinicalWorkflow() {
   return (
-    <section id="clinical-workflow" className="py-20 bg-slate-950 border-t border-slate-900 relative">
+    <section id="clinical-workflow" className="py-24 border-t border-white/10 relative">
       <div className="container-custom">
         
         {/* Section Header */}

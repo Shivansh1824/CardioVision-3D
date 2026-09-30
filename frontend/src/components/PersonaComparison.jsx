@@ -38,7 +38,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
   const [activeTab, setActiveTab] = useState('both'); // 'doctor', 'patient', 'both'
 
   return (
-    <section id="persona-section" className="py-20 bg-slate-950/70 border-t border-slate-900 relative">
+    <section id="persona-section" className="py-24 border-t border-white/10 relative">
       <div className="container-custom">
         
         {/* Header */}

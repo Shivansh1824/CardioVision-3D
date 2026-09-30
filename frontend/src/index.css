@@ -1,15 +1,27 @@
 @import "tailwindcss";
 
-/* CardioVision 3D - Design Tokens */
+/* ===================================================================
+   CardioVision — 2026 Modern Immersive Design Tokens & Theme
+   Luminous Multi-Spectrum Mesh Aesthetic
+   =================================================================== */
+
 :root {
-  --bg-deep: #050811;
-  --bg-card: rgba(14, 21, 37, 0.75);
-  --bg-card-hover: rgba(20, 30, 52, 0.85);
-  --border-subtle: rgba(255, 255, 255, 0.08);
-  --crimson-glow: rgba(239, 68, 68, 0.4);
+  --bg-base: #060913;
+  --bg-card: rgba(15, 23, 42, 0.68);
+  --bg-card-hover: rgba(26, 38, 66, 0.82);
+  --border-glass: rgba(255, 255, 255, 0.12);
+  --border-glow: rgba(99, 102, 241, 0.35);
+
+  /* Vivid 2026 Clinical Spectrum */
+  --crimson-vital: #ef4444;
+  --crimson-glow: rgba(239, 68, 68, 0.45);
+  --violet-glow: rgba(139, 92, 246, 0.35);
+  --cyan-glow: rgba(6, 182, 212, 0.35);
+  --emerald-glow: rgba(16, 185, 129, 0.35);
+
   --font-display: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
-  --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 html {
@@ -19,8 +31,8 @@ html {
 
 body {
   font-family: var(--font-body);
-  background-color: var(--bg-deep);
-  color: #f1f5f9;
+  background-color: var(--bg-base);
+  color: #f8fafc;
   line-height: 1.6;
   overflow-x: hidden;
   -webkit-font-smoothing: antialiased;
@@ -28,126 +40,133 @@ body {
 
 h1, h2, h3, h4, .font-display {
   font-family: var(--font-display);
-  letter-spacing: -0.03em;
-  line-height: 1.15;
+  letter-spacing: -0.035em;
+  line-height: 1.12;
+  text-wrap: balance;
 }
 
-/* Background Atmosphere */
-.bg-ambient-radial {
+/* Luminous Multi-Colour Mesh Canvas */
+.bg-luminous-mesh {
   background: 
-    radial-gradient(circle at 50% 0%, rgba(239, 68, 68, 0.12) 0%, transparent 50%),
-    radial-gradient(circle at 10% 30%, rgba(59, 130, 246, 0.08) 0%, transparent 40%),
-    radial-gradient(circle at 90% 60%, rgba(16, 185, 129, 0.06) 0%, transparent 45%),
-    var(--bg-deep);
+    radial-gradient(circle at 15% 15%, rgba(225, 29, 72, 0.22) 0%, transparent 45%),
+    radial-gradient(circle at 85% 20%, rgba(99, 102, 241, 0.24) 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, rgba(6, 182, 212, 0.16) 0%, transparent 60%),
+    radial-gradient(circle at 20% 80%, rgba(16, 185, 129, 0.18) 0%, transparent 50%),
+    radial-gradient(circle at 80% 85%, rgba(244, 63, 94, 0.20) 0%, transparent 45%),
+    linear-gradient(180deg, #070b18 0%, #0a0e24 50%, #060913 100%);
+  background-attachment: fixed;
 }
 
-/* Glassmorphism */
+/* Modern High-End Glassmorphism */
 .glass-panel {
   background: var(--bg-card);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid var(--border-subtle);
-  border-radius: 20px;
-  box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.06);
-  transition: all 0.3s var(--ease-out-expo);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--border-glass);
+  border-radius: 24px;
+  box-shadow: 
+    0 20px 40px -15px rgba(0, 0, 0, 0.6),
+    inset 0 1px 0 rgba(255, 255, 255, 0.12);
+  transition: all 0.35s var(--ease-expo);
 }
 
 .glass-panel:hover {
-  border-color: rgba(255, 255, 255, 0.16);
+  border-color: rgba(255, 255, 255, 0.22);
   background: var(--bg-card-hover);
+  transform: translateY(-2px);
 }
 
-/* Primary Glowing Action Button */
-.btn-primary-glow {
-  background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);
+/* Primary Vibrant Action Button */
+.btn-primary-vibrant {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%);
   color: #ffffff;
   font-family: var(--font-display);
   font-weight: 600;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   border-radius: 9999px;
-  padding: 12px 28px;
+  padding: 13px 30px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 10px;
-  box-shadow: 0 0 20px -2px var(--crimson-glow), 0 4px 12px rgba(0, 0, 0, 0.3);
-  transition: all 0.25s var(--ease-out-expo);
+  box-shadow: 0 0 24px -2px var(--crimson-glow), 0 8px 20px rgba(0, 0, 0, 0.4);
+  transition: all 0.25s var(--ease-expo);
   text-decoration: none;
 }
 
-.btn-primary-glow:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 0 30px 4px var(--crimson-glow), 0 6px 16px rgba(0, 0, 0, 0.4);
-  background: linear-gradient(135deg, #f87171 0%, #dc2626 100%);
+.btn-primary-vibrant:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 0 34px 4px var(--crimson-glow), 0 10px 24px rgba(0, 0, 0, 0.5);
+  background: linear-gradient(135deg, #fb7185 0%, #f43f5e 50%, #e11d48 100%);
 }
 
 /* Glass Secondary Button */
 .btn-secondary-glass {
-  background: rgba(255, 255, 255, 0.05);
-  color: #e2e8f0;
+  background: rgba(255, 255, 255, 0.07);
+  color: #f1f5f9;
   font-family: var(--font-display);
   font-weight: 500;
-  border: 1px solid var(--border-subtle);
+  border: 1px solid var(--border-glass);
   border-radius: 9999px;
-  padding: 12px 24px;
+  padding: 13px 26px;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  backdrop-filter: blur(12px);
-  transition: all 0.2s var(--ease-out-expo);
+  backdrop-filter: blur(14px);
+  transition: all 0.2s var(--ease-expo);
   text-decoration: none;
 }
 
 .btn-secondary-glass:hover {
-  background: rgba(255, 255, 255, 0.1);
-  border-color: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.14);
+  border-color: rgba(255, 255, 255, 0.35);
   color: #ffffff;
-  transform: translateY(-1px);
+  transform: translateY(-2px);
 }
 
-/* Navigation Link */
+/* Navigation Links */
 .nav-link {
   color: #94a3b8;
   font-weight: 500;
   font-size: 0.925rem;
   text-decoration: none;
-  transition: color 0.2s;
-  padding: 6px 12px;
-  border-radius: 8px;
+  transition: all 0.2s var(--ease-expo);
+  padding: 7px 14px;
+  border-radius: 12px;
 }
 
 .nav-link:hover {
   color: #ffffff;
-  background: rgba(255, 255, 255, 0.04);
+  background: rgba(255, 255, 255, 0.08);
 }
 
-/* Badge Pill */
-.badge-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 14px;
-  border-radius: 9999px;
-  font-size: 0.825rem;
-  font-weight: 600;
-  letter-spacing: 0.02em;
+/* Typography Gradient */
+.text-gradient-vivid {
+  background: linear-gradient(135deg, #ffffff 20%, #fda4af 60%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
 }
 
-/* Layout Utilities */
+.text-gradient-cyan {
+  background: linear-gradient(135deg, #ffffff 30%, #67e8f9 70%, #06b6d4 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.text-gradient-aurora {
+  background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f43f5e 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* Container */
 .container-custom {
-  max-width: 1240px;
+  max-width: 1280px;
   margin-left: auto;
   margin-right: auto;
   padding-left: 24px;
   padding-right: 24px;
-}
-
-/* Gradient Text */
-.text-gradient-vital {
-  background: linear-gradient(135deg, #ffffff 30%, #fca5a5 70%, #ef4444 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
 }
 
 /* Interactive Slider */
@@ -156,7 +175,7 @@ input[type="range"].custom-slider {
   width: 100%;
   height: 6px;
   border-radius: 3px;
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.18);
   outline: none;
 }
 
@@ -166,9 +185,9 @@ input[type="range"].custom-slider::-webkit-slider-thumb {
   width: 18px;
   height: 18px;
   border-radius: 50%;
-  background: #ef4444;
+  background: #f43f5e;
   cursor: pointer;
-  box-shadow: 0 0 10px rgba(239, 68, 68, 0.8);
+  box-shadow: 0 0 14px rgba(244, 63, 94, 0.9);
   border: 2px solid #ffffff;
 }
 
@@ -177,12 +196,12 @@ input[type="range"].custom-slider::-webkit-slider-thumb {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--bg-deep);
+  background: var(--bg-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.15);
+  background: rgba(255, 255, 255, 0.2);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.25);
+  background: rgba(255, 255, 255, 0.35);
 }

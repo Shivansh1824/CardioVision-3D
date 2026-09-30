@@ -42,7 +42,7 @@ const METRIC_CARDS = [
 
 export default function MetricsSection() {
   return (
-    <section id="model-metrics" className="py-20 bg-slate-950/80 border-t border-slate-900 relative">
+    <section id="model-metrics" className="py-24 border-t border-white/10 relative">
       <div className="container-custom">
         
         {/* Section Header */}

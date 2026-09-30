@@ -100,20 +100,20 @@ export default function VesselExplorer({ vesselStates, setVesselStates, selected
   );
 
   return (
-    <section id="vessel-explorer" className="py-20 bg-slate-950 border-t border-slate-900 relative">
+    <section id="vessel-explorer" className="py-24 border-t border-white/10 relative">
       <div className="container-custom">
         
         {/* Section Header */}
         <div className="max-w-3xl mb-12">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-xs font-semibold uppercase mb-3">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-rose-950/70 border border-rose-500/40 text-rose-300 font-mono text-xs font-semibold uppercase mb-3">
             <Flame className="w-3.5 h-3.5" />
             <span>Interactive Multi-Vessel Staging</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-white">
+          <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white">
             Dual-Metric Proportional Scoring & Stenosis Simulator
           </h2>
-          <p className="mt-3 text-slate-400 text-base leading-relaxed">
-            Unlike crude black-box AI tools that falsely label partial disease as 100% or 0%, CardioVision 3D enforces rigorous mathematical proportionality: <strong>0/3 (0%)</strong>, <strong>1/3 (33.3%)</strong>, <strong>2/3 (66.7%)</strong>, and <strong>3/3 (100%)</strong>.
+          <p className="mt-3 text-slate-300 text-base sm:text-lg leading-relaxed">
+            Unlike crude black-box AI tools that falsely label partial disease as 100% or 0%, CardioVision enforces rigorous mathematical proportionality: <strong>0/3 (0%)</strong>, <strong>1/3 (33.3%)</strong>, <strong>2/3 (66.7%)</strong>, and <strong>3/3 (100%)</strong>.
           </p>
         </div>
 
