@@ -1,5 +1,10 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Database, Cpu, Eye, Sliders, ArrowRight, HeartPulse } from 'lucide-react';
+
+gsap.registerPlugin(ScrollTrigger);
 
 const WORKFLOW_STEPS = [
   {
@@ -41,12 +46,44 @@ const WORKFLOW_STEPS = [
 ];
 
 export default function ClinicalWorkflow() {
+  const sectionRef = useRef(null);
+
+  useGSAP(
+    () => {
+      // Header reveal
+      gsap.from('.workflow-header', {
+        y: 40,
+        opacity: 0,
+        duration: 0.8,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.workflow-header',
+          start: 'top 85%',
+        },
+      });
+
+      // Step cards staggered cascade
+      gsap.from('.workflow-card', {
+        y: 50,
+        opacity: 0,
+        duration: 0.7,
+        stagger: 0.12,
+        ease: 'power3.out',
+        scrollTrigger: {
+          trigger: '.workflow-cards-grid',
+          start: 'top 80%',
+        },
+      });
+    },
+    { scope: sectionRef }
+  );
+
   return (
-    <section id="clinical-workflow" className="py-24 border-t border-white/10 relative">
+    <section id="clinical-workflow" ref={sectionRef} className="py-24 border-t border-white/10 relative">
       <div className="container-custom">
-        
+
         {/* Section Header */}
-        <div className="text-center max-w-3xl mx-auto mb-16 space-y-4">
+        <div className="workflow-header text-center max-w-3xl mx-auto mb-16 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-xs font-semibold uppercase">
             <HeartPulse className="w-3.5 h-3.5" />
             <span>How CardioVision 3D Works</span>
@@ -60,13 +97,13 @@ export default function ClinicalWorkflow() {
         </div>
 
         {/* 4 Steps Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="workflow-cards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {WORKFLOW_STEPS.map((step, idx) => {
             const Icon = step.icon;
             return (
               <div
                 key={idx}
-                className="p-6 rounded-2xl glass-panel relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                className="workflow-card p-6 rounded-2xl glass-panel relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
               >
                 <div>
                   {/* Top Bar with Number & Badge */}
@@ -85,15 +122,9 @@ export default function ClinicalWorkflow() {
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-bold font-display text-white mb-1">
-                    {step.title}
-                  </h3>
-                  <p className="text-xs font-mono text-cyan-400 mb-3">
-                    {step.subtitle}
-                  </p>
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    {step.desc}
-                  </p>
+                  <h3 className="text-lg font-bold font-display text-white mb-1">{step.title}</h3>
+                  <p className="text-xs font-mono text-cyan-400 mb-3">{step.subtitle}</p>
+                  <p className="text-xs text-slate-400 leading-relaxed">{step.desc}</p>
                 </div>
 
                 <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-slate-200 transition-colors">

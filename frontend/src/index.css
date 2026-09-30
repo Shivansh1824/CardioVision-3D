@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 /* ===================================================================
@@ -43,6 +44,14 @@ h1, h2, h3, h4, .font-display {
   letter-spacing: -0.035em;
   line-height: 1.12;
   text-wrap: balance;
+}
+
+.font-body {
+  font-family: var(--font-body);
+}
+
+.font-mono {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 /* Luminous Multi-Colour Mesh Canvas */
@@ -158,6 +167,69 @@ h1, h2, h3, h4, .font-display {
   background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 50%, #f43f5e 100%);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
+}
+
+/* Used in ClinicalWorkflow */
+.text-gradient-vital {
+  background: linear-gradient(135deg, #fda4af 0%, #f43f5e 50%, #dc2626 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ECG Heartbeat Line — used in hero ambient effects */
+@keyframes ecg-trace {
+  0%   { stroke-dashoffset: 800; }
+  100% { stroke-dashoffset: 0; }
+}
+
+.ecg-animate {
+  stroke-dasharray: 800;
+  stroke-dashoffset: 800;
+  animation: ecg-trace 3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+/* Floating ambient particle */
+@keyframes float-up {
+  0%   { transform: translateY(0px) scale(1); opacity: 0.6; }
+  100% { transform: translateY(-120px) scale(0.4); opacity: 0; }
+}
+
+.particle-float {
+  animation: float-up 4s ease-out infinite;
+}
+
+/* Shimmer sweep for metric cards */
+@keyframes shimmer {
+  0%   { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
+}
+
+.shimmer-border {
+  background: linear-gradient(90deg, transparent 0%, rgba(255,255,255,0.15) 50%, transparent 100%);
+  background-size: 200% 100%;
+  animation: shimmer 3s linear infinite;
+}
+
+/* Alias used in SignInModal — gradient CTA for patient submit */
+.btn-primary-glow {
+  background: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #be123c 100%);
+  color: #ffffff;
+  font-family: var(--font-display);
+  font-weight: 600;
+  border: none;
+  border-radius: 12px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  box-shadow: 0 0 20px -2px rgba(244, 63, 94, 0.5), 0 6px 16px rgba(0,0,0,0.4);
+  transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.btn-primary-glow:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 0 30px 2px rgba(244, 63, 94, 0.65), 0 8px 20px rgba(0,0,0,0.5);
 }
 
 /* Container */
