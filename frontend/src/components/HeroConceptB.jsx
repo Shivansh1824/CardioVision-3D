@@ -100,14 +100,13 @@ function LayeredHeart({ slicePercent, vesselStates, selectedArtery }) {
     <div style={{ position: 'relative', width: '100%', height: '100%' }}>
       {/* ── Base: real anatomical heart image ── */}
       <img
-        src="/heart-anatomical.jpg"
+        src="/heart-clean.png"
         alt="Anatomical heart"
         style={{
           width: '100%',
           height: '100%',
           objectFit: 'contain',
           display: 'block',
-          mixBlendMode: 'lighten',
           userSelect: 'none',
         }}
         draggable={false}
@@ -140,58 +139,21 @@ function LayeredHeart({ slicePercent, vesselStates, selectedArtery }) {
         </div>
       )}
 
-      {/* ── Coronary artery SVG overlays ── */}
-      <svg
-        viewBox="0 0 400 420"
-        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
-        aria-hidden="true"
-      >
-        {/* RCA */}
-        <path
-          d="M188 175 C170 192 158 215 155 245 C152 272 158 298 168 320 C176 338 186 352 194 362"
-          stroke={C[S.RCA]} strokeWidth={selectedArtery === 'RCA' ? 4.5 : 2.8}
-          strokeLinecap="round" fill="none" opacity={0.92}
-          style={{ filter: glow(C[S.RCA], selectedArtery === 'RCA'), transition: 'all 0.3s' }}
-        />
-        <path
-          d="M155 260 C144 272 138 285 136 298"
-          stroke={C[S.RCA]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.7}
-          style={{ filter: `drop-shadow(0 0 3px ${C[S.RCA]}66)` }}
-        />
-        {/* LAD */}
-        <path
-          d="M198 168 C193 195 190 225 192 258 C194 295 198 330 202 365"
-          stroke={C[S.LAD]} strokeWidth={selectedArtery === 'LAD' ? 4.5 : 2.8}
-          strokeLinecap="round" fill="none" opacity={0.92}
-          style={{ filter: glow(C[S.LAD], selectedArtery === 'LAD'), transition: 'all 0.3s' }}
-        />
-        <path
-          d="M192 240 C205 255 220 265 235 270"
-          stroke={C[S.LAD]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.72}
-          style={{ filter: `drop-shadow(0 0 3px ${C[S.LAD]}66)` }}
-        />
-        {/* LCX */}
-        <path
-          d="M205 162 C225 158 248 162 265 175 C285 190 298 210 302 235 C305 258 300 282 292 302"
-          stroke={C[S.LCX]} strokeWidth={selectedArtery === 'LCX' ? 4.5 : 2.8}
-          strokeLinecap="round" fill="none" opacity={0.92}
-          style={{ filter: glow(C[S.LCX], selectedArtery === 'LCX'), transition: 'all 0.3s' }}
-        />
-        <path
-          d="M285 208 C295 230 298 252 294 272"
-          stroke={C[S.LCX]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.7}
-          style={{ filter: `drop-shadow(0 0 3px ${C[S.LCX]}66)` }}
-        />
-        {/* Slice edge line */}
-        {slicePercent > 0.04 && slicePercent < 0.97 && (
+      {/* ── Slice edge indicator ── */}
+      {slicePercent > 0.04 && slicePercent < 0.97 && (
+        <svg
+          viewBox="0 0 400 420"
+          style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+          aria-hidden="true"
+        >
           <line
-            x1={clipPct * 4} y1={100} x2={clipPct * 4} y2={420}
-            stroke="rgba(225,29,72,0.65)" strokeWidth="2"
+            x1={clipPct * 4} y1={60} x2={clipPct * 4} y2={380}
+            stroke="rgba(225,29,72,0.75)" strokeWidth="2"
             strokeDasharray="5,3"
-            style={{ filter: 'drop-shadow(0 0 5px rgba(225,29,72,0.8))' }}
+            style={{ filter: 'drop-shadow(0 0 6px rgba(225,29,72,0.9))' }}
           />
-        )}
-      </svg>
+        </svg>
+      )}
     </div>
   );
 }

@@ -12,17 +12,57 @@
  * - SVG overlays: coronary artery paths with glow, colour-coded to vessel state
  */
 
-import React, { useRef, useEffect } from 'react';
+import React, { useRef, useEffect, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { motion } from 'framer-motion';
-import { ArrowRight, Activity } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { ArrowRight, Activity, Crosshair } from 'lucide-react';
 
 gsap.registerPlugin(useGSAP);
 
 // ─── Vessel state → colour + label ───────────────────────────────────────────
 const VESSEL_COLOR = { normal: '#10b981', moderate: '#f59e0b', critical: '#ef4444' };
 const VESSEL_LABEL = { normal: 'Clear', moderate: 'Moderate', critical: 'Severe' };
+
+// ─── Clinical Vessel Targets & Anatomical Territories ────────────────────────
+// LAD: Left Anterior Descending (anterior interventricular sulcus → apex)
+// LCX: Left Circumflex (coronary sulcus → obtuse marginal / posterolateral wall)
+// RCA: Right Coronary Artery (right atrioventricular groove → crux / inferior wall)
+const VESSEL_TARGETS = [
+  {
+    code: 'LAD',
+    name: 'Left Anterior Descending',
+    shortName: 'Anterior',
+    pathway: 'Anterior interventricular groove to apex',
+    territory: 'Anterior LV Wall & 2/3 Interventricular Septum',
+    coords: { x: 52, y: 58 },
+    ffr: '0.74',
+    flow: '26 cm/s',
+    hemodynamics: 'Elevated Ischemia Risk',
+  },
+  {
+    code: 'LCX',
+    name: 'Left Circumflex Artery',
+    shortName: 'Lateral',
+    pathway: 'Left atrioventricular groove along lateral margin',
+    territory: 'Lateral & Posterolateral Left Ventricle',
+    coords: { x: 67, y: 44 },
+    ffr: '0.94',
+    flow: '38 cm/s',
+    hemodynamics: 'Normal Patent Flow',
+  },
+  {
+    code: 'RCA',
+    name: 'Right Coronary Artery',
+    shortName: 'Inferior',
+    pathway: 'Right coronary sulcus down to cardiac crux',
+    territory: 'Right Atrium, RV & Conduction (SA/AV Nodes)',
+    coords: { x: 33, y: 52 },
+    ffr: '0.58',
+    flow: '14 cm/s',
+    hemodynamics: 'Critical Stenosis / Perfusion Deficit',
+  },
+];
 
 // ─── Live ECG canvas ─────────────────────────────────────────────────────────
 function ECGWaveform() {
@@ -82,105 +122,6 @@ function ECGWaveform() {
   );
 }
 
-// ─── Coronary artery SVG overlay ─────────────────────────────────────────────
-// These paths are positioned to match the LAD, LCX, RCA on the heart image.
-// They sit in a 100% × 100% SVG over the heart image container.
-function CoronaryOverlay({ vesselStates, selectedArtery }) {
-  const LAD = VESSEL_COLOR[vesselStates?.LAD] ?? VESSEL_COLOR.moderate;
-  const LCX = VESSEL_COLOR[vesselStates?.LCX] ?? VESSEL_COLOR.normal;
-  const RCA = VESSEL_COLOR[vesselStates?.RCA] ?? VESSEL_COLOR.critical;
-
-  const glow = (color, selected) =>
-    selected ? `drop-shadow(0 0 8px ${color}) drop-shadow(0 0 16px ${color}88)` : `drop-shadow(0 0 4px ${color}88)`;
-
-  return (
-    <svg
-      viewBox="0 0 400 420"
-      width="100%"
-      height="100%"
-      style={{ position: 'absolute', inset: 0, pointerEvents: 'none', zIndex: 10 }}
-      aria-hidden="true"
-    >
-      {/* LAD — Left Anterior Descending: runs down the front (anterior interventricular groove) */}
-      <path
-        d="M198 168 C193 195 190 225 192 258 C194 295 198 330 202 365 C204 390 204 408 202 422"
-        stroke={LAD}
-        strokeWidth={selectedArtery === 'LAD' ? 4 : 2.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(LAD, selectedArtery === 'LAD'), transition: 'all 0.3s' }}
-        opacity={0.92}
-      />
-      {/* LAD diagonal branch D1 */}
-      <path
-        d="M192 240 C205 255 220 265 235 270"
-        stroke={LAD}
-        strokeWidth={selectedArtery === 'LAD' ? 2.5 : 1.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(LAD, selectedArtery === 'LAD') }}
-        opacity={0.78}
-      />
-      {/* LAD septal perforators */}
-      <path
-        d="M193 280 C182 288 174 292 168 294"
-        stroke={LAD}
-        strokeWidth="1.4"
-        strokeLinecap="round"
-        fill="none"
-        opacity={0.65}
-        style={{ filter: `drop-shadow(0 0 3px ${LAD}66)` }}
-      />
-
-      {/* LCX — Left Circumflex: curves around the left atrioventricular groove */}
-      <path
-        d="M205 162 C225 158 248 162 265 175 C285 190 298 210 302 235 C305 258 300 282 292 302"
-        stroke={LCX}
-        strokeWidth={selectedArtery === 'LCX' ? 4 : 2.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(LCX, selectedArtery === 'LCX'), transition: 'all 0.3s' }}
-        opacity={0.92}
-      />
-      {/* LCX obtuse marginal branch */}
-      <path
-        d="M285 208 C295 230 298 252 294 272"
-        stroke={LCX}
-        strokeWidth={selectedArtery === 'LCX' ? 2.5 : 1.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(LCX, selectedArtery === 'LCX') }}
-        opacity={0.75}
-      />
-
-      {/* RCA — Right Coronary Artery: runs along the right atrioventricular groove */}
-      <path
-        d="M188 175 C170 192 158 215 155 245 C152 272 158 298 168 320 C176 338 186 352 194 362"
-        stroke={RCA}
-        strokeWidth={selectedArtery === 'RCA' ? 4 : 2.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(RCA, selectedArtery === 'RCA'), transition: 'all 0.3s' }}
-        opacity={0.92}
-      />
-      {/* RCA acute marginal branch */}
-      <path
-        d="M155 260 C144 272 138 285 136 298"
-        stroke={RCA}
-        strokeWidth={selectedArtery === 'RCA' ? 2.5 : 1.5}
-        strokeLinecap="round"
-        fill="none"
-        style={{ filter: glow(RCA, selectedArtery === 'RCA') }}
-        opacity={0.72}
-      />
-
-      {/* Vessel label dots (subtle, non-intrusive) */}
-      <circle cx="202" cy="370" r="5" fill={LAD} opacity="0.9" />
-      <circle cx="295" cy="290" r="5" fill={LCX} opacity="0.9" />
-      <circle cx="158" cy="288" r="5" fill={RCA} opacity="0.9" />
-    </svg>
-  );
-}
 
 // ─── Main component ───────────────────────────────────────────────────────────
 export default function HeroConceptA({
@@ -188,9 +129,12 @@ export default function HeroConceptA({
   onScrollToSection,
   vesselStates,
   selectedArtery,
+  onSelectArtery,
 }) {
   const sectionRef = useRef(null);
-  const heartRef = useRef(null);
+  const heartWrapRef = useRef(null);
+  const [activeVessel, setActiveVessel] = useState(null);
+  const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
 
   // GSAP entrance + persistent heartbeat pulse
   useGSAP(
@@ -205,11 +149,11 @@ export default function HeroConceptA({
         .fromTo('.ca-heart-wrap', { scale: 0.88, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 1.05, ease: 'back.out(1.3)' }, '-=0.65')
         .fromTo('.ca-hud',      { y: 14, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.42, stagger: 0.1 }, '-=0.55');
 
-      // Persistent anatomical heartbeat: systole + diastole (~72 BPM = 0.833s period)
-      // Mimics real cardiac cycle: fast systolic contraction, slower diastolic relaxation
-      if (heartRef.current) {
-        gsap.to(heartRef.current, {
-          scale: 1.038,
+      // Heartbeat pulse (~72 BPM)
+      const heartImg = document.getElementById('ca-heart-image');
+      if (heartImg) {
+        gsap.to(heartImg, {
+          scale: 1.034,
           duration: 0.18,
           ease: 'power2.out',
           repeat: -1,
@@ -221,6 +165,43 @@ export default function HeroConceptA({
     },
     { scope: sectionRef }
   );
+
+  // Pointer proximity & 3D tilt tracking
+  const handlePointerMove = (e) => {
+    if (!heartWrapRef.current) return;
+    const rect = heartWrapRef.current.getBoundingClientRect();
+    const px = ((e.clientX - rect.left) / rect.width) * 100;
+    const py = ((e.clientY - rect.top) / rect.height) * 100;
+
+    // 3D perspective tilt
+    const normX = (e.clientX - rect.left) / rect.width - 0.5;
+    const normY = (e.clientY - rect.top) / rect.height - 0.5;
+    setTilt({ rx: -normY * 9, ry: normX * 11 });
+
+    // Find nearest vessel target pin
+    let nearest = null;
+    let minDistance = Infinity;
+    VESSEL_TARGETS.forEach((vt) => {
+      const dx = px - vt.coords.x;
+      const dy = py - vt.coords.y;
+      const dist = Math.sqrt(dx * dx + dy * dy);
+      if (dist < minDistance) {
+        minDistance = dist;
+        nearest = vt.code;
+      }
+    });
+
+    if (minDistance < 24) {
+      setActiveVessel(nearest);
+    } else {
+      setActiveVessel(null);
+    }
+  };
+
+  const handlePointerLeave = () => {
+    setTilt({ rx: 0, ry: 0 });
+    setActiveVessel(null);
+  };
 
   const LADs = vesselStates?.LAD || 'moderate';
   const LCXs = vesselStates?.LCX || 'normal';
@@ -377,9 +358,12 @@ export default function HeroConceptA({
               <p className="mt-1.5 font-mono text-[9px] text-slate-400 tracking-wider">5-Fold Stratified</p>
             </motion.div>
 
-            {/* ── HEART CENTREPIECE ── */}
+            {/* ── HEART CENTREPIECE + INTERACTIVE CLINICAL TARGET HUD ── */}
             <div
-              className="relative mx-auto"
+              ref={heartWrapRef}
+              onMouseMove={handlePointerMove}
+              onMouseLeave={handlePointerLeave}
+              className="relative mx-auto cursor-crosshair"
               style={{
                 width: '100%',
                 maxWidth: 480,
@@ -397,11 +381,19 @@ export default function HeroConceptA({
                 }}
               />
 
-              {/* Heart image + coronary overlay container */}
-              <div ref={heartRef} style={{ position: 'relative', width: '100%' }}>
+              {/* Heart image container with 3D tilt */}
+              <div
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  transform: `perspective(900px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
+                  transition: 'transform 0.12s ease-out',
+                }}
+              >
                 <img
-                  src="/heart-anatomical.jpg"
-                  alt="Photorealistic anatomical human heart — aorta, pulmonary artery, and coronary arteries visible"
+                  id="ca-heart-image"
+                  src="/heart-clean.png"
+                  alt="Photorealistic anatomical human heart showing natural coronary arteries LAD, LCX, RCA on transparent background"
                   width={480}
                   height={480}
                   style={{
@@ -409,25 +401,140 @@ export default function HeroConceptA({
                     height: 'auto',
                     objectFit: 'contain',
                     display: 'block',
-                    // Remove the white JPG background via multiply blending
-                    mixBlendMode: 'multiply',
                     userSelect: 'none',
                     WebkitUserDrag: 'none',
                   }}
                   draggable={false}
                 />
 
-                {/* Coronary artery SVG paths on top */}
-                <div
-                  style={{
-                    position: 'absolute',
-                    inset: 0,
-                    width: '100%',
-                    height: '100%',
-                  }}
-                >
-                  <CoronaryOverlay vesselStates={vesselStates} selectedArtery={selectedArtery} />
-                </div>
+                {/* ── Interactive Vessel Target Pins ("Three Nerves") ── */}
+                {VESSEL_TARGETS.map((vt) => {
+                  const isHovered = activeVessel === vt.code;
+                  const isSelected = selectedArtery === vt.code;
+                  const isTargeted = isHovered || isSelected;
+                  const status = vesselStates?.[vt.code] || 'normal';
+                  const color = VESSEL_COLOR[status];
+
+                  return (
+                    <div
+                      key={vt.code}
+                      style={{
+                        position: 'absolute',
+                        left: `${vt.coords.x}%`,
+                        top: `${vt.coords.y}%`,
+                        transform: 'translate(-50%, -50%)',
+                        zIndex: isTargeted ? 35 : 20,
+                      }}
+                    >
+                      {/* Clinical Target Hotspot */}
+                      <button
+                        type="button"
+                        onClick={() => onSelectArtery?.(vt.code)}
+                        onMouseEnter={() => setActiveVessel(vt.code)}
+                        className="relative group cursor-pointer focus:outline-none flex items-center justify-center p-3"
+                        aria-label={`Inspect ${vt.name}`}
+                      >
+                        {/* Radar Pulse Wave */}
+                        <span
+                          className="absolute inset-1 rounded-full animate-ping opacity-60"
+                          style={{
+                            background: color,
+                            animationDuration: isTargeted ? '1.4s' : '3s',
+                          }}
+                        />
+                        {/* Target Crosshair Ring */}
+                        <span
+                          className="relative flex items-center justify-center rounded-full transition-all duration-300"
+                          style={{
+                            width: isTargeted ? 24 : 18,
+                            height: isTargeted ? 24 : 18,
+                            background: isTargeted ? `${color}25` : 'rgba(255,255,255,0.92)',
+                            border: `2px solid ${color}`,
+                            boxShadow: `0 0 ${isTargeted ? '16px' : '6px'} ${color}`,
+                          }}
+                        >
+                          <span
+                            className="rounded-full transition-all duration-300"
+                            style={{
+                              width: isTargeted ? 8 : 6,
+                              height: isTargeted ? 8 : 6,
+                              background: color,
+                            }}
+                          />
+                        </span>
+                      </button>
+
+                      {/* Expanding Clinical Breakdown Card */}
+                      <AnimatePresence>
+                        {isTargeted && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.92, y: 10 }}
+                            animate={{ opacity: 1, scale: 1, y: 0 }}
+                            exit={{ opacity: 0, scale: 0.92, y: 6 }}
+                            transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                            className="absolute z-50 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 pointer-events-auto text-left"
+                            style={{
+                              width: 275,
+                              left: vt.coords.x > 50 ? 'auto' : 24,
+                              right: vt.coords.x > 50 ? 24 : 'auto',
+                              top: vt.coords.y > 55 ? 'auto' : -30,
+                              bottom: vt.coords.y > 55 ? 24 : 'auto',
+                              boxShadow: `0 20px 40px -12px ${color}35, 0 8px 24px rgba(0,0,0,0.09)`,
+                            }}
+                          >
+                            {/* Card Header */}
+                            <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                              <div className="flex items-center gap-1.5">
+                                <span className="w-2.5 h-2.5 rounded-full" style={{ background: color }} />
+                                <span className="font-mono text-xs font-bold text-slate-900">{vt.code}</span>
+                                <span className="text-[10px] text-slate-400 font-mono tracking-wider">Artery</span>
+                              </div>
+                              <span
+                                className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md"
+                                style={{ background: `${color}18`, color }}
+                              >
+                                {VESSEL_LABEL[status]} Stenosis
+                              </span>
+                            </div>
+
+                            {/* Anatomical Name & Territory */}
+                            <p className="font-display text-xs font-bold text-slate-800 leading-tight mb-1">
+                              {vt.name}
+                            </p>
+                            <p className="text-[10px] text-slate-500 mb-2 leading-snug">
+                              {vt.territory}
+                            </p>
+
+                            {/* Hemodynamic Telemetry Breakdown */}
+                            <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50/90 border border-slate-100 mb-2.5">
+                              <div>
+                                <p className="font-mono text-[9px] text-slate-400 uppercase tracking-wider">Perfusion FFR</p>
+                                <p className="font-display font-bold text-xs text-slate-800 mt-0.5">{vt.ffr} FFR</p>
+                              </div>
+                              <div>
+                                <p className="font-mono text-[9px] text-slate-400 uppercase tracking-wider">Flow Velocity</p>
+                                <p className="font-display font-bold text-xs text-slate-800 mt-0.5">{vt.flow}</p>
+                              </div>
+                            </div>
+
+                            {/* Clinical Simulator Trigger */}
+                            <button
+                              onClick={() => {
+                                onSelectArtery?.(vt.code);
+                                onScrollToSection?.('vessel-explorer');
+                              }}
+                              className="w-full flex items-center justify-between px-3 py-1.5 rounded-xl text-[10px] font-bold text-white transition-all cursor-pointer shadow-xs"
+                              style={{ background: color }}
+                            >
+                              <span>Explore Stenosis Simulation</span>
+                              <ArrowRight className="w-3 h-3" />
+                            </button>
+                          </motion.div>
+                        )}
+                      </AnimatePresence>
+                    </div>
+                  );
+                })}
               </div>
             </div>
 
