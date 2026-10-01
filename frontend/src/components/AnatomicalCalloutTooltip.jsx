@@ -11,27 +11,30 @@ export default function AnatomicalCalloutTooltip({
   onClose,
   onCardMouseEnter,
   onCardMouseLeave,
+  centerVertically = false,
+  hideTargetRings = false,
+  cardAnchor = null,
 }) {
   if (!data) return null;
 
-  const isVessel = viewMode === 'surface';
-  const status = isVessel ? vesselStates?.[data.code] || 'normal' : null;
+  const isVessel = viewMode === 'surface' || Boolean(data.vesselKey);
+  const status = isVessel ? vesselStates?.[data.vesselKey || data.code] || 'normal' : null;
   const accentColor = isVessel
-    ? VESSEL_COLOR[status] || '#10b981'
-    : '#e11d48';
+    ? VESSEL_COLOR[status] || data.color || '#10b981'
+    : (data.color || '#e11d48');
 
   const isLeft = data.calloutSide === 'left';
   const pinX = pinPos?.x ?? (data.coords?.x || 50);
   const pinY = pinPos?.y ?? (data.coords?.y || 50);
 
-  // Clamp vertical position so the card stays within the stage
+  // Clamp vertical position so the card stays within the stage or center at 50%
   const clampedTop = Math.max(6, Math.min(pinY - 14, 50));
 
   // Anchor point on the card border (where line docks)
   // On ~720px stage with 290px card:
   // Card on right starts at ~59.5%; Card on left ends at ~40.5%
-  const cardAnchorX = isLeft ? 40.5 : 59.5;
-  const cardAnchorY = clampedTop + 14;
+  const cardAnchorX = cardAnchor?.x ?? (isLeft ? 40.5 : 59.5);
+  const cardAnchorY = cardAnchor?.y ?? (centerVertically ? 50 : clampedTop + 14);
 
   return (
     <div className="absolute inset-0 pointer-events-none z-40">
@@ -48,33 +51,37 @@ export default function AnatomicalCalloutTooltip({
           </filter>
         </defs>
 
-        {/* Pulsing targeting rings on the anatomical pinpoint */}
-        <circle
-          cx={`${pinX}%`}
-          cy={`${pinY}%`}
-          r="1.8"
-          fill="none"
-          stroke={accentColor}
-          strokeWidth="0.4"
-          opacity="0.9"
-        />
-        <circle
-          cx={`${pinX}%`}
-          cy={`${pinY}%`}
-          r="3.5"
-          fill="none"
-          stroke={accentColor}
-          strokeWidth="0.25"
-          strokeDasharray="0.8 0.8"
-          opacity="0.7"
-        />
-        <circle
-          cx={`${pinX}%`}
-          cy={`${pinY}%`}
-          r="1.1"
-          fill={accentColor}
-          filter="url(#leaderGlow)"
-        />
+        {/* Pulsing targeting rings on the anatomical pinpoint (hidden if 3D dot provides them) */}
+        {!hideTargetRings && (
+          <>
+            <circle
+              cx={`${pinX}%`}
+              cy={`${pinY}%`}
+              r="1.8"
+              fill="none"
+              stroke={accentColor}
+              strokeWidth="0.4"
+              opacity="0.9"
+            />
+            <circle
+              cx={`${pinX}%`}
+              cy={`${pinY}%`}
+              r="3.5"
+              fill="none"
+              stroke={accentColor}
+              strokeWidth="0.25"
+              strokeDasharray="0.8 0.8"
+              opacity="0.7"
+            />
+            <circle
+              cx={`${pinX}%`}
+              cy={`${pinY}%`}
+              r="1.1"
+              fill={accentColor}
+              filter="url(#leaderGlow)"
+            />
+          </>
+        )}
 
         {/* Angled leader line from pinpoint to external card anchor */}
         <path
@@ -117,22 +124,30 @@ export default function AnatomicalCalloutTooltip({
       </svg>
 
       {/* ── 2. External Clinical Callout Card (Positioned Outside the Heart) ── */}
-      <motion.div
-        key={data.code || data.id}
-        onMouseEnter={onCardMouseEnter}
-        onMouseLeave={onCardMouseLeave}
-        initial={{ opacity: 0, scale: 0.92, y: 8, x: isLeft ? -12 : 12 }}
-        animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
-        exit={{ opacity: 0, scale: 0.92, y: 6, x: isLeft ? -8 : 8 }}
-        transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
-        className="pointer-events-auto absolute bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[285px] sm:w-[295px]"
+      <div
+        className="pointer-events-none absolute"
         style={{
           left: isLeft ? '0%' : 'auto',
           right: isLeft ? 'auto' : '0%',
-          top: `${clampedTop}%`,
-          boxShadow: '0 20px 40px -10px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.06)',
+          top: centerVertically ? '50%' : `${clampedTop}%`,
+          transform: centerVertically ? 'translateY(-50%)' : undefined,
+          zIndex: 40,
         }}
       >
+        <motion.div
+          key={data.code || data.id}
+          onMouseEnter={onCardMouseEnter}
+          onMouseLeave={onCardMouseLeave}
+          initial={{ opacity: 0, scale: 0.92, x: isLeft ? -12 : 12 }}
+          animate={{ opacity: 1, scale: 1, x: 0 }}
+          exit={{ opacity: 0, scale: 0.92, x: isLeft ? -8 : 8 }}
+          transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+          id="clinical-callout-card"
+          className="pointer-events-auto bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[285px] sm:w-[295px]"
+          style={{
+            boxShadow: '0 20px 40px -10px rgba(0,0,0,0.18), 0 4px 16px rgba(0,0,0,0.06)',
+          }}
+        >
         {/* Header Bar */}
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
           <div className="flex items-center gap-1.5 flex-wrap">
@@ -172,7 +187,7 @@ export default function AnatomicalCalloutTooltip({
             </span>
           </div>
           <p className="text-[11px] text-slate-700 leading-relaxed font-medium">
-            {data.flow || data.role}
+            {data.patientExpl || data.flow || data.role}
           </p>
         </div>
 
@@ -188,24 +203,8 @@ export default function AnatomicalCalloutTooltip({
             {data.pathology || data.significance}
           </p>
         </div>
-
-        {/* Triage / Status Footer Pill */}
-        {isVessel && status && (
-          <div className="mt-2.5 pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] font-mono">
-            <span className="text-slate-400">Arterial Status</span>
-            <span
-              className="font-bold px-2 py-0.5 rounded-full"
-              style={{
-                color: accentColor,
-                backgroundColor: `${accentColor}18`,
-                border: `1px solid ${accentColor}35`,
-              }}
-            >
-              {VESSEL_LABEL[status]}
-            </span>
-          </div>
-        )}
-      </motion.div>
+        </motion.div>
+      </div>
     </div>
   );
 }

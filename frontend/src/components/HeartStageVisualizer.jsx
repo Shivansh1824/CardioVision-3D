@@ -23,7 +23,6 @@ import {
   POSTERIOR_VESSELS,
 } from './cardiacAnatomyData';
 import AnatomicalCalloutTooltip from './AnatomicalCalloutTooltip';
-import RotationControls from './RotationControls';
 import CoronaryBloodFlowSvg from './CoronaryBloodFlowSvg';
 import DissectionPinpoints from './DissectionPinpoints';
 
@@ -37,42 +36,16 @@ export default function HeartStageVisualizer({
   const heartWrapRef = useRef(null);
   const isDissected = viewMode === 'dissected';
 
-  // 360° Orbital Rotation State
-  const [rotationY, setRotationY] = useState(0);
-  const [isAutoOrbit, setIsAutoOrbit] = useState(false);
-  const [isDragging, setIsDragging] = useState(false);
-  const [dragStartX, setDragStartX] = useState(0);
-  const [dragStartRot, setDragStartRot] = useState(0);
+  // Rotation fixed strictly at 0° (Anterior view) per user request
+  const rotationY = 0;
+  const normRot = 0;
+  const isPosteriorFacing = false;
 
   // Tooltip & hover states
   const [activeCallout, setActiveCallout] = useState(isDissected ? 'LV' : (selectedArtery || 'LAD'));
   const [isHoveringCard, setIsHoveringCard] = useState(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [isHoveringHeart, setIsHoveringHeart] = useState(false);
-
-  // Normalized rotation angle for front/back visibility (0 to 360)
-  const normRot = ((rotationY % 360) + 360) % 360;
-  const isPosteriorFacing = normRot > 90 && normRot < 270;
-
-  // Auto-orbit animation loop
-  useEffect(() => {
-    if (!isAutoOrbit || isDissected) return;
-    let animId;
-    const step = () => {
-      setRotationY((prev) => (prev + 0.45) % 360);
-      animId = requestAnimationFrame(step);
-    };
-    animId = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(animId);
-  }, [isAutoOrbit, isDissected]);
-
-  // When switching to dissection mode, re-center rotation to 0°
-  useEffect(() => {
-    if (isDissected) {
-      setIsAutoOrbit(false);
-      setRotationY(0);
-    }
-  }, [isDissected]);
 
   const prevSelectedRef = useRef(selectedArtery);
   useEffect(() => {
@@ -82,63 +55,32 @@ export default function HeartStageVisualizer({
     }
   }, [selectedArtery, viewMode]);
 
-  // Pointer drag for 360° rotation
-  const handlePointerDown = (e) => {
-    if (isDissected) return;
-    setIsDragging(true);
-    setIsAutoOrbit(false);
-    setDragStartX(e.clientX);
-    setDragStartRot(rotationY);
-  };
-
   const handlePointerMove = (e) => {
     if (!heartWrapRef.current) return;
     const rect = heartWrapRef.current.getBoundingClientRect();
-
-    // Handle horizontal 360° drag rotation
-    if (isDragging) {
-      const deltaX = e.clientX - dragStartX;
-      setRotationY(dragStartRot + deltaX * 0.7);
-      return;
-    }
 
     // Subtle 3D tilt tracking
     const px = ((e.clientX - rect.left) / rect.width) * 100;
     const py = ((e.clientY - rect.top) / rect.height) * 100;
     const normX = (e.clientX - rect.left) / rect.width - 0.5;
     const normY = (e.clientY - rect.top) / rect.height - 0.5;
-    setTilt({ rx: -normY * 6, ry: normX * 8 });
+    setTilt({ rx: -normY * 4, ry: normX * 5 });
     setIsHoveringHeart(true);
 
     if (!isHoveringCard) {
       if (viewMode === 'surface') {
-        if (!isPosteriorFacing) {
-          let nearest = null;
-          let minDistance = Infinity;
-          SURFACE_VESSELS.forEach((v) => {
-            const dx = px - v.coords.x;
-            const dy = py - v.coords.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < minDistance) {
-              minDistance = dist;
-              nearest = v.code;
-            }
-          });
-          setActiveCallout(minDistance < 18 ? nearest : null);
-        } else {
-          let nearest = null;
-          let minDistance = Infinity;
-          POSTERIOR_VESSELS.forEach((v) => {
-            const dx = px - v.coords.x;
-            const dy = py - v.coords.y;
-            const dist = Math.sqrt(dx * dx + dy * dy);
-            if (dist < minDistance) {
-              minDistance = dist;
-              nearest = v.code;
-            }
-          });
-          setActiveCallout(minDistance < 20 ? nearest : null);
-        }
+        let nearest = null;
+        let minDistance = Infinity;
+        SURFACE_VESSELS.forEach((v) => {
+          const dx = px - v.coords.x;
+          const dy = py - v.coords.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearest = v.code;
+          }
+        });
+        setActiveCallout(minDistance < 18 ? nearest : null);
       } else if (viewMode === 'dissected') {
         let nearest = null;
         let minDistance = Infinity;
@@ -156,12 +98,7 @@ export default function HeartStageVisualizer({
     }
   };
 
-  const handlePointerUp = () => {
-    setIsDragging(false);
-  };
-
   const handlePointerLeave = () => {
-    setIsDragging(false);
     setTilt({ rx: 0, ry: 0 });
     setIsHoveringHeart(false);
     setIsHoveringCard(false);
@@ -213,12 +150,10 @@ export default function HeartStageVisualizer({
       {/* 3D Heart Visualizer Stage */}
       <div
         ref={heartWrapRef}
-        onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
-        onPointerUp={handlePointerUp}
         onMouseLeave={handlePointerLeave}
         className={`relative w-full max-w-[620px] sm:max-w-[700px] lg:max-w-[740px] flex items-center justify-center py-2 select-none min-h-[460px] ${
-          isDissected ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
+          isDissected ? 'cursor-crosshair' : 'cursor-default'
         }`}
       >
         {/* Soft volumetric glow backdrop */}
@@ -236,20 +171,20 @@ export default function HeartStageVisualizer({
           }}
         />
 
-        {/* 3D Perspective Tilt & 360° Rotation Stage */}
+        {/* 3D Perspective Tilt Stage */}
         <motion.div
           id="ca-heart-canvas"
           animate={{
             x: canvasShiftX,
             scale: canvasScale,
             rotateX: tilt.rx,
-            rotateY: rotationY + tilt.ry,
+            rotateY: tilt.ry,
           }}
           transition={{
             x: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
             scale: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
-            rotateX: { duration: isDragging ? 0 : 0.15, ease: 'easeOut' },
-            rotateY: { duration: isDragging ? 0 : isAutoOrbit ? 0 : 0.25, ease: 'easeOut' },
+            rotateX: { duration: 0.15, ease: 'easeOut' },
+            rotateY: { duration: 0.15, ease: 'easeOut' },
           }}
           style={{
             position: 'relative',
@@ -560,20 +495,6 @@ export default function HeartStageVisualizer({
           )}
         </AnimatePresence>
       </div>
-
-      {/* ── 360° Turntable Perspective & Rotation Controls (Surface Mode) ── */}
-      {!isDissected && (
-        <RotationControls
-          isAutoOrbit={isAutoOrbit}
-          onToggleAutoOrbit={() => setIsAutoOrbit(!isAutoOrbit)}
-          normRot={normRot}
-          onSetRotation={(val) => {
-            setIsAutoOrbit(false);
-            setRotationY(val);
-          }}
-          isPosteriorFacing={isPosteriorFacing}
-        />
-      )}
     </div>
   );
 }

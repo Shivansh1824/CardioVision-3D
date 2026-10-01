@@ -3,65 +3,31 @@
  * 
  * Features:
  * - Direct WebGL rendering with Three.js & React Three Fiber (No card box, no border, no video)
- * - Large, commanding heart geometry filling the center stage
- * - Minimal, elegant medical dots (matching Chamber Dissection & Surface flow)
- * - Modal & leader line ONLY open when pointer hovers over an anatomical dot
- * - Dynamic zero-overlap shift: heart smoothly glides left when modal opens, centers when idle
- * - Pure 360° orbital rotation (Zoom-in/zoom-out strictly disabled)
+ * - 3D Heart model permanently centered with generous padding (never cut off, never eaten up)
+ * - Minimal, elegant medical dots anchored 100% to the anatomical mesh surface
+ * - Connected dotted reference line & clinical modal anchored directly to the 3D pin
+ * - Seamless animation: when the model rotates or beats, the dot, line, and modal move together
+ * - Smooth 360° orbital rotation (Zoom strictly disabled)
  * - Seamless switching between Realistic Anatomy and Beating Cycle with automatic camera reset
  */
 
 import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
-import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
-import { Layers, Activity, Heart } from 'lucide-react';
+import { Layers, Activity, Heart, X, AlertTriangle } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS } from '../services/heartModelService';
-import AnatomicalCalloutTooltip from './AnatomicalCalloutTooltip';
-
-/**
- * Projects the active 3D pin's world coordinates into 2D stage percentage (x, y)
- * accounting for canvasShiftX so the SVG leader line stays locked to the pin in real time.
- */
-function ScreenProjector({ activePinId, pinRefs, onProject, canvasShiftX, stageWidth = 720 }) {
-  const { camera } = useThree();
-  const lastPos = useRef({ x: 50, y: 50 });
-
-  useFrame(() => {
-    if (!activePinId || !pinRefs.current[activePinId]) return;
-    const pinGroup = pinRefs.current[activePinId];
-
-    const worldPos = new THREE.Vector3();
-    pinGroup.getWorldPosition(worldPos);
-    worldPos.project(camera);
-
-    const basePercentX = ((worldPos.x + 1) / 2) * 100;
-    const basePercentY = ((-worldPos.y + 1) / 2) * 100;
-
-    // Adjust for the motion.div shift of the canvas
-    const shiftPercent = (canvasShiftX / stageWidth) * 100;
-    const x = Math.max(5, Math.min(95, basePercentX + shiftPercent));
-    const y = Math.max(5, Math.min(95, basePercentY));
-
-    if (Math.abs(x - lastPos.current.x) > 0.1 || Math.abs(y - lastPos.current.y) > 0.1) {
-      lastPos.current = { x, y };
-      onProject({ x, y, isFrontFacing: worldPos.z < 1 });
-    }
-  });
-
-  return null;
-}
 
 /**
  * 3D Heart Mesh Geometry with auto-centering, dynamic vertex colors & surface-locked dots
  */
-function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
+function HeartMesh({ modelConfig, activePin, onSelectPin }) {
   const groupRef = useRef();
   const { scene, animations } = useGLTF(modelConfig.url, '/draco/');
   const { actions, names } = useAnimations(animations, groupRef);
 
-  // Auto-center and normalize scale precisely using bounding box
+  // Auto-center precisely at (0, 0, 0) and scale to match reference height with generous padding
   useLayoutEffect(() => {
     if (!scene) return;
 
@@ -71,8 +37,8 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     
-    // Scale to 4.3 units for a large, commanding heart filling the stage with minimal white space
-    const targetScale = 4.3 / (maxDim || 1);
+    // Scale factor to ensure full heart fits comfortably with generous margins matching reference
+    const targetScale = 1.55 / (maxDim || 1);
 
     if (groupRef.current) {
       groupRef.current.scale.set(targetScale, targetScale, targetScale);
@@ -119,53 +85,230 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
       {/* 3D Heart Mesh Geometry */}
       <primitive object={scene} />
 
-      {/* 3D Medical Pinpoint Dots (Matching Dissection & Surface Views) */}
+      {/* 3D Medical Pinpoint Dots & Surface-Connected Callouts */}
       {ANATOMICAL_PINS.map((pin) => {
         const isSelected = activePin?.id === pin.id;
         const dotColor = pin.color || '#e11d48';
 
-        return (
-          <group
-            key={pin.id}
-            ref={(el) => {
-              if (el) pinRefs.current[pin.id] = el;
-            }}
-            position={pin.position}
-          >
-            <Html center sprite={false} zIndexRange={[50, 0]}>
-              <div
-                onMouseEnter={() => onSelectPin(pin)}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectPin(isSelected ? null : pin);
-                }}
-                className="group relative flex items-center justify-center p-2 cursor-pointer focus:outline-none select-none"
-                aria-label={`Inspect ${pin.name}`}
-              >
-                {/* Active pulsating radar ring */}
-                {isSelected && (
-                  <span
-                    className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-45"
-                    style={{ background: dotColor }}
-                  />
-                )}
+        // Orient connected line and modal into the open space to the left of the heart
+        const isTopSide = pin.id === 'aorta';
+        const dirX = -1;
+        const dirY = isTopSide ? 1 : -1;
 
-                {/* Refined Medical Dot (12px idle, 16px active with white border) */}
-                <span
-                  className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
-                  style={{
-                    width: isSelected ? 16 : 12,
-                    height: isSelected ? 16 : 12,
-                    background: dotColor,
-                    border: '2px solid #ffffff',
-                    boxShadow: isSelected
-                      ? `0 0 0 4px ${dotColor}45, 0 0 16px ${dotColor}`
-                      : '0 2px 8px rgba(0,0,0,0.45)',
+        const elbowX = -36;
+        const elbowY = 26 * dirY;
+        const endX = -65;
+        const endY = 26 * dirY;
+
+        return (
+          <group key={pin.id} position={pin.position}>
+            <Html
+              center={false}
+              sprite={false}
+              zIndexRange={isSelected ? [100, 50] : [40, 10]}
+              style={{
+                pointerEvents: 'none',
+                position: 'relative',
+              }}
+            >
+              {/* ── 1. The Surface-Locked Medical Dot (Centered at (0, 0)) ── */}
+              <div
+                style={{
+                  position: 'absolute',
+                  left: 0,
+                  top: 0,
+                  transform: 'translate(-50%, -50%)',
+                  pointerEvents: 'auto',
+                }}
+              >
+                <button
+                  type="button"
+                  id={`pin-marker-${pin.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectPin(isSelected ? null : pin);
                   }}
+                  onMouseEnter={() => {
+                    if (!activePin) onSelectPin(pin);
+                  }}
+                  className="group relative flex items-center justify-center p-2.5 cursor-pointer focus:outline-none select-none"
+                  aria-label={`Inspect ${pin.name}`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                </span>
+                  {/* Pulsating radar ring when active */}
+                  {isSelected && (
+                    <span
+                      className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
+                      style={{ background: dotColor }}
+                    />
+                  )}
+
+                  {/* Minimal Medical Dot (12px idle, 15px active with crisp white ring) */}
+                  <span
+                    className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
+                    style={{
+                      width: isSelected ? 15 : 12,
+                      height: isSelected ? 15 : 12,
+                      background: dotColor,
+                      border: '2px solid #ffffff',
+                      boxShadow: isSelected
+                        ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
+                        : '0 2px 8px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+
+                  {/* Landmark Code Pill on Hover (when not selected) */}
+                  {!isSelected && (
+                    <div
+                      className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
+                    >
+                      {pin.code}
+                    </div>
+                  )}
+                </button>
               </div>
+
+              {/* ── 2. Connected Dotted Line & Modal (Synchronized with Dot) ── */}
+              <AnimatePresence>
+                {isSelected && (
+                  <div
+                    style={{
+                      position: 'absolute',
+                      left: 0,
+                      top: 0,
+                      pointerEvents: 'none',
+                    }}
+                  >
+                    {/* Dynamic Connected Dotted SVG Leader Line starting at (0, 0) */}
+                    <svg
+                      style={{
+                        position: 'absolute',
+                        left: 0,
+                        top: 0,
+                        overflow: 'visible',
+                        pointerEvents: 'none',
+                        zIndex: 20,
+                      }}
+                    >
+                      {/* Outer glowing dotted line */}
+                      <path
+                        d={`M 0 0 L ${elbowX} ${elbowY} H ${endX}`}
+                        fill="none"
+                        stroke={dotColor}
+                        strokeWidth="2.2"
+                        strokeDasharray="4 3"
+                        strokeLinecap="round"
+                        style={{ filter: `drop-shadow(0 0 4px ${dotColor}99)` }}
+                      />
+                      {/* Inner solid white core line for contrast */}
+                      <path
+                        d={`M 0 0 L ${elbowX} ${elbowY} H ${endX}`}
+                        fill="none"
+                        stroke="#ffffff"
+                        strokeWidth="1.1"
+                        strokeDasharray="4 3"
+                        strokeLinecap="round"
+                        opacity="0.85"
+                      />
+                      {/* Terminal anchor node dot touching the card */}
+                      <circle
+                        cx={endX}
+                        cy={endY}
+                        r="3.5"
+                        fill={dotColor}
+                        stroke="#ffffff"
+                        strokeWidth="2"
+                        style={{ filter: `drop-shadow(0 0 4px ${dotColor})` }}
+                      />
+                    </svg>
+
+                    {/* Integrated Clinical Callout Modal (Connected to End of Line) */}
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.90, y: dirY * 10 }}
+                      animate={{ opacity: 1, scale: 1, y: 0 }}
+                      exit={{ opacity: 0, scale: 0.90, y: dirY * 10 }}
+                      transition={{ duration: 0.22, ease: [0.16, 1, 0.3, 1] }}
+                      onClick={(e) => e.stopPropagation()}
+                      className="pointer-events-auto bg-white/95 backdrop-blur-xl rounded-2xl p-3.5 shadow-2xl border border-slate-200/90 text-left w-[275px] sm:w-[295px]"
+                      style={{
+                        position: 'absolute',
+                        left: dirX === 1 ? `${endX}px` : 'auto',
+                        right: dirX === -1 ? `${-endX}px` : 'auto',
+                        top: `${endY - 26}px`,
+                        zIndex: 35,
+                        boxShadow: '0 20px 40px -10px rgba(0,0,0,0.20), 0 4px 16px rgba(0,0,0,0.06)',
+                      }}
+                    >
+                      {/* Header Bar */}
+                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <span
+                            className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse"
+                            style={{ background: dotColor }}
+                          />
+                          <span className="font-mono text-xs font-bold text-slate-900">
+                            [{pin.code}]
+                          </span>
+                          <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold border border-slate-200">
+                            {pin.shortName || pin.tag}
+                          </span>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            onSelectPin(null);
+                          }}
+                          className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
+                          aria-label="Close callout"
+                        >
+                          <X className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+
+                      {/* Landmark Full Name */}
+                      <h4 className="font-display text-xs sm:text-sm font-bold text-slate-900 leading-tight mb-2">
+                        {pin.name}
+                      </h4>
+
+                      {/* Hemodynamic Flow Section */}
+                      <div className="mb-2 bg-sky-50/70 rounded-xl p-2.5 border border-sky-100/90">
+                        <div className="flex items-center gap-1.5 mb-1 text-sky-800">
+                          <Activity className="w-3 h-3 text-sky-600 shrink-0" />
+                          <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
+                            Hemodynamic Flow
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
+                          {pin.patientExpl}
+                        </p>
+                      </div>
+
+                      {/* Clinical Pathology Section */}
+                      <div className="bg-rose-50/70 rounded-xl p-2.5 border border-rose-100/90">
+                        <div className="flex items-center gap-1.5 mb-1 text-rose-800">
+                          <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
+                          <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
+                            Clinical Pathology
+                          </span>
+                        </div>
+                        <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
+                          {pin.pathology}
+                        </p>
+                      </div>
+
+                      {/* Territory Note (NO arterial status) */}
+                      {pin.bloodTerritory && (
+                        <div className="mt-2 pt-1.5 border-t border-slate-100 text-[9px] font-mono text-slate-400">
+                          Territory: {pin.bloodTerritory}
+                        </div>
+                      )}
+                    </motion.div>
+                  </div>
+                )}
+              </AnimatePresence>
             </Html>
           </group>
         );
@@ -195,23 +338,16 @@ function Loader() {
 
 /**
  * Main 3D Heart Centerpiece
- * Pure transparent stage, zero card box, zero video, zero zoom, full 360° inspection
+ * Pure transparent stage, centered heart, smooth hover modal with auto-dismiss
  */
-export default function RealisticHeart3DViewer({ vesselStates }) {
-  // Realistic Anatomy active by default
+export default function RealisticHeart3DViewer() {
   const [selectedModel, setSelectedModel] = useState('realistic');
-  
-  // Card ONLY opens when pointer hovers over a pin (null by default)
   const [activePin, setActivePin] = useState(null);
-  const [pin2DPos, setPin2DPos] = useState({ x: 50, y: 50, isFrontFacing: true });
-  const [isHoveringModal, setIsHoveringModal] = useState(false);
+
   const controlsRef = useRef();
-  const pinRefs = useRef({});
+  const stageRef = useRef(null);
 
   const currentModelConfig = HEART_MODELS[selectedModel];
-
-  // Dynamic layout shift: heart glides left when callout is active to guarantee ZERO overlap
-  const canvasShiftX = activePin ? -135 : 0;
 
   // Reset camera view whenever model is switched
   useEffect(() => {
@@ -221,25 +357,14 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
     }
   }, [selectedModel]);
 
-  // Prepare callout data formatted identically to Surface & Blood Flow
-  const calloutData = activePin
-    ? {
-        code: activePin.code,
-        name: activePin.name,
-        shortName: activePin.shortName,
-        tag: activePin.tag,
-        flow: activePin.patientExpl,
-        role: activePin.patientExpl,
-        pathology: activePin.pathology,
-        calloutSide: 'right', // Card docked on the right side
-      }
-    : null;
-
   return (
-    <div className="relative w-full max-w-[720px] flex flex-col items-center select-none">
+    <div
+      ref={stageRef}
+      className="relative w-full max-w-[740px] flex flex-col items-center select-none"
+    >
       
       {/* ── Top Model Switcher: Realistic Anatomy vs Beating Cycle ── */}
-      <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/85 backdrop-blur-md border border-slate-200/90 shadow-xs mb-1.5 z-30">
+      <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/85 backdrop-blur-md border border-slate-200/90 shadow-xs mb-2 z-30">
         <button
           type="button"
           onClick={() => setSelectedModel('realistic')}
@@ -267,8 +392,8 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
         </button>
       </div>
 
-      {/* ── Seamless Transparent 3D Stage (No Card Frame, No Video) ── */}
-      <div className="relative w-full h-[510px] sm:h-[550px] flex items-center justify-center overflow-visible">
+      {/* ── Seamless Transparent 3D Stage (Permanently Centered with Ample Padding) ── */}
+      <div className="relative w-full h-[500px] sm:h-[540px] flex items-center justify-center">
         
         {/* Soft volumetric depth glow behind the heart */}
         <div
@@ -279,16 +404,13 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
           }}
         />
 
-        {/* Heart Canvas Motion Container with zero-overlap shift */}
-        <motion.div
-          animate={{ x: canvasShiftX }}
-          transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
-          className="w-full h-full"
-        >
+        {/* 3D WebGL Canvas */}
+        <div className="w-full h-full">
           <Canvas
-            camera={{ position: [0, 0, 2.2], fov: 42 }}
+            camera={{ position: [0, 0, 2.85], fov: 40 }}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             className="w-full h-full cursor-grab active:cursor-grabbing"
+            onClick={() => setActivePin(null)}
           >
             {/* Medical Studio Lighting */}
             <ambientLight intensity={1.5} />
@@ -306,47 +428,22 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
               minPolarAngle={0.1}
             />
 
-            {/* Real-time 3D to 2D Screen Projector for Dynamic Leader Line */}
-            <ScreenProjector
-              activePinId={activePin?.id}
-              pinRefs={pinRefs}
-              canvasShiftX={canvasShiftX}
-              onProject={setPin2DPos}
-            />
-
             <Suspense fallback={<Loader />}>
               <HeartMesh
                 key={selectedModel}
                 modelConfig={currentModelConfig}
                 activePin={activePin}
-                onSelectPin={setActivePin}
-                pinRefs={pinRefs}
+                onSelectPin={(pin) => setActivePin(pin)}
               />
             </Suspense>
           </Canvas>
-        </motion.div>
+        </div>
 
-        {/* ── Leader Line & Clinical Callout Modal (Only visible on hover/active pin) ── */}
-        <AnimatePresence>
-          {calloutData && (
-            <AnatomicalCalloutTooltip
-              viewMode="surface"
-              data={calloutData}
-              vesselStates={vesselStates}
-              pinPos={{ x: pin2DPos.x, y: pin2DPos.y }}
-              onClose={() => setActivePin(null)}
-              onCardMouseEnter={() => setIsHoveringModal(true)}
-              onCardMouseLeave={() => {
-                setIsHoveringModal(false);
-              }}
-            />
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ── Bottom Footnote ── */}
-      <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 mb-8 text-center">
-        Hover anatomical dots to inspect pathology · Drag heart to rotate 360°
+      <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 text-center">
+        Click or hover anatomical dots to inspect pathology · Drag heart to rotate 360°
       </p>
 
     </div>
