@@ -48,3 +48,9 @@ dist-ssr/
 .idea/
 *.swp
 *.swo
+
+# 3D Assets (Stored in Supabase Storage)
+3D Model/
+*.glb
+*.gltf
+

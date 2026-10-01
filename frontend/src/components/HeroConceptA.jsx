@@ -12,7 +12,7 @@
  * - 3D parallax pointer tilt & organic 72 BPM cardiac cycle pulse
  */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { ArrowRight, Layers, Droplet, Box } from 'lucide-react';
 
@@ -23,6 +23,7 @@ import {
 } from './cardiacAnatomyData';
 import HeartStageVisualizer from './HeartStageVisualizer';
 import RealisticHeart3DViewer from './RealisticHeart3DViewer';
+import { preloadHeartModels } from '../services/heartModelService';
 
 export default function HeroConceptA({
   onOpenSignIn,
@@ -33,6 +34,12 @@ export default function HeroConceptA({
 }) {
   // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers) or '3d-model'
   const [viewMode, setViewMode] = useState('surface');
+
+  // Background preload 3D models immediately when site opens
+  useEffect(() => {
+    preloadHeartModels();
+  }, []);
+
 
   const LADs = vesselStates?.LAD || 'moderate';
   const LCXs = vesselStates?.LCX || 'normal';
