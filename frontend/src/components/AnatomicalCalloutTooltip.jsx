@@ -102,7 +102,15 @@ export default function AnatomicalCalloutTooltip({
         }}
       >
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-          <span className="font-mono text-xs font-bold text-rose-600">Dissected Anatomy</span>
+          <div className="flex items-center gap-1.5">
+            <span className="w-2.5 h-2.5 rounded-full bg-rose-600 animate-pulse" />
+            <span className="font-mono text-xs font-bold text-rose-600">Coronal Section</span>
+            {dissectionData.tag && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-rose-50 text-rose-700 font-semibold border border-rose-200">
+                {dissectionData.tag}
+              </span>
+            )}
+          </div>
           <button
             type="button"
             onClick={onClose}
@@ -117,9 +125,16 @@ export default function AnatomicalCalloutTooltip({
           {dissectionData.name}
         </p>
 
-        <p className="text-[11px] text-slate-600 leading-relaxed font-medium">
+        <p className="text-[11px] text-slate-600 leading-relaxed font-medium mb-2">
           {dissectionData.role}
         </p>
+
+        {dissectionData.significance && (
+          <p className="text-[10px] text-slate-500 leading-relaxed italic bg-rose-50/50 p-2 rounded-lg border border-rose-100">
+            <span className="font-semibold text-rose-700 not-italic block mb-0.5">Clinical Pathology:</span>
+            {dissectionData.significance}
+          </p>
+        )}
       </motion.div>
     );
   }
