@@ -1,69 +1,32 @@
 /**
- * HeroConceptA — HeartBloom Cinematic
- * Centerpiece: Photorealistic anatomical heart image with transparent background
+ * HeroConceptA — Interactive Cardiovascular Twin & Dissection
  *
- * Updates:
- * - Removed Live ECG and Clinical CDS per clinical specification
- * - Removed aggressive beeping / pinging circles; replaced with sleek medical pinpoint dots
- * - Breakdown card docks on the right side with zero overlap on the heart
- * - Zero auto-opened cards on initial load (clean resting state)
- * - 3D parallax pointer tilt & smooth GSAP heartbeat pulse
+ * Features:
+ * - Full-stage photorealistic anatomical heart (zero excessive white space)
+ * - Two interactive anatomical views:
+ *     1) Surface & Active Blood Flow (LAD, LCX, RCA animated coronary blood perfusion)
+ *     2) Universal Chamber Dissection (Internal ventricles, septum, and valves)
+ * - Subtle pop-up tooltip near each artery with full functional explanation & simulator CTA
+ * - Dismissible tooltip with (x) close button
+ * - Clean medical pinpoints (no beeping/pinging circles)
+ * - 3D parallax pointer tilt & organic 72 BPM cardiac cycle pulse
  */
 
 import React, { useRef, useState } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowRight, Info } from 'lucide-react';
+import { ArrowRight, X, Layers, Droplet } from 'lucide-react';
 
 gsap.registerPlugin(useGSAP);
 
-// ─── Vessel state → colour + label ───────────────────────────────────────────
-const VESSEL_COLOR = { normal: '#10b981', moderate: '#f59e0b', critical: '#ef4444' };
-const VESSEL_LABEL = { normal: 'Clear', moderate: 'Moderate', critical: 'Severe' };
-
-// ─── Clinical Vessel Targets & Anatomical Territories ────────────────────────
-// 1. LAD: Left Anterior Descending (anterior interventricular sulcus → apex)
-// 2. LCX: Left Circumflex (coronary sulcus → obtuse marginal branches)
-// 3. RCA: Right Coronary Artery (right atrioventricular groove → crux / PDA)
-const VESSEL_TARGETS = [
-  {
-    code: 'LAD',
-    name: 'Left Anterior Descending',
-    shortName: 'Anterior',
-    clinicalRole: 'Supplies ~50% of left ventricle, anterior wall & septum',
-    pathway: 'Anterior interventricular groove to cardiac apex',
-    stenosisImpact: 'Known as the "Widow Maker" — severe blockage causes large anterior wall infarction',
-    coords: { x: 50, y: 58 },
-    ffr: '0.74',
-    flow: '26 cm/s',
-    risk: 'Elevated Ischemia Risk',
-  },
-  {
-    code: 'LCX',
-    name: 'Left Circumflex Artery',
-    shortName: 'Lateral',
-    clinicalRole: 'Supplies lateral and posterolateral left ventricle',
-    pathway: 'Left coronary sulcus wrapping around lateral margin',
-    stenosisImpact: 'Blockage causes lateral wall ischemia and potential mitral valve dysfunction',
-    coords: { x: 67, y: 44 },
-    ffr: '0.94',
-    flow: '38 cm/s',
-    risk: 'Normal Patent Flow',
-  },
-  {
-    code: 'RCA',
-    name: 'Right Coronary Artery',
-    shortName: 'Inferior',
-    clinicalRole: 'Supplies right atrium, right ventricle & SA/AV conduction nodes',
-    pathway: 'Right atrioventricular groove to cardiac crux & PDA',
-    stenosisImpact: 'Blockage causes inferior wall infarction, high risk of bradycardia and AV nodal blocks',
-    coords: { x: 33, y: 52 },
-    ffr: '0.58',
-    flow: '14 cm/s',
-    risk: 'Critical Stenosis / Perfusion Deficit',
-  },
-];
+import {
+  VESSEL_COLOR,
+  VESSEL_LABEL,
+  SURFACE_VESSELS,
+  DISSECTION_LANDMARKS,
+} from './cardiacAnatomyData';
+import AnatomicalCalloutTooltip from './AnatomicalCalloutTooltip';
 
 export default function HeroConceptA({
   onOpenSignIn,
@@ -74,10 +37,14 @@ export default function HeroConceptA({
 }) {
   const sectionRef = useRef(null);
   const heartWrapRef = useRef(null);
-  
-  // Inspected vessel: null on initial load (no pre-opened card overlapping the heart)
-  const [inspectedVessel, setInspectedVessel] = useState(null);
+
+  // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers)
+  const [viewMode, setViewMode] = useState('surface');
+
+  // Active callout tooltip (null on initial load so the heart displays cleanly)
+  const [activeCallout, setActiveCallout] = useState(null);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
+  const [isHoveringHeart, setIsHoveringHeart] = useState(false);
 
   // GSAP entrance + persistent heartbeat pulse
   useGSAP(
@@ -88,14 +55,13 @@ export default function HeroConceptA({
         .fromTo('.ca-sub',      { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.62 }, '-=0.48')
         .fromTo('.ca-cta',      { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.5, stagger: 0.1 }, '-=0.38')
         .fromTo('.ca-stat',     { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.07 }, '-=0.3')
-        .fromTo('.ca-heart-wrap', { scale: 0.92, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.95, ease: 'back.out(1.2)' }, '-=0.55')
-        .fromTo('.ca-hud',      { y: 14, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.42, stagger: 0.1 }, '-=0.55');
+        .fromTo('.ca-heart-stage', { scale: 0.92, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.95, ease: 'back.out(1.2)' }, '-=0.55');
 
       // Heartbeat pulse (~72 BPM) on the heart image
-      const heartImg = document.getElementById('ca-heart-image');
-      if (heartImg) {
-        gsap.to(heartImg, {
-          scale: 1.03,
+      const heartEl = document.getElementById('ca-heart-canvas');
+      if (heartEl) {
+        gsap.to(heartEl, {
+          scale: 1.028,
           duration: 0.18,
           ease: 'power2.out',
           repeat: -1,
@@ -108,50 +74,51 @@ export default function HeroConceptA({
     { scope: sectionRef }
   );
 
-  // 3D perspective tilt & pointer proximity detection
+  // Pointer movement: 3D perspective tilt & proximity tracking
   const handlePointerMove = (e) => {
     if (!heartWrapRef.current) return;
     const rect = heartWrapRef.current.getBoundingClientRect();
     const px = ((e.clientX - rect.left) / rect.width) * 100;
     const py = ((e.clientY - rect.top) / rect.height) * 100;
 
-    // Gentle 3D perspective tilt
+    // 3D perspective tilt
     const normX = (e.clientX - rect.left) / rect.width - 0.5;
     const normY = (e.clientY - rect.top) / rect.height - 0.5;
     setTilt({ rx: -normY * 8, ry: normX * 10 });
+    setIsHoveringHeart(true);
 
-    // Proximity detection for the nearest vessel pin
-    let nearest = null;
-    let minDistance = Infinity;
-    VESSEL_TARGETS.forEach((vt) => {
-      const dx = px - vt.coords.x;
-      const dy = py - vt.coords.y;
-      const dist = Math.sqrt(dx * dx + dy * dy);
-      if (dist < minDistance) {
-        minDistance = dist;
-        nearest = vt.code;
+    // Auto-detect nearest vessel if in surface mode and none manually locked
+    if (viewMode === 'surface') {
+      let nearest = null;
+      let minDistance = Infinity;
+      SURFACE_VESSELS.forEach((v) => {
+        const dx = px - v.coords.x;
+        const dy = py - v.coords.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearest = v.code;
+        }
+      });
+
+      if (minDistance < 18) {
+        setActiveCallout(nearest);
       }
-    });
-
-    // Proximity activation radius: 20%
-    if (minDistance < 20) {
-      setInspectedVessel(nearest);
     }
   };
 
   const handlePointerLeave = () => {
     setTilt({ rx: 0, ry: 0 });
-    setInspectedVessel(null);
+    setIsHoveringHeart(false);
   };
 
   const LADs = vesselStates?.LAD || 'moderate';
   const LCXs = vesselStates?.LCX || 'normal';
   const RCAs = vesselStates?.RCA || 'critical';
 
-  // Active target details (if user hovered or selected)
-  const activeTarget = VESSEL_TARGETS.find((v) => v.code === inspectedVessel) || null;
-  const activeStatus = activeTarget ? vesselStates?.[activeTarget.code] || 'normal' : null;
-  const activeColor = activeStatus ? VESSEL_COLOR[activeStatus] : '#e11d48';
+  // Active callout details
+  const activeVesselData = SURFACE_VESSELS.find((v) => v.code === activeCallout) || null;
+  const activeDissectionData = DISSECTION_LANDMARKS.find((d) => d.id === activeCallout) || null;
 
   return (
     <section
@@ -159,28 +126,28 @@ export default function HeroConceptA({
       className="relative overflow-hidden"
       style={{
         minHeight: '92vh',
-        paddingTop: '5.5rem',
-        paddingBottom: '5rem',
+        paddingTop: '5rem',
+        paddingBottom: '4.5rem',
         background:
-          'radial-gradient(ellipse 85% 65% at 68% 42%, rgba(225,29,72,0.08) 0%, transparent 58%),' +
-          'radial-gradient(ellipse 65% 55% at 12% 62%, rgba(186,230,253,0.25) 0%, transparent 58%),' +
+          'radial-gradient(ellipse 90% 70% at 65% 45%, rgba(225,29,72,0.08) 0%, transparent 60%),' +
+          'radial-gradient(ellipse 65% 55% at 15% 60%, rgba(186,230,253,0.25) 0%, transparent 60%),' +
           'linear-gradient(168deg, #f8fafc 0%, #fdf4f7 48%, #f0f9ff 100%)',
       }}
     >
-      {/* Soft ambient backdrop bloom */}
+      {/* Soft ambient backdrop glow */}
       <div
         aria-hidden="true"
         style={{
-          position: 'absolute', right: -60, top: '45%', transform: 'translateY(-50%)',
-          width: 700, height: 700, borderRadius: '50%', pointerEvents: 'none',
-          background: 'radial-gradient(circle, rgba(225,29,72,0.08) 0%, transparent 70%)',
+          position: 'absolute', right: -40, top: '45%', transform: 'translateY(-50%)',
+          width: 750, height: 750, borderRadius: '50%', pointerEvents: 'none',
+          background: 'radial-gradient(circle, rgba(225,29,72,0.09) 0%, transparent 68%)',
         }}
       />
 
       <div className="container-custom relative z-10">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12 items-center">
 
-          {/* ─── LEFT: Editorial copy ────────────────────────────────────── */}
+          {/* ─── LEFT: Editorial copy & Triage ─────────────────────────────── */}
           <div className="lg:col-span-5 space-y-6">
             <div className="ca-overline inline-flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
@@ -189,7 +156,7 @@ export default function HeroConceptA({
               </span>
             </div>
 
-            <h1 className="ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.08]">
+            <h1 className="ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.06]">
               Understand <br />
               Your Heart <br />
               &amp; <span className="text-gradient-vivid">Coronary Arteries</span>
@@ -203,7 +170,7 @@ export default function HeroConceptA({
             <div className="ca-cta flex flex-wrap items-center gap-3">
               <button
                 onClick={() => onScrollToSection?.('vessel-explorer')}
-                className="ca-cta btn-primary-vibrant text-sm cursor-pointer"
+                className="ca-cta btn-primary-vibrant text-sm cursor-pointer shadow-md"
                 id="concept-a-explore-btn"
               >
                 <span>Explore Arteries</span>
@@ -220,7 +187,7 @@ export default function HeroConceptA({
 
             {/* Live vessel triage strip */}
             <div className="pt-2">
-              <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center justify-between mb-2.5">
                 <p className="font-mono text-[10px] font-semibold text-slate-400 tracking-widest uppercase">
                   Coronary Arteries Triage
                 </p>
@@ -232,19 +199,23 @@ export default function HeroConceptA({
                   { code: 'LCX', name: 'Lateral',  status: LCXs },
                   { code: 'RCA', name: 'Inferior', status: RCAs },
                 ].map((v) => {
-                  const isActive = inspectedVessel === v.code || selectedArtery === v.code;
+                  const isActive = activeCallout === v.code || selectedArtery === v.code;
                   return (
                     <button
                       key={v.code}
                       type="button"
                       onClick={() => {
                         onSelectArtery?.(v.code);
-                        setInspectedVessel(v.code);
+                        setActiveCallout(v.code);
+                        setViewMode('surface');
                       }}
-                      onMouseEnter={() => setInspectedVessel(v.code)}
+                      onMouseEnter={() => {
+                        setActiveCallout(v.code);
+                        setViewMode('surface');
+                      }}
                       className={`ca-stat flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-xs transition-all cursor-pointer text-left ${
                         isActive
-                          ? 'bg-white border-slate-400 shadow-md ring-2 ring-rose-500/20'
+                          ? 'bg-white border-rose-300 shadow-md ring-2 ring-rose-500/20'
                           : 'bg-white/85 border-slate-200/80 hover:bg-white hover:border-slate-300'
                       }`}
                     >
@@ -267,246 +238,289 @@ export default function HeroConceptA({
             </div>
           </div>
 
-          {/* ─── RIGHT: Heart + Side-by-Side Right Breakdown Panel ────────── */}
-          <div className="lg:col-span-7 relative ca-heart-wrap">
+          {/* ─── RIGHT: Full-Stage Heart Centerpiece & Dissection ─────────── */}
+          <div className="lg:col-span-7 flex flex-col items-center justify-center ca-heart-stage relative">
 
-            {/* Top Bar: CAD Detection Rate & Vessel Accuracy */}
-            <div className="flex items-center justify-between gap-3 mb-4">
-              <motion.div
-                className="ca-hud inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/90 backdrop-blur-md border border-emerald-600/20 shadow-xs"
-                whileHover={{ y: -2 }}
+            {/* Mode Switcher: Surface (Blood Flow) vs Dissected Chambers */}
+            <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm mb-3 z-30">
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('surface');
+                  setActiveCallout(null);
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === 'surface'
+                    ? 'bg-rose-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
               >
-                <span className="w-2 h-2 rounded-full bg-emerald-500" />
-                <span className="font-mono text-[10px] font-bold text-slate-600 uppercase tracking-wider">CAD Detection</span>
-                <span className="font-display font-extrabold text-emerald-700 text-sm">91.2%</span>
-                <span className="text-[9px] text-slate-400 font-mono">Stratified</span>
-              </motion.div>
-
-              <div className="hidden sm:flex items-center gap-3 px-3 py-1.5 rounded-xl bg-white/80 backdrop-blur-md border border-slate-200/70 text-[10px] font-mono text-slate-500 shadow-xs">
-                <span>LAD <b className="text-slate-800">84.4%</b></span>
-                <span className="text-slate-300">•</span>
-                <span>LCX <b className="text-slate-800">73.1%</b></span>
-                <span className="text-slate-300">•</span>
-                <span>RCA <b className="text-slate-800">72.1%</b></span>
-              </div>
+                <Droplet className="w-3.5 h-3.5" />
+                <span>Surface &amp; Blood Flow</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  setViewMode('dissected');
+                  setActiveCallout(null);
+                }}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === 'dissected'
+                    ? 'bg-rose-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Layers className="w-3.5 h-3.5" />
+                <span>Chamber Dissection</span>
+              </button>
             </div>
 
-            {/* Main Stage: Heart + Dedicated Right Inspection Panel */}
-            <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-
-              {/* Heart Centerpiece Column */}
+            {/* Heart Visualizer Stage */}
+            <div
+              ref={heartWrapRef}
+              onMouseMove={handlePointerMove}
+              onMouseLeave={handlePointerLeave}
+              className="relative w-full max-w-[480px] sm:max-w-[500px] flex items-center justify-center cursor-crosshair py-2"
+            >
+              {/* Radial glow directly behind the heart */}
               <div
-                ref={heartWrapRef}
-                onMouseMove={handlePointerMove}
-                onMouseLeave={handlePointerLeave}
-                className="md:col-span-7 relative flex items-center justify-center cursor-crosshair py-2"
+                aria-hidden="true"
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'radial-gradient(ellipse 75% 70% at 50% 50%, rgba(225,29,72,0.14) 0%, rgba(186,230,253,0.12) 48%, transparent 72%)',
+                  borderRadius: '50%', filter: 'blur(22px)',
+                }}
+              />
+
+              {/* 3D Perspective Tilt & Zoom Wrapper */}
+              <div
+                id="ca-heart-canvas"
+                style={{
+                  position: 'relative',
+                  width: '100%',
+                  transform: `perspective(1000px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg) scale(${isHoveringHeart ? 1.04 : 1})`,
+                  transition: 'transform 0.16s ease-out',
+                }}
               >
-                {/* Soft glow behind heart */}
-                <div
-                  aria-hidden="true"
+                {/* ── 1. Surface Heart (Photorealistic Coronary Anatomy) ── */}
+                <img
+                  src="/heart-clean.png"
+                  alt="Photorealistic 3D human heart showing natural coronary arteries LAD, LCX, RCA on transparent background"
+                  width={500}
+                  height={500}
                   style={{
-                    position: 'absolute', inset: 0,
-                    background: 'radial-gradient(ellipse 70% 65% at 50% 50%, rgba(225,29,72,0.12) 0%, rgba(186,230,253,0.10) 45%, transparent 72%)',
-                    borderRadius: '50%', filter: 'blur(20px)',
+                    width: '100%',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    display: viewMode === 'surface' ? 'block' : 'none',
+                    userSelect: 'none',
+                    WebkitUserDrag: 'none',
+                    filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.12))',
                   }}
+                  draggable={false}
                 />
 
-                {/* 3D Perspective Tilt Wrapper */}
-                <div
+                {/* ── 2. Dissected Heart (Universal Internal Chambers View) ── */}
+                <img
+                  src="/heart-dissected.png"
+                  alt="Universal anatomical heart dissection coronal cross-section showing left and right ventricles, valves and septum"
+                  width={500}
+                  height={500}
                   style={{
-                    position: 'relative',
                     width: '100%',
-                    maxWidth: 360,
-                    transform: `perspective(900px) rotateX(${tilt.rx}deg) rotateY(${tilt.ry}deg)`,
-                    transition: 'transform 0.14s ease-out',
+                    height: 'auto',
+                    objectFit: 'contain',
+                    display: viewMode === 'dissected' ? 'block' : 'none',
+                    userSelect: 'none',
+                    WebkitUserDrag: 'none',
+                    filter: 'drop-shadow(0 20px 30px rgba(0,0,0,0.14))',
                   }}
-                >
-                  <img
-                    id="ca-heart-image"
-                    src="/heart-clean.png"
-                    alt="Photorealistic 3D human heart showing natural coronary arteries LAD, LCX, RCA on transparent background"
-                    width={360}
-                    height={360}
-                    style={{
-                      width: '100%',
-                      height: 'auto',
-                      objectFit: 'contain',
-                      display: 'block',
-                      userSelect: 'none',
-                      WebkitUserDrag: 'none',
-                    }}
-                    draggable={false}
-                  />
+                  draggable={false}
+                />
 
-                  {/* ── Precision Medical Pinpoint Dots (No beeping circles) ── */}
-                  {VESSEL_TARGETS.map((vt) => {
-                    const isHovered = inspectedVessel === vt.code;
-                    const isSelected = selectedArtery === vt.code;
-                    const isTargeted = isHovered || isSelected;
-                    const status = vesselStates?.[vt.code] || 'normal';
+                {/* ── 3. Animated Blood Flow Streams (Active in Surface Mode) ── */}
+                {viewMode === 'surface' && (
+                  <svg
+                    viewBox="0 0 400 420"
+                    className="absolute inset-0 w-full h-full pointer-events-none z-15"
+                    aria-hidden="true"
+                  >
+                    <defs>
+                      <linearGradient id="bloodFlowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                        <stop offset="0%" stopColor="#ff4d4d" stopOpacity="0.9" />
+                        <stop offset="50%" stopColor="#e11d48" stopOpacity="0.75" />
+                        <stop offset="100%" stopColor="#991b1b" stopOpacity="0.4" />
+                      </linearGradient>
+                      <filter id="bloodGlow" x="-20%" y="-20%" width="140%" height="140%">
+                        <feGaussianBlur stdDeviation="3" result="blur" />
+                        <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                      </filter>
+                    </defs>
+
+                    {/* LAD Arterial Blood Flow Stream (Anterior Groove → Apex) */}
+                    <path
+                      d="M 198 165 C 194 200 192 235 195 270 C 198 305 204 338 206 370"
+                      fill="none"
+                      stroke="url(#bloodFlowGrad)"
+                      strokeWidth="3.2"
+                      strokeLinecap="round"
+                      strokeDasharray="10 8"
+                      className="animate-blood-flow"
+                      filter="url(#bloodGlow)"
+                      opacity={activeCallout === 'LAD' ? 1 : 0.65}
+                    />
+
+                    {/* LCX Arterial Blood Flow Stream (Coronary Sulcus → Margin) */}
+                    <path
+                      d="M 205 162 C 230 162 255 174 275 198 C 292 220 298 245 292 275"
+                      fill="none"
+                      stroke="url(#bloodFlowGrad)"
+                      strokeWidth="2.8"
+                      strokeLinecap="round"
+                      strokeDasharray="9 7"
+                      className="animate-blood-flow-fast"
+                      filter="url(#bloodGlow)"
+                      opacity={activeCallout === 'LCX' ? 1 : 0.65}
+                    />
+
+                    {/* RCA Arterial Blood Flow Stream (Right Groove → Inferior) */}
+                    <path
+                      d="M 185 175 C 168 195 156 222 154 252 C 152 280 160 308 172 334"
+                      fill="none"
+                      stroke="url(#bloodFlowGrad)"
+                      strokeWidth="3.0"
+                      strokeLinecap="round"
+                      strokeDasharray="10 8"
+                      className="animate-blood-flow"
+                      filter="url(#bloodGlow)"
+                      opacity={activeCallout === 'RCA' ? 1 : 0.65}
+                    />
+                  </svg>
+                )}
+
+                {/* ── 4. Precision Medical Pinpoints (Surface Mode) ── */}
+                {viewMode === 'surface' &&
+                  SURFACE_VESSELS.map((v) => {
+                    const isSelected = activeCallout === v.code;
+                    const status = vesselStates?.[v.code] || 'normal';
                     const color = VESSEL_COLOR[status];
 
                     return (
                       <div
-                        key={vt.code}
+                        key={v.code}
                         style={{
                           position: 'absolute',
-                          left: `${vt.coords.x}%`,
-                          top: `${vt.coords.y}%`,
+                          left: `${v.coords.x}%`,
+                          top: `${v.coords.y}%`,
                           transform: 'translate(-50%, -50%)',
-                          zIndex: isTargeted ? 30 : 20,
+                          zIndex: isSelected ? 35 : 20,
                         }}
                       >
                         <button
                           type="button"
                           onClick={() => {
-                            onSelectArtery?.(vt.code);
-                            setInspectedVessel(vt.code);
+                            onSelectArtery?.(v.code);
+                            setActiveCallout(isSelected ? null : v.code);
                           }}
-                          onMouseEnter={() => setInspectedVessel(vt.code)}
-                          className="relative flex items-center justify-center p-2 group cursor-pointer focus:outline-none"
-                          aria-label={`Inspect ${vt.name}`}
+                          onMouseEnter={() => setActiveCallout(v.code)}
+                          className="relative flex items-center justify-center p-2.5 group cursor-pointer focus:outline-none"
+                          aria-label={`Inspect ${v.name}`}
                         >
-                          {/* Clean Pinpoint Dot */}
                           <span
                             className="rounded-full transition-all duration-200"
                             style={{
-                              width: isTargeted ? 12 : 8,
-                              height: isTargeted ? 12 : 8,
+                              width: isSelected ? 13 : 9,
+                              height: isSelected ? 13 : 9,
                               background: color,
                               border: '2px solid #ffffff',
-                              boxShadow: isTargeted
-                                ? `0 0 0 3px ${color}40, 0 0 12px ${color}`
-                                : `0 0 4px rgba(0,0,0,0.25)`,
+                              boxShadow: isSelected
+                                ? `0 0 0 4px ${color}45, 0 0 14px ${color}`
+                                : '0 2px 6px rgba(0,0,0,0.3)',
                             }}
                           />
                         </button>
                       </div>
                     );
                   })}
-                </div>
-              </div>
 
-              {/* ── Right-Side Inspection Panel (Never overlaps the heart) ── */}
-              <div className="md:col-span-5 relative">
-                <AnimatePresence mode="wait">
-                  {activeTarget ? (
-                    <motion.div
-                      key={activeTarget.code}
-                      initial={{ opacity: 0, x: 12 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      exit={{ opacity: 0, x: -8 }}
-                      transition={{ duration: 0.2, ease: 'easeOut' }}
-                      className="bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-xl border border-slate-200/90 text-left"
-                      style={{
-                        boxShadow: `0 16px 36px -10px ${activeColor}25, 0 4px 16px rgba(0,0,0,0.06)`,
-                      }}
-                    >
-                      {/* Header with status */}
-                      <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-                        <div className="flex items-center gap-1.5">
-                          <span className="w-2.5 h-2.5 rounded-full" style={{ background: activeColor }} />
-                          <span className="font-mono text-xs font-bold text-slate-900">{activeTarget.code}</span>
-                          <span className="text-[10px] text-slate-400 font-mono">Artery</span>
-                        </div>
-                        <span
-                          className="font-mono text-[10px] font-bold px-2 py-0.5 rounded-md"
-                          style={{ background: `${activeColor}15`, color: activeColor }}
-                        >
-                          {VESSEL_LABEL[activeStatus]} Stenosis
-                        </span>
-                      </div>
-
-                      {/* Artery Name & Pathway */}
-                      <p className="font-display text-sm font-bold text-slate-800 leading-tight">
-                        {activeTarget.name}
-                      </p>
-                      <p className="text-[10px] text-slate-500 font-mono mt-0.5 mb-2 leading-relaxed">
-                        {activeTarget.pathway}
-                      </p>
-
-                      {/* Functional territory */}
-                      <div className="p-2 rounded-xl bg-slate-50/90 border border-slate-100 mb-2.5">
-                        <p className="text-[10px] text-slate-600 leading-relaxed font-medium">
-                          {activeTarget.clinicalRole}
-                        </p>
-                      </div>
-
-                      {/* Hemodynamic Telemetry */}
-                      <div className="grid grid-cols-2 gap-2 p-2 rounded-xl bg-slate-50/90 border border-slate-100 mb-3">
-                        <div>
-                          <p className="font-mono text-[9px] text-slate-400 uppercase tracking-wider">Perfusion FFR</p>
-                          <p className="font-display font-bold text-xs text-slate-800 mt-0.5">{activeTarget.ffr} FFR</p>
-                        </div>
-                        <div>
-                          <p className="font-mono text-[9px] text-slate-400 uppercase tracking-wider">Flow Velocity</p>
-                          <p className="font-display font-bold text-xs text-slate-800 mt-0.5">{activeTarget.flow}</p>
-                        </div>
-                      </div>
-
-                      {/* Simulator Trigger CTA */}
-                      <button
-                        onClick={() => {
-                          onSelectArtery?.(activeTarget.code);
-                          onScrollToSection?.('vessel-explorer');
+                {/* ── 5. Internal Landmarks Pinpoints (Dissected Mode) ── */}
+                {viewMode === 'dissected' &&
+                  DISSECTION_LANDMARKS.map((landmark) => {
+                    const isSelected = activeCallout === landmark.id;
+                    return (
+                      <div
+                        key={landmark.id}
+                        style={{
+                          position: 'absolute',
+                          left: `${landmark.coords.x}%`,
+                          top: `${landmark.coords.y}%`,
+                          transform: 'translate(-50%, -50%)',
+                          zIndex: isSelected ? 35 : 20,
                         }}
-                        className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[10px] font-bold text-white transition-all cursor-pointer shadow-xs hover:opacity-95"
-                        style={{ background: activeColor }}
                       >
-                        <span>Simulate in Vessel Explorer</span>
-                        <ArrowRight className="w-3.5 h-3.5" />
-                      </button>
-                    </motion.div>
-                  ) : (
-                    /* Default Clean Resting State (No overlap, inviting guide) */
-                    <motion.div
-                      key="resting-guide"
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      exit={{ opacity: 0 }}
-                      transition={{ duration: 0.2 }}
-                      className="bg-white/80 backdrop-blur-md rounded-2xl p-4 border border-slate-200/80 shadow-sm text-left"
-                    >
-                      <div className="flex items-center gap-2 mb-2">
-                        <Info className="w-4 h-4 text-rose-500" />
-                        <p className="font-mono text-xs font-bold text-slate-800 uppercase tracking-wider">
-                          Coronary Navigator
-                        </p>
-                      </div>
-                      <p className="text-xs text-slate-600 leading-relaxed mb-3">
-                        Hover over any pinpoint on the heart or select an artery below to inspect real-time hemodynamics, perfusion territories, and AI stenosis predictions.
-                      </p>
-
-                      <div className="space-y-1.5">
-                        {VESSEL_TARGETS.map((vt) => (
-                          <button
-                            key={vt.code}
-                            type="button"
-                            onClick={() => {
-                              onSelectArtery?.(vt.code);
-                              setInspectedVessel(vt.code);
+                        <button
+                          type="button"
+                          onClick={() => setActiveCallout(isSelected ? null : landmark.id)}
+                          onMouseEnter={() => setActiveCallout(landmark.id)}
+                          className="relative flex items-center justify-center p-2.5 group cursor-pointer focus:outline-none"
+                          aria-label={`Inspect ${landmark.name}`}
+                        >
+                          <span
+                            className="rounded-full transition-all duration-200"
+                            style={{
+                              width: isSelected ? 13 : 9,
+                              height: isSelected ? 13 : 9,
+                              background: '#e11d48',
+                              border: '2px solid #ffffff',
+                              boxShadow: isSelected
+                                ? '0 0 0 4px rgba(225,29,72,0.4), 0 0 14px #e11d48'
+                                : '0 2px 6px rgba(0,0,0,0.35)',
                             }}
-                            onMouseEnter={() => setInspectedVessel(vt.code)}
-                            className="w-full flex items-center justify-between px-2.5 py-1.5 rounded-lg bg-slate-50/80 hover:bg-white border border-slate-100 hover:border-slate-300 transition-all text-left cursor-pointer"
-                          >
-                            <span className="font-mono text-[11px] font-bold text-slate-700">{vt.code}</span>
-                            <span className="text-[10px] text-slate-500 truncate max-w-[130px]">{vt.name}</span>
-                            <span className="text-[10px] font-bold" style={{ color: VESSEL_COLOR[vesselStates?.[vt.code] || 'normal'] }}>
-                              {VESSEL_LABEL[vesselStates?.[vt.code] || 'normal']}
-                            </span>
-                          </button>
-                        ))}
+                          />
+                        </button>
                       </div>
-                    </motion.div>
-                  )}
+                    );
+                  })}
+
+                {/* ── 6. Subtle Interactive Callout Tooltip (Pops up near the section) ── */}
+                <AnimatePresence>
+                  <AnatomicalCalloutTooltip
+                    viewMode={viewMode}
+                    vesselData={activeVesselData}
+                    dissectionData={activeDissectionData}
+                    vesselStates={vesselStates}
+                    onClose={() => setActiveCallout(null)}
+                    onSelectArtery={onSelectArtery}
+                    onScrollToSection={onScrollToSection}
+                  />
                 </AnimatePresence>
               </div>
-
             </div>
+
+            {/* Subtle Hint Footnote */}
+            <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 text-center">
+              {viewMode === 'surface'
+                ? 'Hover near LAD, LCX, or RCA to inspect blood supply & functionality'
+                : 'Click or hover internal pinpoints to examine chambers, valves, and septum'}
+            </p>
 
           </div>
         </div>
       </div>
+
+      {/* Blood Flow Keyframe Styles */}
+      <style>{`
+        @keyframes bloodFlowAnimation {
+          0% { stroke-dashoffset: 36; }
+          100% { stroke-dashoffset: 0; }
+        }
+        .animate-blood-flow {
+          animation: bloodFlowAnimation 1.1s linear infinite;
+        }
+        .animate-blood-flow-fast {
+          animation: bloodFlowAnimation 0.85s linear infinite;
+        }
+      `}</style>
     </section>
   );
 }

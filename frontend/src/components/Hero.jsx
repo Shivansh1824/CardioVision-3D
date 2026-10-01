@@ -1,17 +1,15 @@
 import React, { useState } from 'react';
 import HeroConceptA from './HeroConceptA';
-import HeroConceptB from './HeroConceptB';
 import HeroConceptOriginal from './HeroConceptOriginal';
 
-// Available concepts for A/B/C testing
+// Available concepts
 const CONCEPTS = [
-  { id: 'original', label: 'Original',        sublabel: 'SVG 2D' },
-  { id: 'a',        label: 'Concept A',        sublabel: '3D Cinematic' },
-  { id: 'b',        label: 'Concept B',        sublabel: 'Dissection' },
+  { id: 'a',        label: 'Hero',              sublabel: '3D Anatomical Twin' },
+  { id: 'original', label: 'Original 2D',       sublabel: 'SVG 2D' },
 ];
 
 export default function Hero(props) {
-  const [active, setActive] = useState('original');
+  const [active, setActive] = useState('a');
 
   return (
     <>
@@ -34,7 +32,7 @@ export default function Hero(props) {
             textTransform: 'uppercase', paddingRight: 6,
           }}
         >
-          Hero
+          View
         </span>
         {CONCEPTS.map((c) => (
           <button
@@ -55,10 +53,9 @@ export default function Hero(props) {
         ))}
       </div>
 
-      {/* ── Render active concept ── */}
-      {active === 'original' && <HeroConceptOriginal {...props} />}
+      {/* ── Render active hero ── */}
       {active === 'a'        && <HeroConceptA {...props} />}
-      {active === 'b'        && <HeroConceptB {...props} />}
+      {active === 'original' && <HeroConceptOriginal {...props} />}
     </>
   );
 }
