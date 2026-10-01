@@ -74,3 +74,33 @@ export const DISSECTION_LANDMARKS = [
     significance: 'Mitral & Tricuspid complexes. Rupture of chordae during acute ischemia causes acute valve flail, severe regurgitation, and cardiogenic edema.',
   },
 ];
+
+export const POSTERIOR_VESSELS = [
+  {
+    code: 'CS',
+    name: 'Coronary Sinus',
+    shortName: 'Venous Hub',
+    coords: { x: 48, y: 55 },
+    role: 'Wide venous channel that collects ~85% of deoxygenated myocardial blood from coronary veins and returns it directly into the right atrium.',
+    significance: 'Crucial clinical landmark for electrophysiology studies and biventricular pacemaker (CRT) left ventricular lead placement.',
+    calloutSide: 'right',
+  },
+  {
+    code: 'PDA',
+    name: 'Posterior Descending Artery',
+    shortName: 'Posterior',
+    coords: { x: 52, y: 72 },
+    role: 'Runs in posterior interventricular sulcus towards cardiac apex. Supplies the posterior 1/3 of the septum and inferior ventricular walls.',
+    significance: 'Determines coronary dominance (right dominant in ~85% of population via RCA). Occlusion leads to inferior and posterior wall myocardial infarction.',
+    calloutSide: 'right',
+  },
+  {
+    code: 'PV',
+    name: 'Pulmonary Veins',
+    shortName: 'Oxygenated Return',
+    coords: { x: 62, y: 38 },
+    role: 'Four pulmonary veins that transport freshly oxygenated blood from the lungs into the left atrium.',
+    significance: 'Site of ectopic electrical triggers for atrial fibrillation (AFib). Targeted during catheter pulmonary vein isolation (PVI) ablation.',
+    calloutSide: 'left',
+  },
+];

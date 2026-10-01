@@ -12,12 +12,9 @@
  * - 3D parallax pointer tilt & organic 72 BPM cardiac cycle pulse
  */
 
-import React, { useRef, useState } from 'react';
-import { useGSAP } from '@gsap/react';
-import gsap from 'gsap';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { ArrowRight, Layers, Droplet } from 'lucide-react';
-
-gsap.registerPlugin(useGSAP);
 
 import {
   VESSEL_COLOR,
@@ -33,24 +30,8 @@ export default function HeroConceptA({
   selectedArtery,
   onSelectArtery,
 }) {
-  const sectionRef = useRef(null);
-
   // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers)
   const [viewMode, setViewMode] = useState('surface');
-
-  // GSAP entrance
-  useGSAP(
-    () => {
-      const tl = gsap.timeline({ defaults: { ease: 'expo.out' } });
-      tl.fromTo('.ca-overline', { y: -18, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.55 })
-        .fromTo('.ca-headline', { y: 38, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.78 }, '-=0.35')
-        .fromTo('.ca-sub',      { y: 22, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.62 }, '-=0.48')
-        .fromTo('.ca-cta',      { y: 16, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.5, stagger: 0.1 }, '-=0.38')
-        .fromTo('.ca-stat',     { y: 20, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.07 }, '-=0.3')
-        .fromTo('.ca-heart-stage', { scale: 0.92, autoAlpha: 0 }, { scale: 1, autoAlpha: 1, duration: 0.95, ease: 'back.out(1.2)' }, '-=0.55');
-    },
-    { scope: sectionRef }
-  );
 
   const LADs = vesselStates?.LAD || 'moderate';
   const LCXs = vesselStates?.LCX || 'normal';
@@ -58,7 +39,6 @@ export default function HeroConceptA({
 
   return (
     <section
-      ref={sectionRef}
       className="relative overflow-hidden"
       style={{
         minHeight: '92vh',
@@ -135,18 +115,13 @@ export default function HeroConceptA({
                   { code: 'LCX', name: 'Lateral',  status: LCXs },
                   { code: 'RCA', name: 'Inferior', status: RCAs },
                 ].map((v) => {
-                  const isActive = activeCallout === v.code || selectedArtery === v.code;
+                  const isActive = selectedArtery === v.code;
                   return (
                     <button
                       key={v.code}
                       type="button"
                       onClick={() => {
                         onSelectArtery?.(v.code);
-                        setActiveCallout(v.code);
-                        setViewMode('surface');
-                      }}
-                      onMouseEnter={() => {
-                        setActiveCallout(v.code);
                         setViewMode('surface');
                       }}
                       className={`ca-stat flex items-center gap-2 px-3 py-1.5 rounded-xl border shadow-xs transition-all cursor-pointer text-left ${
@@ -209,16 +184,17 @@ export default function HeroConceptA({
             <HeartStageVisualizer
               viewMode={viewMode}
               vesselStates={vesselStates}
+              selectedArtery={selectedArtery}
               onSelectArtery={onSelectArtery}
               onScrollToSection={onScrollToSection}
             />
 
-            {/* Subtle Guidance Footnote */}
-            <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 text-center">
-              {viewMode === 'surface'
-                ? 'Hover near LAD, LCX, or RCA to inspect blood supply & functionality'
-                : 'Coronal dissection active · Click or hover labeled anatomical landmarks'}
-            </p>
+            {/* Dissection Guidance Footnote */}
+            {viewMode === 'dissected' && (
+              <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 text-center">
+                Coronal dissection active · Click or hover labeled anatomical landmarks
+              </p>
+            )}
 
           </div>
         </div>

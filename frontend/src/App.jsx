@@ -12,6 +12,7 @@ import SafetyDisclaimer from './components/SafetyDisclaimer';
 import Footer from './components/Footer';
 import SignInModal from './components/SignInModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
+import ErrorBoundary from './components/ErrorBoundary';
 
 export default function App() {
   // Shared state for the 3 coronary vessels across Anatomical Heart & Explorer
@@ -76,13 +77,15 @@ export default function App() {
       {/* Main Page Content */}
       <main className="flex-1">
         {/* Hero Section with Anatomical Heart Visualizer & Proof Metrics */}
-        <Hero
-          onOpenSignIn={handleOpenSignIn}
-          onScrollToSection={handleScrollToSection}
-          vesselStates={vesselStates}
-          selectedArtery={selectedArtery}
-          onSelectArtery={setSelectedArtery}
-        />
+        <ErrorBoundary>
+          <Hero
+            onOpenSignIn={handleOpenSignIn}
+            onScrollToSection={handleScrollToSection}
+            vesselStates={vesselStates}
+            selectedArtery={selectedArtery}
+            onSelectArtery={setSelectedArtery}
+          />
+        </ErrorBoundary>
 
         {/* Live Multi-Vessel Staging & What-If Simulator */}
         <VesselExplorer

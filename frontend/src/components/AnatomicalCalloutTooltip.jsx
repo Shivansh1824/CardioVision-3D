@@ -65,18 +65,24 @@ export default function AnatomicalCalloutTooltip({
           {vesselData.significance}
         </p>
 
-        <button
-          type="button"
-          onClick={() => {
-            onSelectArtery?.(vesselData.code);
-            onScrollToSection?.('vessel-explorer');
-          }}
-          className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold text-white transition-all cursor-pointer shadow-xs hover:opacity-95"
-          style={{ background: color }}
-        >
-          <span>Simulate in Vessel Explorer</span>
-          <ArrowRight className="w-3.5 h-3.5" />
-        </button>
+        {['LAD', 'LCX', 'RCA'].includes(vesselData.code) ? (
+          <button
+            type="button"
+            onClick={() => {
+              onSelectArtery?.(vesselData.code);
+              onScrollToSection?.('vessel-explorer');
+            }}
+            className="w-full flex items-center justify-between px-3 py-2 rounded-xl text-[11px] font-bold text-white transition-all cursor-pointer shadow-xs hover:opacity-95"
+            style={{ background: color }}
+          >
+            <span>Simulate in Vessel Explorer</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        ) : (
+          <div className="w-full px-3 py-1.5 rounded-xl text-[11px] font-mono font-bold text-sky-700 bg-sky-50 border border-sky-200 text-center">
+            Posterior Vasculature Circuit
+          </div>
+        )}
       </motion.div>
     );
   }
