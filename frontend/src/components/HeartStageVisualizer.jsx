@@ -35,6 +35,7 @@ export default function HeartStageVisualizer({
   onScrollToSection,
 }) {
   const heartWrapRef = useRef(null);
+  const isDissected = viewMode === 'dissected';
 
   // 360° Orbital Rotation State
   const [rotationY, setRotationY] = useState(0);
@@ -44,12 +45,10 @@ export default function HeartStageVisualizer({
   const [dragStartRot, setDragStartRot] = useState(0);
 
   // Tooltip & hover states
-  const [activeCallout, setActiveCallout] = useState(null);
+  const [activeCallout, setActiveCallout] = useState(isDissected ? 'LV' : (selectedArtery || 'LAD'));
   const [isHoveringCard, setIsHoveringCard] = useState(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [isHoveringHeart, setIsHoveringHeart] = useState(false);
-
-  const isDissected = viewMode === 'dissected';
 
   // Normalized rotation angle for front/back visibility (0 to 360)
   const normRot = ((rotationY % 360) + 360) % 360;
@@ -74,6 +73,14 @@ export default function HeartStageVisualizer({
       setRotationY(0);
     }
   }, [isDissected]);
+
+  const prevSelectedRef = useRef(selectedArtery);
+  useEffect(() => {
+    if (selectedArtery && selectedArtery !== prevSelectedRef.current && viewMode === 'surface') {
+      setActiveCallout(selectedArtery);
+      prevSelectedRef.current = selectedArtery;
+    }
+  }, [selectedArtery, viewMode]);
 
   // Pointer drag for 360° rotation
   const handlePointerDown = (e) => {
@@ -167,6 +174,39 @@ export default function HeartStageVisualizer({
     POSTERIOR_VESSELS.find((v) => v.code === activeCallout) ||
     null;
   const activeDissectionData = DISSECTION_LANDMARKS.find((d) => d.id === activeCallout) || null;
+  const activeData = activeVesselData || activeDissectionData;
+
+  const isCardLeft = activeData?.calloutSide === 'left';
+  // Shift and scale heart canvas when callout is active to guarantee ZERO overlap with external card
+  const canvasShiftX = activeCallout ? (isCardLeft ? 115 : -115) : 0;
+  const canvasScale = isDissected ? 0.94 : activeCallout ? 0.90 : isHoveringHeart ? 1.02 : 1.0;
+
+  // Calculate projected 2D coordinates of the target pinpoint in stage percentage space
+  const calculatePinPos = () => {
+    if (!activeData) return { x: 50, y: 50 };
+    const stageW = 720;
+    const shiftPercent = (canvasShiftX / stageW) * 100;
+
+    if (isDissected) {
+      return {
+        x: activeData.coords.x * canvasScale + shiftPercent + (1 - canvasScale) * 50,
+        y: activeData.coords.y,
+      };
+    }
+    const currentRot = ((rotationY + tilt.ry) % 360 + 360) % 360;
+    const isBack = currentRot > 90 && currentRot < 270;
+    const angleRad = isBack
+      ? (((currentRot - 180) * Math.PI) / 180)
+      : ((currentRot * Math.PI) / 180);
+    const projX = 50 + (activeData.coords.x - 50) * Math.cos(angleRad) * canvasScale;
+    const projY = activeData.coords.y + tilt.rx * 0.12;
+    return {
+      x: Math.max(8, Math.min(projX + shiftPercent, 92)),
+      y: Math.max(8, Math.min(projY, 90)),
+    };
+  };
+
+  const pinPos = calculatePinPos();
 
   return (
     <div className="flex flex-col items-center w-full">
@@ -177,7 +217,7 @@ export default function HeartStageVisualizer({
         onPointerMove={handlePointerMove}
         onPointerUp={handlePointerUp}
         onMouseLeave={handlePointerLeave}
-        className={`relative w-full max-w-[480px] sm:max-w-[510px] flex items-center justify-center py-2 select-none ${
+        className={`relative w-full max-w-[620px] sm:max-w-[700px] lg:max-w-[740px] flex items-center justify-center py-2 select-none min-h-[460px] ${
           isDissected ? 'cursor-crosshair' : isDragging ? 'cursor-grabbing' : 'cursor-grab'
         }`}
       >
@@ -200,18 +240,21 @@ export default function HeartStageVisualizer({
         <motion.div
           id="ca-heart-canvas"
           animate={{
-            scale: isDissected ? 0.93 : isHoveringHeart ? 1.03 : 1.0,
+            x: canvasShiftX,
+            scale: canvasScale,
             rotateX: tilt.rx,
             rotateY: rotationY + tilt.ry,
           }}
           transition={{
-            scale: { duration: 0.5, ease: [0.16, 1, 0.3, 1] },
+            x: { duration: 0.35, ease: [0.16, 1, 0.3, 1] },
+            scale: { duration: 0.45, ease: [0.16, 1, 0.3, 1] },
             rotateX: { duration: isDragging ? 0 : 0.15, ease: 'easeOut' },
             rotateY: { duration: isDragging ? 0 : isAutoOrbit ? 0 : 0.25, ease: 'easeOut' },
           }}
           style={{
             position: 'relative',
             width: '100%',
+            maxWidth: 480,
             perspective: 1200,
             transformStyle: 'preserve-3d',
           }}
@@ -220,10 +263,10 @@ export default function HeartStageVisualizer({
           <motion.div
             animate={{
               opacity: isDissected ? 1 : 0,
-              scale: isDissected ? 1 : 0.95,
+              scale: isDissected ? 1 : 0.94,
               filter: isDissected ? 'blur(0px)' : 'blur(4px)',
             }}
-            transition={{ duration: 0.55, ease: [0.16, 1, 0.3, 1] }}
+            transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
             style={{
               position: isDissected ? 'relative' : 'absolute',
               inset: 0,
@@ -243,9 +286,22 @@ export default function HeartStageVisualizer({
                 objectFit: 'contain',
                 userSelect: 'none',
                 WebkitUserDrag: 'none',
-                filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.16))',
+                filter: 'drop-shadow(0 20px 32px rgba(0,0,0,0.18))',
               }}
               draggable={false}
+            />
+
+            {/* Volumetric Internal Cavity Depth Lighting */}
+            <div
+              style={{
+                position: 'absolute',
+                inset: '20% 22% 22% 22%',
+                background: 'radial-gradient(ellipse at 50% 50%, rgba(15,23,42,0.35) 0%, rgba(225,29,72,0.08) 50%, transparent 80%)',
+                borderRadius: '50%',
+                filter: 'blur(16px)',
+                pointerEvents: 'none',
+                mixBlendMode: 'multiply',
+              }}
             />
           </motion.div>
 
@@ -289,10 +345,10 @@ export default function HeartStageVisualizer({
             <motion.div
               animate={
                 isDissected
-                  ? { x: -36, rotateY: -35, opacity: 0, scale: 0.96 }
+                  ? { x: -46, rotateY: -55, opacity: 0, scale: 0.94 }
                   : { x: 0, rotateY: 0, opacity: 1, scale: 1 }
               }
-              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 position: 'absolute',
                 inset: 0,
@@ -322,10 +378,10 @@ export default function HeartStageVisualizer({
             <motion.div
               animate={
                 isDissected
-                  ? { x: 36, rotateY: 35, opacity: 0, scale: 0.96 }
+                  ? { x: 46, rotateY: 55, opacity: 0, scale: 0.94 }
                   : { x: 0, rotateY: 0, opacity: 1, scale: 1 }
               }
-              transition={{ duration: 0.65, ease: [0.22, 1, 0.36, 1] }}
+              transition={{ duration: 0.75, ease: [0.16, 1, 0.3, 1] }}
               style={{
                 position: isDissected ? 'absolute' : 'relative',
                 inset: 0,
@@ -484,24 +540,25 @@ export default function HeartStageVisualizer({
             />
           )}
 
-          {/* ── Layer 8: Interactive Detailed Callout Card ── */}
-          <AnimatePresence>
+        </motion.div>
+
+        {/* ── Layer 8: External Clinical Callout Card & SVG Leader Line (Fixed 2D Plane) ── */}
+        <AnimatePresence>
+          {activeData && (
             <AnatomicalCalloutTooltip
               viewMode={viewMode}
-              vesselData={activeVesselData}
-              dissectionData={activeDissectionData}
+              data={activeData}
               vesselStates={vesselStates}
+              pinPos={pinPos}
               onClose={() => setActiveCallout(null)}
-              onSelectArtery={onSelectArtery}
-              onScrollToSection={onScrollToSection}
               onCardMouseEnter={() => setIsHoveringCard(true)}
               onCardMouseLeave={() => {
                 setIsHoveringCard(false);
                 setActiveCallout(null);
               }}
             />
-          </AnimatePresence>
-        </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* ── 360° Turntable Perspective & Rotation Controls (Surface Mode) ── */}
