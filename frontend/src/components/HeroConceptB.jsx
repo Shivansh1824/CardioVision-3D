@@ -88,147 +88,111 @@ function LayeredHeart({ slicePercent, vesselStates, selectedArtery }) {
   const S = { LAD: vesselStates?.LAD || 'moderate', LCX: vesselStates?.LCX || 'normal', RCA: vesselStates?.RCA || 'critical' };
   const C = { normal: '#10b981', moderate: '#f59e0b', critical: '#ef4444' };
 
-  const visibleLayer = slicePercent < 0.25 ? 0 : slicePercent < 0.5 ? 1 : slicePercent < 0.75 ? 2 : 3;
-  const clipX = Math.round(slicePercent * 500);
+  const glow = (color, sel) =>
+    sel
+      ? `drop-shadow(0 0 7px ${color}) drop-shadow(0 0 14px ${color}99)`
+      : `drop-shadow(0 0 4px ${color}88)`;
+
+  // Clip x position in px out of 440 (image container width)
+  const clipPct = Math.round(slicePercent * 100);
 
   return (
-    <svg viewBox="0 0 500 560" width="100%" height="100%" style={{ overflow: 'visible' }}>
-      <defs>
-        {/* Clip: left half = intact, right half = peeled */}
-        <clipPath id="cb-peel-intact">
-          <rect x="0" y="0" width={clipX} height="560" />
-        </clipPath>
-        <clipPath id="cb-peel-open">
-          <rect x={clipX} y="0" width={500 - clipX} height="560" />
-        </clipPath>
-
-        {/* Tissue gradients */}
-        <radialGradient id="cb-epi" cx="38%" cy="32%" r="65%">
-          <stop offset="0%" stopColor="#fecdd3" />
-          <stop offset="55%" stopColor="#e11d48" />
-          <stop offset="100%" stopColor="#9f1239" />
-        </radialGradient>
-        <radialGradient id="cb-myo" cx="40%" cy="35%" r="60%">
-          <stop offset="0%" stopColor="#fda4af" />
-          <stop offset="60%" stopColor="#be123c" />
-          <stop offset="100%" stopColor="#881337" />
-        </radialGradient>
-        <radialGradient id="cb-chamber" cx="50%" cy="50%" r="50%">
-          <stop offset="0%" stopColor="#1e1b4b" />
-          <stop offset="100%" stopColor="#450a0a" />
-        </radialGradient>
-
-        {/* Wet gloss highlight */}
-        <radialGradient id="cb-gloss" cx="35%" cy="28%" r="40%">
-          <stop offset="0%" stopColor="rgba(255,255,255,0.55)" />
-          <stop offset="100%" stopColor="rgba(255,255,255,0)" />
-        </radialGradient>
-
-        <linearGradient id="cb-aorta" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#fda4af" />
-          <stop offset="100%" stopColor="#e11d48" />
-        </linearGradient>
-        <linearGradient id="cb-pulm" x1="0%" y1="0%" x2="0%" y2="100%">
-          <stop offset="0%" stopColor="#bae6fd" />
-          <stop offset="100%" stopColor="#0284c7" />
-        </linearGradient>
-
-        <filter id="cb-glow-sm">
-          <feGaussianBlur stdDeviation="3" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-        <filter id="cb-glow-lg">
-          <feGaussianBlur stdDeviation="7" result="blur" />
-          <feComposite in="SourceGraphic" in2="blur" operator="over" />
-        </filter>
-      </defs>
-
-      {/* ── INTACT LEFT SIDE (before slice line) ── */}
-      <g clipPath="url(#cb-peel-intact)">
-        {/* Epicardium — outermost wall */}
-        <path
-          d="M150 175 C110 200 95 255 110 325 C130 405 200 480 250 520 C305 475 370 400 395 320 C415 255 400 190 355 175 C310 160 260 165 220 168 Z"
-          fill="url(#cb-epi)" stroke="#881337" strokeWidth="2"
-        />
-        {/* Great vessels */}
-        <rect x="210" y="68" width="38" height="110" rx="10" fill="url(#cb-aorta)" />
-        <rect x="254" y="78" width="28" height="95" rx="9" fill="url(#cb-pulm)" />
-        {/* Gloss overlay */}
-        <ellipse cx="185" cy="230" rx="68" ry="100" fill="url(#cb-gloss)" />
-      </g>
-
-      {/* ── PEELED RIGHT SIDE (after slice line) ── */}
-      <g clipPath="url(#cb-peel-open)">
-        {/* Myocardium layer */}
-        {slicePercent >= 0.25 && (
-          <path
-            d="M150 175 C110 200 95 255 110 325 C130 405 200 480 250 520 C305 475 370 400 395 320 C415 255 400 190 355 175 C310 160 260 165 220 168 Z"
-            fill="url(#cb-myo)" stroke="#7f1d1d" strokeWidth="2.5"
-          />
-        )}
-        {/* Chambers (dark blood cavities) — only at 50%+ */}
-        {slicePercent >= 0.5 && (
-          <>
-            {/* Right ventricle */}
-            <path d="M170 310 C155 360 178 430 210 465 C240 455 250 415 248 340 C225 315 195 305 170 310 Z"
-              fill="url(#cb-chamber)" />
-            {/* Interventricular septum */}
-            <path d="M248 340 C248 420 244 475 250 520 C256 475 258 410 255 340 Z"
-              fill="#7f1d1d" stroke="#450a0a" strokeWidth="2" />
-            {/* Left ventricle */}
-            <path d="M255 345 C258 420 278 470 310 445 C345 415 355 355 335 325 C315 335 285 340 255 345 Z"
-              fill="url(#cb-chamber)" />
-            {/* Valve flaps */}
-            <path d="M185 305 C198 328 220 325 232 308" stroke="#f1f5f9" strokeWidth="3" fill="none" strokeLinecap="round" />
-            <path d="M270 310 C283 333 305 330 315 312" stroke="#f1f5f9" strokeWidth="3" fill="none" strokeLinecap="round" />
-          </>
-        )}
-        {/* Endocardium lining — only at 75%+ */}
-        {slicePercent >= 0.75 && (
-          <>
-            <path d="M170 310 C155 360 178 430 210 465 C240 455 250 415 248 340 C225 315 195 305 170 310 Z"
-              fill="none" stroke="#fda4af" strokeWidth="2.5" strokeDasharray="6,4" opacity="0.7" />
-            <path d="M255 345 C258 420 278 470 310 445 C345 415 355 355 335 325 C315 335 285 340 255 345 Z"
-              fill="none" stroke="#a5f3fc" strokeWidth="2.5" strokeDasharray="6,4" opacity="0.7" />
-            <text x="172" y="385" fill="#a5f3fc" fontSize="11" fontFamily="monospace" fontWeight="bold">R. Ventricle</text>
-            <text x="265" y="385" fill="#fda4af" fontSize="11" fontFamily="monospace" fontWeight="bold">L. Ventricle</text>
-          </>
-        )}
-      </g>
-
-      {/* ── CORONARY ARTERIES (above both halves) ── */}
-      {/* RCA */}
-      <path
-        d="M210 255 C185 280 172 320 175 375 C180 415 195 440 220 465"
-        stroke={C[S.RCA]} strokeWidth={selectedArtery === 'RCA' ? 5 : 3.5}
-        strokeLinecap="round" fill="none"
-        filter={selectedArtery === 'RCA' ? 'url(#cb-glow-lg)' : 'url(#cb-glow-sm)'}
-      />
-      {/* LAD */}
-      <path
-        d="M272 250 C262 290 258 340 262 390 C265 445 272 490 282 540"
-        stroke={C[S.LAD]} strokeWidth={selectedArtery === 'LAD' ? 5 : 3.5}
-        strokeLinecap="round" fill="none"
-        filter={selectedArtery === 'LAD' ? 'url(#cb-glow-lg)' : 'url(#cb-glow-sm)'}
-      />
-      {/* LCX */}
-      <path
-        d="M288 255 C322 268 358 290 378 320 C395 350 395 390 385 425"
-        stroke={C[S.LCX]} strokeWidth={selectedArtery === 'LCX' ? 5 : 3.5}
-        strokeLinecap="round" fill="none"
-        filter={selectedArtery === 'LCX' ? 'url(#cb-glow-lg)' : 'url(#cb-glow-sm)'}
+    <div style={{ position: 'relative', width: '100%', height: '100%' }}>
+      {/* ── Base: real anatomical heart image ── */}
+      <img
+        src="/heart-anatomical.jpg"
+        alt="Anatomical heart"
+        style={{
+          width: '100%',
+          height: '100%',
+          objectFit: 'contain',
+          display: 'block',
+          mixBlendMode: 'lighten',
+          userSelect: 'none',
+        }}
+        draggable={false}
       />
 
-      {/* Slice edge glow (at split) */}
-      {slicePercent > 0.02 && slicePercent < 0.98 && (
-        <line
-          x1={clipX} y1={140} x2={clipX} y2={535}
-          stroke="rgba(225,29,72,0.5)" strokeWidth="2.5"
-          strokeDasharray="6,3"
-          style={{ filter: 'drop-shadow(0 0 6px rgba(225,29,72,0.7))' }}
+      {/* ── Dissection reveal: dark anatomical cross-section overlay (clipped to right side) ── */}
+      {slicePercent > 0.04 && (
+        <div
+          style={{
+            position: 'absolute', inset: 0,
+            clipPath: `inset(0 0 0 ${clipPct}%)`,
+            background:
+              'radial-gradient(ellipse 70% 65% at 50% 52%, rgba(76,5,25,0.92) 0%, rgba(6,13,24,0.96) 80%)',
+            transition: 'clip-path 0s',
+          }}
         />
       )}
-    </svg>
+
+      {/* ── Layer label text on peeled side ── */}
+      {slicePercent >= 0.5 && (
+        <div
+          style={{
+            position: 'absolute', top: '42%', left: `${clipPct + 2}%`,
+            pointerEvents: 'none',
+          }}
+        >
+          <p style={{ fontFamily: 'monospace', fontSize: 10, color: '#fda4af', fontWeight: 700, whiteSpace: 'nowrap' }}>
+            {slicePercent >= 0.75 ? 'Endocardium' : 'Myocardium'}
+          </p>
+        </div>
+      )}
+
+      {/* ── Coronary artery SVG overlays ── */}
+      <svg
+        viewBox="0 0 400 420"
+        style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', pointerEvents: 'none' }}
+        aria-hidden="true"
+      >
+        {/* RCA */}
+        <path
+          d="M188 175 C170 192 158 215 155 245 C152 272 158 298 168 320 C176 338 186 352 194 362"
+          stroke={C[S.RCA]} strokeWidth={selectedArtery === 'RCA' ? 4.5 : 2.8}
+          strokeLinecap="round" fill="none" opacity={0.92}
+          style={{ filter: glow(C[S.RCA], selectedArtery === 'RCA'), transition: 'all 0.3s' }}
+        />
+        <path
+          d="M155 260 C144 272 138 285 136 298"
+          stroke={C[S.RCA]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.7}
+          style={{ filter: `drop-shadow(0 0 3px ${C[S.RCA]}66)` }}
+        />
+        {/* LAD */}
+        <path
+          d="M198 168 C193 195 190 225 192 258 C194 295 198 330 202 365"
+          stroke={C[S.LAD]} strokeWidth={selectedArtery === 'LAD' ? 4.5 : 2.8}
+          strokeLinecap="round" fill="none" opacity={0.92}
+          style={{ filter: glow(C[S.LAD], selectedArtery === 'LAD'), transition: 'all 0.3s' }}
+        />
+        <path
+          d="M192 240 C205 255 220 265 235 270"
+          stroke={C[S.LAD]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.72}
+          style={{ filter: `drop-shadow(0 0 3px ${C[S.LAD]}66)` }}
+        />
+        {/* LCX */}
+        <path
+          d="M205 162 C225 158 248 162 265 175 C285 190 298 210 302 235 C305 258 300 282 292 302"
+          stroke={C[S.LCX]} strokeWidth={selectedArtery === 'LCX' ? 4.5 : 2.8}
+          strokeLinecap="round" fill="none" opacity={0.92}
+          style={{ filter: glow(C[S.LCX], selectedArtery === 'LCX'), transition: 'all 0.3s' }}
+        />
+        <path
+          d="M285 208 C295 230 298 252 294 272"
+          stroke={C[S.LCX]} strokeWidth="1.8" strokeLinecap="round" fill="none" opacity={0.7}
+          style={{ filter: `drop-shadow(0 0 3px ${C[S.LCX]}66)` }}
+        />
+        {/* Slice edge line */}
+        {slicePercent > 0.04 && slicePercent < 0.97 && (
+          <line
+            x1={clipPct * 4} y1={100} x2={clipPct * 4} y2={420}
+            stroke="rgba(225,29,72,0.65)" strokeWidth="2"
+            strokeDasharray="5,3"
+            style={{ filter: 'drop-shadow(0 0 5px rgba(225,29,72,0.8))' }}
+          />
+        )}
+      </svg>
+    </div>
   );
 }
 
