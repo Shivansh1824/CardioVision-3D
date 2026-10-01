@@ -1,470 +1,542 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Info } from 'lucide-react';
+import { Eye, Layers, ZoomIn, ZoomOut, Activity, Droplets } from 'lucide-react';
 
 const STATUS = {
-  normal:   { color: '#10b981', glow: 'rgba(16,185,129,0.8)',  label: 'Normal  (<50%)',   pulse: '3s'   },
-  moderate: { color: '#f59e0b', glow: 'rgba(245,158,11,0.9)', label: 'Moderate (50–69%)', pulse: '1.8s' },
-  critical: { color: '#ef4444', glow: 'rgba(239,68,68,1.0)',  label: 'Critical (≥70%)',   pulse: '0.7s' },
-};
-
-const VESSEL_INFO = {
-  LAD: 'LAD — Anterior wall & apex. Primary culprit in anterior STEMI. The "Widowmaker" artery.',
-  LCX: 'LCX — Posterolateral left ventricle & obtuse marginal branches. AV groove supply.',
-  RCA: 'RCA — Right ventricle, inferior wall, SA node & AV conduction system.',
+  normal:   { color: '#059669', bg: '#d1fae5', label: 'Clear Flow (<50% Stenosis)',   badge: 'bg-emerald-100 text-emerald-800 border-emerald-300' },
+  moderate: { color: '#d97706', bg: '#fef3c7', label: 'Narrowed (50–69% Stenosis)',  badge: 'bg-amber-100 text-amber-800 border-amber-300' },
+  critical: { color: '#e11d48', bg: '#ffe4e6', label: 'Severe Blockage (≥70%)',      badge: 'bg-rose-100 text-rose-800 border-rose-300' },
 };
 
 export default function AnatomicalHeartVisualizer({
-  vesselStates = { LAD: 'normal', LCX: 'moderate', RCA: 'normal' },
+  vesselStates = { LAD: 'moderate', LCX: 'normal', RCA: 'critical' },
   selectedArtery = 'LAD',
   onSelectArtery = () => {},
 }) {
-  const [hovered, setHovered] = useState(null);
+  // Modes: 'coronary' (surface arteries) | 'chambers' (internal cross-section) | 'flow' (animated blood circulation)
+  const [activeLayer, setActiveLayer] = useState('coronary');
+  const [zoomLevel, setZoomLevel] = useState(1);
+  const [hoveredPart, setHoveredPart] = useState(null);
 
-  const lad = STATUS[vesselStates.LAD] || STATUS.normal;
-  const lcx = STATUS[vesselStates.LCX] || STATUS.normal;
-  const rca = STATUS[vesselStates.RCA] || STATUS.normal;
-  const active = hovered || selectedArtery;
+  const ladStatus = STATUS[vesselStates.LAD] || STATUS.normal;
+  const lcxStatus = STATUS[vesselStates.LCX] || STATUS.normal;
+  const rcaStatus = STATUS[vesselStates.RCA] || STATUS.normal;
 
-  const glowColor =
-    active === 'LAD' ? lad.glow : active === 'LCX' ? lcx.glow : rca.glow;
+  const currentArteryStatus =
+    selectedArtery === 'LAD' ? ladStatus : selectedArtery === 'LCX' ? lcxStatus : rcaStatus;
 
   return (
-    <div className="relative w-full rounded-3xl overflow-hidden bg-gradient-to-b from-slate-950 via-[#0a0316] to-slate-950 border border-white/10 shadow-2xl backdrop-blur-xl p-4 sm:p-5">
+    <div className="relative w-full rounded-3xl bg-gradient-to-b from-white via-rose-50/30 to-slate-50 border border-slate-200/90 shadow-xl overflow-hidden p-5 sm:p-6 transition-all">
 
-      {/* ── HUD bar ── */}
-      <div className="flex items-center justify-between pb-3 mb-1 border-b border-white/10 font-mono text-xs">
+      {/* Top HUD: Mode Selector & Clinical Telemetry */}
+      <div className="flex flex-wrap items-center justify-between gap-3 pb-4 mb-2 border-b border-slate-200 text-xs">
         <div className="flex items-center gap-2">
-          <span className="relative flex h-2.5 w-2.5">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75" />
-            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500" />
-          </span>
-          <span className="text-slate-300 font-semibold tracking-wide">Anatomical Digital Twin</span>
-          <span className="text-slate-600">|</span>
-          <span className="text-emerald-400 font-bold">72 BPM</span>
+          <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-rose-100/80 border border-rose-200 text-rose-700 font-semibold">
+            <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+            <span>72 BPM Cardiac Rhythm</span>
+          </div>
+          <span className="text-slate-400">|</span>
+          <span className="text-slate-600 font-medium">Anatomical Human Heart</span>
         </div>
-        <span className="text-[10px] text-slate-500">Coronary Artery Tree • Dual-Ventricle</span>
+
+        {/* View Layer Selector */}
+        <div className="inline-flex p-1 rounded-xl bg-slate-100 border border-slate-200 text-xs font-semibold">
+          <button
+            onClick={() => setActiveLayer('coronary')}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              activeLayer === 'coronary'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Coronary Arteries
+          </button>
+          <button
+            onClick={() => setActiveLayer('chambers')}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              activeLayer === 'chambers'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Chambers &amp; Valves
+          </button>
+          <button
+            onClick={() => setActiveLayer('flow')}
+            className={`px-3 py-1 rounded-lg transition-all cursor-pointer ${
+              activeLayer === 'flow'
+                ? 'bg-white text-slate-900 shadow-xs'
+                : 'text-slate-600 hover:text-slate-900'
+            }`}
+          >
+            Blood Circulation
+          </button>
+        </div>
       </div>
 
-      {/* ── Canvas ── */}
-      <div className="relative w-full flex items-center justify-center overflow-hidden" style={{ height: '460px' }}>
+      {/* Main Interactive Stage */}
+      <div className="relative w-full flex items-center justify-center min-h-[460px] select-none overflow-hidden">
+        
+        {/* Floating Zoom & Controls Widget */}
+        <div className="absolute top-2 right-2 z-20 flex flex-col gap-1.5 bg-white/90 backdrop-blur-md p-1.5 rounded-xl border border-slate-200 shadow-sm">
+          <button
+            onClick={() => setZoomLevel((z) => Math.min(1.4, z + 0.15))}
+            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            title="Zoom In"
+            aria-label="Zoom In"
+          >
+            <ZoomIn className="w-4 h-4" />
+          </button>
+          <button
+            onClick={() => setZoomLevel((z) => Math.max(0.85, z - 0.15))}
+            className="p-1.5 rounded-lg text-slate-600 hover:text-slate-900 hover:bg-slate-100 transition-colors"
+            title="Zoom Out"
+            aria-label="Zoom Out"
+          >
+            <ZoomOut className="w-4 h-4" />
+          </button>
+        </div>
 
-        {/* Ambient glow behind heart */}
-        <div
-          className="absolute rounded-full blur-3xl opacity-25 pointer-events-none transition-all duration-700"
-          style={{ width: 280, height: 280, background: glowColor }}
-        />
-
-        {/* Pulsing heartbeat contraction */}
+        {/* Dynamic Anatomical Heart SVG Model with Beating Systole/Diastole Motion */}
         <motion.div
-          className="relative w-full max-w-[400px] flex items-center justify-center"
-          style={{ aspectRatio: '4/5' }}
-          animate={{ scale: [1, 1.025, 0.995, 1.03, 1] }}
-          transition={{ duration: 1.0, repeat: Infinity, ease: [0.22, 1, 0.36, 1] }}
+          className="relative w-full max-w-[440px] flex items-center justify-center transition-transform duration-300"
+          style={{ transform: `scale(${zoomLevel})` }}
+          animate={{
+            scale: [zoomLevel, zoomLevel * 1.025, zoomLevel * 0.995, zoomLevel * 1.028, zoomLevel],
+          }}
+          transition={{
+            duration: 0.92,
+            repeat: Infinity,
+            ease: [0.22, 1, 0.36, 1],
+          }}
         >
           <svg
-            viewBox="0 0 520 640"
-            className="w-full h-full select-none"
-            style={{ overflow: 'visible', filter: 'drop-shadow(0 20px 40px rgba(0,0,0,0.7))' }}
+            viewBox="0 0 500 580"
+            className="w-full h-auto drop-shadow-2xl overflow-visible"
           >
             <defs>
-              {/* ── Radial gradients for realistic myocardial muscle depth ── */}
-              <radialGradient id="lvGrad" cx="55%" cy="60%" r="65%">
-                <stop offset="0%"   stopColor="#c0273c" />
-                <stop offset="30%"  stopColor="#9b1d2f" />
-                <stop offset="65%"  stopColor="#6b1020" />
-                <stop offset="100%" stopColor="#2c0410" />
+              {/* Muscle tissue gradient (Myocardium) */}
+              <radialGradient id="myoGrad" cx="45%" cy="55%" r="60%">
+                <stop offset="0%" stopColor="#e11d48" />
+                <stop offset="45%" stopColor="#be123c" />
+                <stop offset="80%" stopColor="#9f1239" />
+                <stop offset="100%" stopColor="#4c0519" />
               </radialGradient>
 
-              <radialGradient id="rvGrad" cx="40%" cy="50%" r="60%">
-                <stop offset="0%"   stopColor="#a82030" />
-                <stop offset="50%"  stopColor="#7a1522" />
-                <stop offset="100%" stopColor="#300510" />
+              {/* Internal Chamber Depth */}
+              <radialGradient id="chamberDeep" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stopColor="#881337" />
+                <stop offset="100%" stopColor="#310511" />
               </radialGradient>
 
-              <radialGradient id="laGrad" cx="60%" cy="45%" r="55%">
-                <stop offset="0%"   stopColor="#b82a3a" />
-                <stop offset="100%" stopColor="#4a0e18" />
-              </radialGradient>
-
-              <radialGradient id="raGrad" cx="40%" cy="45%" r="55%">
-                <stop offset="0%"   stopColor="#a81c2c" />
-                <stop offset="100%" stopColor="#3c0c14" />
-              </radialGradient>
-
-              <linearGradient id="aortaGrad" x1="0%" y1="100%" x2="60%" y2="0%">
-                <stop offset="0%"   stopColor="#dc2626" />
-                <stop offset="50%"  stopColor="#ef4444" />
-                <stop offset="100%" stopColor="#b91c1c" />
+              {/* Aorta Arterial Blood Gradient */}
+              <linearGradient id="aortaArch" x1="0%" y1="100%" x2="60%" y2="0%">
+                <stop offset="0%" stopColor="#e11d48" />
+                <stop offset="50%" stopColor="#f43f5e" />
+                <stop offset="100%" stopColor="#be123c" />
               </linearGradient>
 
-              <linearGradient id="paGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                <stop offset="0%"   stopColor="#3b82f6" />
-                <stop offset="100%" stopColor="#1e40af" />
+              {/* Pulmonary Artery (Deoxygenated blue) */}
+              <linearGradient id="pulmonaryBlue" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#0284c7" />
+                <stop offset="60%" stopColor="#0369a1" />
+                <stop offset="100%" stopColor="#075985" />
               </linearGradient>
 
-              <linearGradient id="svcGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                <stop offset="0%"   stopColor="#2563eb" />
-                <stop offset="100%" stopColor="#1e3a8a" />
+              {/* Vena Cava (Deoxygenated venous blue) */}
+              <linearGradient id="venaCava" x1="0%" y1="0%" x2="0%" y2="100%">
+                <stop offset="0%" stopColor="#38bdf8" />
+                <stop offset="100%" stopColor="#0284c7" />
               </linearGradient>
 
-              {/* ── Glow filters per vessel ── */}
-              <filter id="glowLAD" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={lad.color} floodOpacity="1" />
-              </filter>
-              <filter id="glowLCX" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={lcx.color} floodOpacity="1" />
-              </filter>
-              <filter id="glowRCA" x="-30%" y="-30%" width="160%" height="160%">
-                <feDropShadow dx="0" dy="0" stdDeviation="5" floodColor={rca.color} floodOpacity="1" />
-              </filter>
-              <filter id="vesselGlow">
-                <feGaussianBlur stdDeviation="2" result="blur" />
+              {/* Valve White Pearlescent */}
+              <linearGradient id="valveGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+                <stop offset="0%" stopColor="#ffffff" />
+                <stop offset="100%" stopColor="#e2e8f0" />
+              </linearGradient>
+
+              {/* Drop Shadows */}
+              <filter id="softGlow" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="4" result="blur" />
                 <feComposite in="SourceGraphic" in2="blur" operator="over" />
               </filter>
             </defs>
 
-            {/* ================================================================
-                LAYER 1 — GREAT VESSELS (behind chambers)
-                ================================================================ */}
-
-            {/* Superior Vena Cava — runs inferiorly into right atrium */}
-            <path
-              d="M178,68 C176,42 196,30 206,58 L214,172 C200,178 186,177 178,170 Z"
-              fill="url(#svcGrad)"
-              opacity="0.88"
-            />
-            {/* Inferior Vena Cava stub */}
-            <path
-              d="M178,420 C166,440 168,460 176,468 L196,468 C200,460 200,440 192,420 Z"
-              fill="url(#svcGrad)"
-              opacity="0.6"
-            />
-
-            {/* Aortic root + ascending aorta */}
-            <path
-              d="M242,168 C240,130 250,105 272,95 C296,84 324,88 342,110 C360,132 355,168 340,185 L316,180 C322,162 320,140 305,130 C288,118 270,124 265,148 L252,175 Z"
-              fill="url(#aortaGrad)"
-              filter="drop-shadow(0 4px 12px rgba(220,38,38,0.35))"
-            />
-            {/* Aortic arch — the characteristic looping arch */}
-            <path
-              d="M342,110 C360,88 375,70 385,55 C390,48 382,38 374,40 L358,44 C350,60 338,72 330,82 L318,78 C326,65 340,50 346,38 L360,34 C376,30 398,46 390,62 C382,76 368,94 352,112 Z"
-              fill="url(#aortaGrad)"
-              opacity="0.85"
-            />
-            {/* Brachiocephalic trunk */}
-            <path d="M354,44 L360,5 L376,8 L368,46 Z" fill="url(#aortaGrad)" opacity="0.9" />
-            {/* Left common carotid */}
-            <path d="M372,40 L380,4 L392,6 L384,42 Z" fill="url(#aortaGrad)" opacity="0.85" />
-            {/* Left subclavian */}
-            <path d="M388,48 L400,16 L412,20 L400,54 Z" fill="url(#aortaGrad)" opacity="0.8" />
-
-            {/* Pulmonary trunk — anterior to aorta, crosses left */}
-            <path
-              d="M250,182 C248,158 260,140 280,135 C305,128 330,140 332,162 C335,178 320,192 300,198 L278,220 C264,212 252,200 250,182 Z"
-              fill="url(#paGrad)"
-              opacity="0.9"
-            />
-            {/* Right pulmonary artery */}
-            <path d="M332,162 C352,155 372,160 380,172 L375,186 C362,176 348,170 330,176 Z" fill="url(#paGrad)" opacity="0.8" />
-            {/* Left pulmonary artery */}
-            <path d="M298,135 C295,114 285,98 270,90 L260,98 C272,106 282,122 285,138 Z" fill="url(#paGrad)" opacity="0.8" />
-
-            {/* ================================================================
-                LAYER 2 — CARDIAC CHAMBERS (authentic morphology)
-                The heart is oblique: apex points infero-laterally to the left.
-                Right ventricle is anterior/superior; LV is posterior/inferior.
-                ================================================================ */}
-
-            {/* Right Atrium — right side, behind SVC */}
-            <path
-              d="M152,195 C118,215 112,270 120,305 C128,338 155,355 185,352 C190,330 194,295 196,258 C198,222 185,196 152,195 Z"
-              fill="url(#raGrad)"
-              stroke="#3a0810"
-              strokeWidth="1.5"
-            />
-            {/* Right auricle (ear-like appendage) */}
-            <path
-              d="M152,195 C138,185 128,180 120,190 C112,200 116,218 130,220 C140,220 148,210 152,195 Z"
-              fill="url(#raGrad)"
-              opacity="0.8"
-            />
-
-            {/* Left Atrium — posterior, mostly hidden; auricle visible left of PA */}
-            <path
-              d="M335,205 C360,215 375,255 368,290 C360,318 338,332 316,326 C310,300 308,265 310,230 Z"
-              fill="url(#laGrad)"
-              stroke="#3a0c18"
-              strokeWidth="1.5"
-            />
-            {/* Left auricle */}
-            <path
-              d="M260,190 C248,175 238,172 232,182 C226,196 236,215 250,218 C258,218 264,205 260,190 Z"
-              fill="url(#laGrad)"
-              opacity="0.85"
-            />
-
-            {/* Right Ventricle — thin-walled crescent wrapping anterior LV */}
-            <path
-              d="M185,310 C168,348 170,408 196,460 C210,488 228,508 250,522 C248,470 246,390 248,308 C225,304 202,304 185,310 Z"
-              fill="url(#rvGrad)"
-              stroke="#420c18"
-              strokeWidth="1.8"
-            />
-
-            {/* Left Ventricle — dominant chamber, conical, thick walls */}
-            <path
-              d="M248,308 C246,390 248,470 250,522 C255,534 264,558 278,570 C286,576 296,572 308,554 C340,495 372,415 370,335 C368,302 350,284 326,284 C300,284 272,290 248,308 Z"
-              fill="url(#lvGrad)"
-              stroke="#580e20"
-              strokeWidth="2.2"
-            />
-
-            {/* Interventricular groove — separating RV from LV */}
-            <path
-              d="M248,308 Q254,415 278,570"
-              fill="none"
-              stroke="#1a0208"
-              strokeWidth="10"
-              opacity="0.85"
-            />
-            {/* Muscular ridge highlight */}
-            <path
-              d="M249,308 Q255,415 279,570"
-              fill="none"
-              stroke="rgba(255,60,60,0.15)"
-              strokeWidth="3"
-            />
-
-            {/* Anterior interventricular vein (subtle blue) */}
-            <path
-              d="M252,315 Q258,420 282,570"
-              fill="none"
-              stroke="#1e3a8a"
-              strokeWidth="2.5"
-              opacity="0.4"
-            />
-
-            {/* ================================================================
-                LAYER 3 — CORONARY ARTERIES (LAD, LCX, RCA)
-                ================================================================ */}
-
-            {/* ── RCA: Right Coronary Artery ── */}
-            <g
-              onClick={() => onSelectArtery('RCA')}
-              onMouseEnter={() => setHovered('RCA')}
-              onMouseLeave={() => setHovered(null)}
-              className="cursor-pointer"
-            >
-              {/* Main trunk — runs right AV groove */}
+            {/* 1. SUPERIOR & INFERIOR VENA CAVA (Right Venous Return) */}
+            <g className="vena-cava-group" onMouseEnter={() => setHoveredPart('Vena Cava')} onMouseLeave={() => setHoveredPart(null)}>
+              {/* Superior Vena Cava */}
               <path
-                d="M220,230 C204,252 188,280 182,318 C176,356 182,400 204,445 C212,462 224,480 238,496"
-                fill="none"
-                stroke={rca.color}
-                strokeWidth={active === 'RCA' ? 8 : 5}
-                strokeLinecap="round"
-                filter="url(#glowRCA)"
-                className="transition-all duration-300"
+                d="M140 60 C140 100 145 150 155 185 L185 180 C180 140 175 95 175 60 Z"
+                fill="url(#venaCava)"
+                stroke="#0369a1"
+                strokeWidth="1.5"
               />
-              {/* Acute marginal branch */}
+              {/* Inferior Vena Cava */}
               <path
-                d="M182,340 C166,362 154,390 158,412"
-                fill="none"
-                stroke={rca.color}
-                strokeWidth={active === 'RCA' ? 4 : 2.5}
-                strokeLinecap="round"
-                opacity="0.8"
+                d="M175 420 C170 450 165 490 160 520 L195 520 C200 485 202 450 200 420 Z"
+                fill="url(#venaCava)"
+                stroke="#0369a1"
+                strokeWidth="1.5"
               />
-              {/* Posterior descending artery */}
+            </g>
+
+            {/* 2. AORTA ARCH & 3 BRACHIOCEPHALIC ARTERIAL BRANCHES */}
+            <g className="aorta-group" onMouseEnter={() => setHoveredPart('Aortic Arch')} onMouseLeave={() => setHoveredPart(null)}>
+              {/* 3 Upper branches: Brachiocephalic, Left Common Carotid, Left Subclavian */}
+              <path d="M225 45 L225 95 L242 98 L242 45 Z" fill="url(#aortaArch)" stroke="#9f1239" strokeWidth="1.2" />
+              <path d="M255 35 L255 95 L272 98 L272 35 Z" fill="url(#aortaArch)" stroke="#9f1239" strokeWidth="1.2" />
+              <path d="M285 45 L285 105 L302 110 L302 45 Z" fill="url(#aortaArch)" stroke="#9f1239" strokeWidth="1.2" />
+
+              {/* Massive Aortic Arch curving across behind pulmonary trunk */}
               <path
-                d="M240,496 C248,510 252,530 248,548"
-                fill="none"
-                stroke={rca.color}
-                strokeWidth={active === 'RCA' ? 3 : 2}
-                strokeLinecap="round"
-                opacity="0.75"
-              />
-              {/* Blood flow animation */}
-              <path
-                d="M220,230 C204,252 188,280 182,318 C176,356 182,400 204,445 C212,462 224,480 238,496"
-                fill="none"
-                stroke="white"
+                d="M205 180 C195 120 220 75 270 75 C335 75 365 125 360 190 C340 190 325 180 320 165 C320 120 300 105 270 105 C240 105 228 130 235 180 Z"
+                fill="url(#aortaArch)"
+                stroke="#9f1239"
                 strokeWidth="2"
-                strokeDasharray="8 18"
-                strokeLinecap="round"
-                opacity="0.75"
-              >
-                <animate attributeName="stroke-dashoffset" from="0" to="-52" dur={rca.pulse} repeatCount="indefinite" />
-              </path>
+              />
             </g>
 
-            {/* ── LCX: Left Circumflex ── */}
-            <g
-              onClick={() => onSelectArtery('LCX')}
-              onMouseEnter={() => setHovered('LCX')}
-              onMouseLeave={() => setHovered(null)}
-              className="cursor-pointer"
-            >
-              {/* Courses left AV groove posteriorly */}
+            {/* 3. PULMONARY TRUNK & LEFT/RIGHT PULMONARY ARTERIES */}
+            <g className="pulmonary-trunk-group" onMouseEnter={() => setHoveredPart('Pulmonary Artery Trunk')} onMouseLeave={() => setHoveredPart(null)}>
+              {/* Left Branch */}
               <path
-                d="M285,248 C316,252 348,268 368,302 C382,328 378,368 360,404"
-                fill="none"
-                stroke={lcx.color}
-                strokeWidth={active === 'LCX' ? 7 : 4.5}
-                strokeLinecap="round"
-                filter="url(#glowLCX)"
-                className="transition-all duration-300"
+                d="M280 180 C320 165 370 170 410 185 L405 210 C370 200 330 195 285 205 Z"
+                fill="url(#pulmonaryBlue)"
+                stroke="#075985"
+                strokeWidth="1.5"
               />
-              {/* Obtuse marginal branch (OM1) */}
+              {/* Right Branch */}
               <path
-                d="M350,275 C368,298 378,335 372,360"
-                fill="none"
-                stroke={lcx.color}
-                strokeWidth={active === 'LCX' ? 4 : 2.5}
-                strokeLinecap="round"
-                opacity="0.8"
+                d="M190 190 C150 180 115 185 85 195 L90 220 C120 210 155 205 195 210 Z"
+                fill="url(#pulmonaryBlue)"
+                stroke="#075985"
+                strokeWidth="1.5"
               />
-              {/* Blood flow animation */}
+              {/* Central Trunk crossing over aorta */}
               <path
-                d="M285,248 C316,252 348,268 368,302 C382,328 378,368 360,404"
-                fill="none"
-                stroke="white"
+                d="M215 240 C210 195 240 165 285 165 C310 165 330 180 330 215 C330 245 300 255 255 255 Z"
+                fill="url(#pulmonaryBlue)"
+                stroke="#075985"
                 strokeWidth="2"
-                strokeDasharray="8 18"
-                strokeLinecap="round"
-                opacity="0.75"
-              >
-                <animate attributeName="stroke-dashoffset" from="0" to="-52" dur={lcx.pulse} repeatCount="indefinite" />
-              </path>
+              />
             </g>
 
-            {/* ── LAD: Left Anterior Descending ── */}
-            <g
-              onClick={() => onSelectArtery('LAD')}
-              onMouseEnter={() => setHovered('LAD')}
-              onMouseLeave={() => setHovered(null)}
-              className="cursor-pointer"
-            >
-              {/* Runs anterior interventricular groove to apex */}
-              <path
-                d="M274,245 C270,292 270,352 274,412 C280,468 292,514 308,558"
-                fill="none"
-                stroke={lad.color}
-                strokeWidth={active === 'LAD' ? 9 : 6}
-                strokeLinecap="round"
-                filter="url(#glowLAD)"
-                className="transition-all duration-300"
-              />
-              {/* First diagonal branch (D1) */}
-              <path
-                d="M272,318 C292,346 316,374 326,410"
-                fill="none"
-                stroke={lad.color}
-                strokeWidth={active === 'LAD' ? 4.5 : 3}
-                strokeLinecap="round"
-                opacity="0.85"
-              />
-              {/* Second diagonal branch (D2) */}
-              <path
-                d="M276,400 C298,432 312,464 318,496"
-                fill="none"
-                stroke={lad.color}
-                strokeWidth={active === 'LAD' ? 3.5 : 2.2}
-                strokeLinecap="round"
-                opacity="0.8"
-              />
-              {/* Septal perforators */}
-              <path
-                d="M272,350 C256,365 244,382 240,398"
-                fill="none"
-                stroke={lad.color}
-                strokeWidth="2.5"
-                strokeLinecap="round"
-                opacity="0.6"
-              />
-              {/* Blood flow animation */}
-              <path
-                d="M274,245 C270,292 270,352 274,412 C280,468 292,514 308,558"
-                fill="none"
-                stroke="white"
-                strokeWidth="2.5"
-                strokeDasharray="10 22"
-                strokeLinecap="round"
-                opacity="0.85"
-              >
-                <animate attributeName="stroke-dashoffset" from="0" to="-64" dur={lad.pulse} repeatCount="indefinite" />
-              </path>
-            </g>
+            {/* 4. MAIN VENTRICULAR & ATRIAL MYOCARDIUM BODY */}
+            {activeLayer !== 'chambers' ? (
+              /* Surface Muscle Wall with Anatomical Contours */
+              <g className="myocardium-surface">
+                {/* Right Atrium Body */}
+                <path
+                  d="M150 185 C115 200 100 250 115 310 C130 355 165 385 180 395 C175 320 165 240 150 185 Z"
+                  fill="url(#myoGrad)"
+                  stroke="#4c0519"
+                  strokeWidth="2"
+                />
 
-            {/* ================================================================
-                LAYER 4 — ANATOMICAL PIN LABELS
-                ================================================================ */}
-            {/* LAD pin */}
-            <g transform="translate(306, 368)">
-              <circle r="15" fill="rgba(10,15,30,0.95)" stroke={lad.color} strokeWidth="2.5" filter="url(#glowLAD)" />
-              <text x="0" y="4" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="bold" fontFamily="monospace">LAD</text>
-            </g>
-            {/* LCX pin */}
-            <g transform="translate(378, 320)">
-              <circle r="15" fill="rgba(10,15,30,0.95)" stroke={lcx.color} strokeWidth="2.5" filter="url(#glowLCX)" />
-              <text x="0" y="4" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="bold" fontFamily="monospace">LCX</text>
-            </g>
-            {/* RCA pin */}
-            <g transform="translate(160, 360)">
-              <circle r="15" fill="rgba(10,15,30,0.95)" stroke={rca.color} strokeWidth="2.5" filter="url(#glowRCA)" />
-              <text x="0" y="4" textAnchor="middle" fill="#fff" fontSize="9.5" fontWeight="bold" fontFamily="monospace">RCA</text>
-            </g>
+                {/* Left Atrium Auricle */}
+                <path
+                  d="M335 200 C370 205 405 240 395 280 C380 295 355 300 340 300 Z"
+                  fill="url(#myoGrad)"
+                  stroke="#4c0519"
+                  strokeWidth="2"
+                />
 
-            {/* Apex label */}
-            <text x="310" y="590" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="monospace" fontStyle="italic">Cardiac Apex</text>
-            {/* Base label */}
-            <text x="285" y="82" textAnchor="middle" fill="rgba(255,255,255,0.3)" fontSize="9" fontFamily="monospace" fontStyle="italic">Cardiac Base (Great Vessels)</text>
+                {/* Left & Right Ventricles Muscular Apex Cone */}
+                <path
+                  d="M175 380 C155 410 170 450 205 480 C245 515 270 545 285 550 C305 540 350 490 390 420 C425 350 420 290 380 260 C340 235 270 245 230 260 C185 300 175 350 175 380 Z"
+                  fill="url(#myoGrad)"
+                  stroke="#4c0519"
+                  strokeWidth="2.5"
+                />
+
+                {/* Anatomical Muscle Striations / Shading Creases */}
+                <path
+                  d="M205 390 C220 440 250 480 280 520"
+                  stroke="rgba(76, 5, 25, 0.45)"
+                  strokeWidth="4"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+                <path
+                  d="M340 310 C355 360 365 410 350 460"
+                  stroke="rgba(76, 5, 25, 0.35)"
+                  strokeWidth="3.5"
+                  strokeLinecap="round"
+                  fill="none"
+                />
+              </g>
+            ) : (
+              /* Internal Chambers & Valves Cutaway View (Wikimedia Anatomy) */
+              <g className="heart-chambers-internal">
+                {/* Thick Cut Myocardium Wall Outer Border */}
+                <path
+                  d="M140 200 C95 240 100 320 120 370 C155 450 240 540 285 550 C320 540 405 460 415 360 C425 280 390 220 340 200 Z"
+                  fill="#9f1239"
+                  stroke="#4c0519"
+                  strokeWidth="6"
+                />
+
+                {/* Right Ventricle Cavity */}
+                <path
+                  d="M170 330 C155 370 175 425 210 465 C235 455 245 420 245 350 C225 330 195 320 170 330 Z"
+                  fill="url(#chamberDeep)"
+                />
+
+                {/* Thick Interventricular Septum (Wall dividing ventricles) */}
+                <path
+                  d="M245 350 C245 425 240 470 280 535 C285 530 295 480 290 400 C285 350 270 340 245 350 Z"
+                  fill="#881337"
+                  stroke="#4c0519"
+                  strokeWidth="2"
+                />
+
+                {/* Left Ventricle Cavity (Deep, thick muscular chamber) */}
+                <path
+                  d="M295 400 C300 475 320 480 345 450 C375 410 380 350 355 330 C335 340 310 355 295 400 Z"
+                  fill="url(#chamberDeep)"
+                />
+
+                {/* Tricuspid Valve Flaps (Right side) */}
+                <path d="M185 320 C195 340 215 340 225 325" stroke="url(#valveGrad)" strokeWidth="4" strokeLinecap="round" fill="none" />
+                {/* Chordae Tendineae (Heart strings) */}
+                <path d="M195 335 L190 370 M215 335 L220 370" stroke="#f1f5f9" strokeWidth="1.2" opacity="0.8" />
+
+                {/* Mitral / Bicuspid Valve Flaps (Left side) */}
+                <path d="M320 325 C335 345 355 340 365 325" stroke="url(#valveGrad)" strokeWidth="4" strokeLinecap="round" fill="none" />
+                <path d="M330 340 L335 385 M350 340 L345 385" stroke="#f1f5f9" strokeWidth="1.2" opacity="0.8" />
+
+                {/* Chamber Labels in HUD */}
+                <text x="175" y="380" fill="#93c5fd" fontSize="11" fontWeight="bold" fontFamily="monospace">R. Ventricle</text>
+                <text x="315" y="390" fill="#fda4af" fontSize="11" fontWeight="bold" fontFamily="monospace">L. Ventricle</text>
+                <text x="160" y="270" fill="#93c5fd" fontSize="11" fontWeight="bold" fontFamily="monospace">R. Atrium</text>
+                <text x="325" y="270" fill="#fda4af" fontSize="11" fontWeight="bold" fontFamily="monospace">L. Atrium</text>
+              </g>
+            )}
+
+            {/* 5. CORONARY ARTERY TREE (LAD, LCX, RCA) */}
+            {activeLayer !== 'chambers' && (
+              <g className="coronary-artery-tree">
+
+                {/* RCA: Right Coronary Artery — Runs down right atrioventricular groove */}
+                <g
+                  className="cursor-pointer group"
+                  onClick={() => onSelectArtery('RCA')}
+                  onMouseEnter={() => setHoveredPart('Right Coronary Artery (RCA)')}
+                  onMouseLeave={() => setHoveredPart(null)}
+                >
+                  {/* RCA Glow Halo */}
+                  <path
+                    d="M210 260 C185 285 175 320 180 375 C185 415 195 440 220 465"
+                    stroke={rcaStatus.color}
+                    strokeWidth={selectedArtery === 'RCA' ? "12" : "7"}
+                    strokeOpacity={selectedArtery === 'RCA' ? "0.4" : "0.2"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Main RCA Branch */}
+                  <path
+                    d="M210 260 C185 285 175 320 180 375 C185 415 195 440 220 465"
+                    stroke={rcaStatus.color}
+                    strokeWidth={selectedArtery === 'RCA' ? "4.5" : "3.5"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Acute Marginal Branch of RCA */}
+                  <path
+                    d="M178 350 C160 365 145 385 140 405"
+                    stroke={rcaStatus.color}
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.85"
+                  />
+                </g>
+
+                {/* LAD: Left Anterior Descending — The "Widowmaker" running down anterior groove to apex */}
+                <g
+                  className="cursor-pointer group"
+                  onClick={() => onSelectArtery('LAD')}
+                  onMouseEnter={() => setHoveredPart('Left Anterior Descending Artery (LAD)')}
+                  onMouseLeave={() => setHoveredPart(null)}
+                >
+                  {/* LAD Glow Halo */}
+                  <path
+                    d="M275 255 C265 295 260 340 262 390 C265 445 272 490 282 540"
+                    stroke={ladStatus.color}
+                    strokeWidth={selectedArtery === 'LAD' ? "14" : "8"}
+                    strokeOpacity={selectedArtery === 'LAD' ? "0.45" : "0.22"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Main LAD Stem */}
+                  <path
+                    d="M275 255 C265 295 260 340 262 390 C265 445 272 490 282 540"
+                    stroke={ladStatus.color}
+                    strokeWidth={selectedArtery === 'LAD' ? "5" : "3.8"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Diagonal Branches D1 & D2 */}
+                  <path
+                    d="M264 340 C285 360 310 375 330 385"
+                    stroke={ladStatus.color}
+                    strokeWidth="2.4"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.9"
+                  />
+                  <path
+                    d="M265 415 C285 435 305 450 320 460"
+                    stroke={ladStatus.color}
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.8"
+                  />
+                  {/* Septal Perforators */}
+                  <path
+                    d="M262 370 C245 380 230 385 220 390"
+                    stroke={ladStatus.color}
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.75"
+                  />
+                </g>
+
+                {/* LCX: Left Circumflex — Curves around left atrioventricular groove to lateral wall */}
+                <g
+                  className="cursor-pointer group"
+                  onClick={() => onSelectArtery('LCX')}
+                  onMouseEnter={() => setHoveredPart('Left Circumflex Artery (LCX)')}
+                  onMouseLeave={() => setHoveredPart(null)}
+                >
+                  {/* LCX Glow Halo */}
+                  <path
+                    d="M290 260 C325 270 360 290 380 320 C395 350 395 390 385 425"
+                    stroke={lcxStatus.color}
+                    strokeWidth={selectedArtery === 'LCX' ? "12" : "7"}
+                    strokeOpacity={selectedArtery === 'LCX' ? "0.4" : "0.2"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Main LCX Branch */}
+                  <path
+                    d="M290 260 C325 270 360 290 380 320 C395 350 395 390 385 425"
+                    stroke={lcxStatus.color}
+                    strokeWidth={selectedArtery === 'LCX' ? "4.5" : "3.5"}
+                    strokeLinecap="round"
+                    fill="none"
+                  />
+                  {/* Obtuse Marginal (OM1) Branch */}
+                  <path
+                    d="M355 295 C370 330 375 365 370 395"
+                    stroke={lcxStatus.color}
+                    strokeWidth="2.2"
+                    strokeLinecap="round"
+                    fill="none"
+                    opacity="0.85"
+                  />
+                </g>
+
+              </g>
+            )}
+
+            {/* 6. ANIMATED BLOOD CIRCULATION PARTICLES (Flow Mode) */}
+            {activeLayer === 'flow' && (
+              <g className="circulation-flow-particles">
+                {/* Deoxygenated Blood (Venous -> Lungs via Pulmonary) */}
+                <circle cx="160" cy="110" r="4" fill="#38bdf8">
+                  <animate attributeName="cy" values="60;185;240" dur="1.8s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.8s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="280" cy="190" r="4.5" fill="#0284c7">
+                  <animate attributeName="cx" values="240;330;400" dur="1.6s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.6s" repeatCount="indefinite" />
+                </circle>
+
+                {/* Oxygenated Blood (Lungs -> Left Ventricle -> Aorta to Body) */}
+                <circle cx="270" cy="95" r="5" fill="#f43f5e">
+                  <animate attributeName="cy" values="180;100;45" dur="1.4s" repeatCount="indefinite" />
+                  <animate attributeName="cx" values="220;270;285" dur="1.4s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.4s" repeatCount="indefinite" />
+                </circle>
+                <circle cx="265" cy="340" r="4" fill="#e11d48">
+                  <animate attributeName="cy" values="260;370;510" dur="1.5s" repeatCount="indefinite" />
+                  <animate attributeName="opacity" values="0;1;0" dur="1.5s" repeatCount="indefinite" />
+                </circle>
+              </g>
+            )}
+
+            {/* Vessel Interactive Pins */}
+            {activeLayer !== 'chambers' && (
+              <g className="anatomical-pins text-xs font-sans">
+                {/* LAD Pin */}
+                <g onClick={() => onSelectArtery('LAD')} className="cursor-pointer">
+                  <circle cx="264" cy="380" r="7" fill={ladStatus.color} stroke="#ffffff" strokeWidth="2" />
+                  <text x="277" y="384" fill="#0f172a" fontWeight="bold" fontSize="11">LAD</text>
+                </g>
+                {/* LCX Pin */}
+                <g onClick={() => onSelectArtery('LCX')} className="cursor-pointer">
+                  <circle cx="378" cy="320" r="7" fill={lcxStatus.color} stroke="#ffffff" strokeWidth="2" />
+                  <text x="390" y="324" fill="#0f172a" fontWeight="bold" fontSize="11">LCX</text>
+                </g>
+                {/* RCA Pin */}
+                <g onClick={() => onSelectArtery('RCA')} className="cursor-pointer">
+                  <circle cx="180" cy="360" r="7" fill={rcaStatus.color} stroke="#ffffff" strokeWidth="2" />
+                  <text x="148" y="364" fill="#0f172a" fontWeight="bold" fontSize="11">RCA</text>
+                </g>
+              </g>
+            )}
+
           </svg>
         </motion.div>
       </div>
 
-      {/* ── Vessel selector buttons ── */}
-      <div className="grid grid-cols-3 gap-2 pt-4 border-t border-white/10">
-        {[
-          { key: 'LAD', label: 'LAD', full: 'Left Anterior Descending', cfg: lad },
-          { key: 'LCX', label: 'LCX', full: 'Left Circumflex',          cfg: lcx },
-          { key: 'RCA', label: 'RCA', full: 'Right Coronary Artery',     cfg: rca },
-        ].map((v) => {
-          const isActive = active === v.key;
-          return (
-            <button
-              key={v.key}
-              onClick={() => onSelectArtery(v.key)}
-              onMouseEnter={() => setHovered(v.key)}
-              onMouseLeave={() => setHovered(null)}
-              className={`p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
-                isActive
-                  ? 'bg-slate-800/90 border-white/25 shadow-lg'
-                  : 'bg-slate-950/60 border-white/5 hover:border-white/18'
-              }`}
-            >
-              <div className="flex items-center justify-between mb-1">
-                <span className="font-display font-bold text-white text-xs">{v.label}</span>
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: v.cfg.color, boxShadow: `0 0 8px ${v.cfg.color}` }}
-                />
-              </div>
-              <div className="text-[10px] font-mono text-slate-400 truncate">{v.full}</div>
-              <div className="text-[10px] font-bold font-mono mt-0.5" style={{ color: v.cfg.color }}>
-                {v.cfg.label}
-              </div>
-            </button>
-          );
-        })}
+      {/* Bottom Context Panel: Active Vessel or Chamber Info */}
+      <div className="mt-4 pt-4 border-t border-slate-200">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="font-display font-bold text-slate-900 text-sm">
+                {hoveredPart || (
+                  selectedArtery === 'LAD'
+                    ? 'Left Anterior Descending (LAD)'
+                    : selectedArtery === 'LCX'
+                    ? 'Left Circumflex (LCX)'
+                    : 'Right Coronary Artery (RCA)'
+                )}
+              </span>
+              <span className={`text-[11px] font-semibold px-2 py-0.5 rounded-full border ${currentArteryStatus.badge}`}>
+                {currentArteryStatus.label}
+              </span>
+            </div>
+            <p className="text-xs text-slate-600 mt-1">
+              {selectedArtery === 'LAD' && 'Feeds the front wall and apex. Most critical artery for left ventricular pump function.'}
+              {selectedArtery === 'LCX' && 'Feeds the lateral and back walls of the heart. Essential for heart muscle oxygenation.'}
+              {selectedArtery === 'RCA' && 'Feeds the right side of the heart and cardiac pacemaker nodes controlling rhythm.'}
+            </p>
+          </div>
+
+          {/* Quick Vessel Selector Buttons */}
+          <div className="flex items-center gap-1.5 self-start sm:self-auto">
+            {['LAD', 'LCX', 'RCA'].map((v) => (
+              <button
+                key={v}
+                onClick={() => onSelectArtery(v)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  selectedArtery === v
+                    ? 'bg-rose-600 text-white shadow-xs'
+                    : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
+                }`}
+              >
+                {v}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
-      {/* ── Inspector callout ── */}
-      <div className="mt-2.5 p-2.5 rounded-xl bg-slate-950/80 border border-white/5 text-xs flex items-start gap-2">
-        <Info className="w-4 h-4 text-cyan-400 flex-shrink-0 mt-0.5" />
-        <span className="text-slate-300 leading-snug">{VESSEL_INFO[active]}</span>
-      </div>
     </div>
   );
 }

@@ -1,213 +1,197 @@
-import React, { useState, useRef } from 'react';
+import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Stethoscope, Heart, Users, ArrowRight, Brain, FileText, Activity, Shield } from 'lucide-react';
+import { CheckCircle2, Heart, Activity, FileText, ShieldAlert, Sparkles, ArrowRight } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
-const DOCTOR_FEATURES = [
-  { icon: Brain,    label: 'SHAP Attribution',     desc: 'Log-odds waterfall plots decomposing marginal risk per biomarker with feature importance ranking.' },
-  { icon: Activity, label: 'Multi-Vessel Staging',  desc: 'Proportional 0/3 → 3/3 vessel disease classification with triage urgency codes (SVD/DVD/TVD).' },
-  { icon: FileText, label: 'Clinical PDF Report',   desc: 'Official Cardiology Diagnostic Report PDF with physician signature line for medical records.' },
-  { icon: Shield,   label: 'Zero-Leakage Pipeline', desc: 'Calibrated XGBoost + LightGBM ensemble validated on 303-patient UCI #411 cohort. 0.912 AUC.' },
-];
-
-const PATIENT_FEATURES = [
-  { icon: Heart,    label: 'My Heart Twin',         desc: '"Your front heart artery shows high alert ⚠️" — plain English, zero medical jargon.' },
-  { icon: Activity, label: 'Top 3 Risk Drivers',    desc: "Simple, prioritized list of what's most affecting your heart health, not intimidating numbers." },
-  { icon: Brain,    label: '"What-If" Lifestyle',   desc: 'See how a 30-minute daily walk or cutting sodium changes your heart risk in real time.' },
-  { icon: FileText, label: 'Heart Health Passport', desc: 'A simplified take-home summary designed for family members and caregivers to understand.' },
-];
-
 export default function PersonaComparison({ onOpenSignIn }) {
-  const [activeTab, setActiveTab] = useState('both');
   const sectionRef = useRef(null);
 
   useGSAP(
     () => {
-      gsap.from('.persona-header', {
-        y: 35,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.persona-header', start: 'top 85%' },
-      });
-      gsap.from('.persona-card', {
-        y: 45,
-        opacity: 0,
-        duration: 0.75,
-        stagger: 0.15,
-        ease: 'power3.out',
-        scrollTrigger: { trigger: '.persona-cards', start: 'top 80%' },
-      });
+      gsap.fromTo(
+        '.doctor-block',
+        { y: 35, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.doctor-block', start: 'top 85%' } }
+      );
+      gsap.fromTo(
+        '.patient-block',
+        { y: 35, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.patient-block', start: 'top 85%' } }
+      );
     },
     { scope: sectionRef }
   );
 
-  const showDoctor = activeTab === 'both' || activeTab === 'doctor';
-  const showPatient = activeTab === 'both' || activeTab === 'patient';
-
   return (
-    <section id="persona-section" ref={sectionRef} className="py-24 border-t border-white/10 relative overflow-hidden">
+    <div ref={sectionRef} className="space-y-0">
+      
+      {/* ============================================================
+          SECTION 1: FOR CARDIOLOGISTS & CLINICIANS (Dedicated)
+          ============================================================ */}
+      <section id="doctor-section" className="py-20 bg-slate-50/80 border-t border-slate-200">
+        <div className="container-custom">
+          
+          <div className="doctor-block">
+            {/* Header */}
+            <div className="max-w-3xl mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 border border-sky-200 text-sky-800 text-xs font-semibold uppercase mb-3">
+                <Activity className="w-3.5 h-3.5 text-sky-600" />
+                <span>Clinical Practice</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
+                How CardioVision Accelerates Daily Cardiology Practice
+              </h2>
+              <p className="mt-3 text-slate-600 text-base sm:text-lg leading-relaxed">
+                Designed to reduce diagnostic guesswork, triage multi-vessel risk objectively, and help clinical teams make confident catheterization decisions in seconds.
+              </p>
+            </div>
 
-      {/* Ambient background glow blobs */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 rounded-full blur-[120px] opacity-10 pointer-events-none"
-           style={{ background: 'radial-gradient(circle, #06b6d4 0%, transparent 70%)' }} />
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 rounded-full blur-[120px] opacity-10 pointer-events-none"
-           style={{ background: 'radial-gradient(circle, #ef4444 0%, transparent 70%)' }} />
+            {/* 4 Doctor Workflow Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: 'Rapid Pre-Cath Triage',
+                  desc: 'Quickly flags patients who genuinely need urgent invasive catheterization versus those who can be safely managed with outpatient medical therapy.',
+                  tag: 'Triage Efficiency',
+                },
+                {
+                  title: 'Objective 3-Vessel Assessment',
+                  desc: 'Evaluates LAD, LCX, and RCA individually in seconds, giving physicians an immediate anatomical breakdown of regional coronary risk.',
+                  tag: 'Anatomical Precision',
+                },
+                {
+                  title: 'Clear Risk Drivers',
+                  desc: 'Directly shows which specific clinical markers (ECG wave changes, wall motion readings, lipid levels) drove the assessment rating.',
+                  tag: 'Zero Black-Box Guessing',
+                },
+                {
+                  title: 'Instant Clinical Summary',
+                  desc: 'Generates a clean diagnostic summary with coronary findings ready for medical charts, referral letters, and multidisciplinary reviews.',
+                  tag: 'EMR Ready',
+                },
+              ].map((card, i) => (
+                <div
+                  key={i}
+                  className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 inline-block mb-3">
+                      {card.tag}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mb-2">{card.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{card.desc}</p>
+                  </div>
+                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-sky-700 font-semibold">
+                    <CheckCircle2 className="w-3.5 h-3.5" />
+                    <span>Clinical Advantage</span>
+                  </div>
+                </div>
+              ))}
+            </div>
 
-      <div className="container-custom relative z-10">
-
-        {/* ── Section Header ── */}
-        <div className="persona-header text-center max-w-3xl mx-auto mb-12 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-cyan-950/60 border border-cyan-800/50 text-cyan-400 font-mono text-xs font-semibold uppercase">
-            <Users className="w-3.5 h-3.5" />
-            <span>Dual-Persona Experience</span>
-          </div>
-          <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white">
-            Built for <span className="text-gradient-cyan">Cardiologists</span>{' '}
-            &amp; <span className="text-gradient-vivid">Heart Patients</span>
-          </h2>
-          <p className="text-slate-400 text-base sm:text-lg">
-            One synchronized platform. Two completely different, purpose-built experiences.
-          </p>
-
-          {/* Tab selector */}
-          <div className="inline-flex p-1.5 rounded-full bg-slate-900 border border-slate-800 mt-4">
-            {[
-              { id: 'both',    label: 'Side-by-Side' },
-              { id: 'doctor',  label: '🩺 Doctor Only', active: 'bg-gradient-to-r from-cyan-600 to-blue-600 shadow-cyan-500/20' },
-              { id: 'patient', label: '❤️ Patient Only', active: 'bg-gradient-to-r from-red-600 to-rose-600 shadow-red-500/20' },
-            ].map((tab) => (
+            {/* Action Bar */}
+            <div className="mt-8 flex items-center justify-between p-4 rounded-2xl bg-white border border-slate-200">
+              <div className="text-xs text-slate-600">
+                <strong>Clinician Portal:</strong> Review patient cohorts, check vessel risk scores, and download diagnostic summaries.
+              </div>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-5 py-2 rounded-full text-xs sm:text-sm font-semibold transition-all cursor-pointer ${
-                  activeTab === tab.id
-                    ? tab.id === 'both'
-                      ? 'bg-slate-700 text-white shadow-md'
-                      : `${tab.active} text-white shadow-md`
-                    : 'text-slate-400 hover:text-white'
-                }`}
+                onClick={() => onOpenSignIn && onOpenSignIn('doctor')}
+                className="btn-primary-vibrant text-xs py-2 px-4 cursor-pointer"
               >
-                {tab.label}
+                <span>Doctor Portal Access</span>
+                <ArrowRight className="w-3.5 h-3.5" />
               </button>
-            ))}
+            </div>
           </div>
-        </div>
-
-        {/* ── Persona Cards ── */}
-        <div className={`persona-cards grid gap-8 ${activeTab === 'both' ? 'grid-cols-1 lg:grid-cols-2' : 'grid-cols-1 max-w-2xl mx-auto'}`}>
-
-          {/* Doctor Card */}
-          {showDoctor && (
-            <div className="persona-card relative rounded-3xl overflow-hidden border border-cyan-500/25 bg-gradient-to-b from-slate-900/95 via-cyan-950/20 to-slate-950/95 shadow-2xl shadow-cyan-950/40">
-              {/* Top accent bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-cyan-500 via-blue-500 to-cyan-400" />
-
-              <div className="p-8">
-                {/* Card header */}
-                <div className="flex items-center justify-between pb-6 border-b border-slate-800/80">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-cyan-600 to-blue-700 flex items-center justify-center shadow-lg shadow-cyan-600/30">
-                      <Stethoscope className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold font-display text-white">Doctor View</h3>
-                      <p className="text-xs font-mono text-cyan-400">Clinical Decision Support Portal</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-medium bg-cyan-950/80 border border-cyan-700/60 text-cyan-300">
-                    High Precision
-                  </span>
-                </div>
-
-                {/* Feature rows */}
-                <div className="mt-6 space-y-3">
-                  {DOCTOR_FEATURES.map((f, i) => {
-                    const Icon = f.icon;
-                    return (
-                      <div key={i} className="flex gap-3 p-3 rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-cyan-800/40 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-cyan-950/80 border border-cyan-800/50 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-4 h-4 text-cyan-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white">{f.label}</div>
-                          <div className="text-[11px] text-slate-400 leading-snug mt-0.5">{f.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* CTA */}
-                <button
-                  onClick={() => onOpenSignIn && onOpenSignIn('doctor')}
-                  className="mt-7 w-full py-3 rounded-xl bg-gradient-to-r from-cyan-600 to-blue-600 hover:from-cyan-500 hover:to-blue-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-cyan-600/20 group"
-                >
-                  <span>Enter as Cardiologist</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-          )}
-
-          {/* Patient Card */}
-          {showPatient && (
-            <div className="persona-card relative rounded-3xl overflow-hidden border border-red-500/25 bg-gradient-to-b from-slate-900/95 via-rose-950/20 to-slate-950/95 shadow-2xl shadow-red-950/40">
-              {/* Top accent bar */}
-              <div className="h-1 w-full bg-gradient-to-r from-red-500 via-rose-500 to-pink-400" />
-
-              <div className="p-8">
-                {/* Card header */}
-                <div className="flex items-center justify-between pb-6 border-b border-slate-800/80">
-                  <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-red-600 to-rose-700 flex items-center justify-center shadow-lg shadow-red-600/30">
-                      <Heart className="w-6 h-6 text-white fill-white/20" />
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold font-display text-white">Patient View</h3>
-                      <p className="text-xs font-mono text-red-400">My Digital Heart Twin</p>
-                    </div>
-                  </div>
-                  <span className="px-3 py-1 rounded-full text-xs font-mono font-medium bg-red-950/80 border border-red-700/60 text-red-300">
-                    Anxiety-Free
-                  </span>
-                </div>
-
-                {/* Feature rows */}
-                <div className="mt-6 space-y-3">
-                  {PATIENT_FEATURES.map((f, i) => {
-                    const Icon = f.icon;
-                    return (
-                      <div key={i} className="flex gap-3 p-3 rounded-xl bg-slate-950/50 border border-slate-800/60 hover:border-red-800/40 transition-colors">
-                        <div className="w-8 h-8 rounded-lg bg-red-950/80 border border-red-800/50 flex items-center justify-center flex-shrink-0">
-                          <Icon className="w-4 h-4 text-red-400" />
-                        </div>
-                        <div>
-                          <div className="text-xs font-semibold text-white">{f.label}</div>
-                          <div className="text-[11px] text-slate-400 leading-snug mt-0.5">{f.desc}</div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-
-                {/* CTA */}
-                <button
-                  onClick={() => onOpenSignIn && onOpenSignIn('patient')}
-                  className="mt-7 w-full py-3 rounded-xl bg-gradient-to-r from-red-600 to-rose-600 hover:from-red-500 hover:to-rose-500 text-white font-semibold text-sm transition-all flex items-center justify-center gap-2 cursor-pointer shadow-lg shadow-red-600/20 group"
-                >
-                  <span>Enter as Heart Patient</span>
-                  <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-                </button>
-              </div>
-            </div>
-          )}
 
         </div>
-      </div>
-    </section>
+      </section>
+
+      {/* ============================================================
+          SECTION 2: FOR HEART PATIENTS & FAMILIES (Dedicated)
+          ============================================================ */}
+      <section id="patient-section" className="py-20 bg-white border-t border-slate-200">
+        <div className="container-custom">
+          
+          <div className="patient-block">
+            {/* Header */}
+            <div className="max-w-3xl mb-12">
+              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold uppercase mb-3">
+                <Heart className="w-3.5 h-3.5 text-rose-600" />
+                <span>Patient Empowerment</span>
+              </div>
+              <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
+                How CardioVision Gives Heart Patients Clarity &amp; Peace of Mind
+              </h2>
+              <p className="mt-3 text-slate-600 text-base sm:text-lg leading-relaxed">
+                Replacing anxiety and complex medical terms with clear visual understanding. See your heart arteries, understand your diagnosis, and know what steps help you live better.
+              </p>
+            </div>
+
+            {/* 4 Patient Benefit Cards */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+              {[
+                {
+                  title: 'See Your Heart in 3D',
+                  desc: 'Instead of staring at a page of numbers you cannot understand, see a clear 3D model showing where your heart is healthy and where it needs care.',
+                  tag: 'Clear Visuals',
+                },
+                {
+                  title: 'Plain-English Explanations',
+                  desc: 'Every finding is translated into everyday words: "Your front artery has mild narrowing," so you always feel confident about your health.',
+                  tag: 'No Jargon',
+                },
+                {
+                  title: 'Understand What Helps',
+                  desc: 'See how simple everyday actions—like taking a 30-minute daily walk, reducing salt, or taking prescribed medicine—keep your arteries healthy.',
+                  tag: 'Actionable Steps',
+                },
+                {
+                  title: 'Share with Family & Caregivers',
+                  desc: 'Download an easy-to-understand summary you can show your loved ones, so everyone understands your recovery plan together.',
+                  tag: 'Family Peace of Mind',
+                },
+              ].map((card, i) => (
+                <div
+                  key={i}
+                  className="p-6 rounded-2xl bg-rose-50/40 border border-rose-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                >
+                  <div>
+                    <span className="text-[11px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-md border border-rose-200 inline-block mb-3">
+                      {card.tag}
+                    </span>
+                    <h3 className="text-base font-bold text-slate-900 mb-2">{card.title}</h3>
+                    <p className="text-xs text-slate-600 leading-relaxed">{card.desc}</p>
+                  </div>
+                  <div className="pt-4 mt-4 border-t border-rose-100 flex items-center gap-1.5 text-xs text-rose-700 font-semibold">
+                    <Heart className="w-3.5 h-3.5 text-rose-600" />
+                    <span>Patient Benefit</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Action Bar */}
+            <div className="mt-8 flex items-center justify-between p-4 rounded-2xl bg-rose-50/60 border border-rose-200">
+              <div className="text-xs text-slate-700">
+                <strong>Patient Heart Portal:</strong> View your personalized 3D heart, check healthy lifestyle tips, and download your heart guide.
+              </div>
+              <button
+                onClick={() => onOpenSignIn && onOpenSignIn('patient')}
+                className="btn-secondary-glass text-xs py-2 px-4 cursor-pointer"
+              >
+                <span>Patient Portal Access</span>
+                <ArrowRight className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+
+        </div>
+      </section>
+
+    </div>
   );
 }

@@ -2,46 +2,46 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Database, Cpu, Eye, Sliders, ArrowRight, HeartPulse } from 'lucide-react';
+import { FileText, Cpu, Heart, CheckCircle2, ArrowRight } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const WORKFLOW_STEPS = [
   {
     step: '01',
-    icon: Database,
-    title: 'Multimodal Clinical Intake',
-    subtitle: 'Labs, ECG & Echocardiogram',
-    desc: 'Ingests standard hospital data without requiring invasive catheterization: 12-lead ECG waveforms, Echo Regional Wall Motion Abnormalities (RWMA), and lipid biomarker panels.',
-    badge: 'Non-Invasive Input',
-    badgeColor: 'text-cyan-400 bg-cyan-950/70 border-cyan-800',
+    icon: FileText,
+    title: 'Standard Medical Tests Collected',
+    subtitle: 'ECG, Ultrasound & Blood Work',
+    desc: 'Uses the routine tests you already take at the clinic: ECG heart rhythm, echocardiogram ultrasound of heart muscle movement, and standard cholesterol blood panels. Zero needles or invasive catheters needed.',
+    tag: 'Non-Invasive',
+    tagColor: 'text-sky-700 bg-sky-50 border-sky-200',
   },
   {
     step: '02',
     icon: Cpu,
-    title: 'Anti-Leakage AI Ensemble',
-    subtitle: 'XGBoost + LightGBM + SHAP',
-    desc: 'Calibrated soft-voting classifiers evaluate multi-vessel CAD risk and individual LAD, LCX, and RCA stenosis status with SHAP local feature attribution in under 30 milliseconds.',
-    badge: '0.912 ROC-AUC',
-    badgeColor: 'text-emerald-400 bg-emerald-950/70 border-emerald-800',
+    title: 'AI Evaluates Each Artery',
+    subtitle: 'Under 30 Milliseconds',
+    desc: 'The trained clinical algorithm cross-references your test markers to determine the individual blood flow health of your front (LAD), side (LCX), and right (RCA) coronary arteries.',
+    tag: 'Rapid Analysis',
+    tagColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
   },
   {
     step: '03',
-    icon: Eye,
-    title: '3D Spatial Heart Twin',
-    subtitle: 'Anatomical Coronary Mapping',
-    desc: 'Translates abstract numbers into spatial anatomical intuition. Coronary vessels pulse in real-time with physiological systolic/diastolic motion and color-coded stenosis alerts.',
-    badge: '3D WebGL / R3F',
-    badgeColor: 'text-red-400 bg-red-950/70 border-red-800',
+    icon: Heart,
+    title: '3D Heart Twin Updates',
+    subtitle: 'Clear Visual Color Coding',
+    desc: 'Your personalized 3D heart shows how blood flows in real time: green where arteries are clear and unobstructed, amber for mild plaque, and red where narrowing needs clinical care.',
+    tag: 'Intuitive 3D Twin',
+    tagColor: 'text-rose-700 bg-rose-50 border-rose-200',
   },
   {
     step: '04',
-    icon: Sliders,
-    title: 'Interactive "What-If" Engine',
-    subtitle: 'Treatment & Habit Simulator',
-    desc: 'Clinicians adjust pharmacotherapy; patients simulate daily walking and dietary changes. The 3D heart dynamically cools from high-risk crimson to healthy emerald in real time.',
-    badge: 'Real-Time Dynamic',
-    badgeColor: 'text-amber-400 bg-amber-950/70 border-amber-800',
+    icon: CheckCircle2,
+    title: 'Shared Doctor-Patient Care Plan',
+    subtitle: 'Empowered Health Decisions',
+    desc: 'Doctor and patient look at the same clear visual model together to plan next steps—whether simple daily habit changes, targeted medication, or advanced cardiology consultation.',
+    tag: 'Actionable Outcome',
+    tagColor: 'text-indigo-700 bg-indigo-50 border-indigo-200',
   },
 ];
 
@@ -50,86 +50,70 @@ export default function ClinicalWorkflow() {
 
   useGSAP(
     () => {
-      // Header reveal
-      gsap.from('.workflow-header', {
-        y: 40,
-        opacity: 0,
-        duration: 0.8,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.workflow-header',
-          start: 'top 85%',
-        },
-      });
-
-      // Step cards staggered cascade
-      gsap.from('.workflow-card', {
-        y: 50,
-        opacity: 0,
-        duration: 0.7,
-        stagger: 0.12,
-        ease: 'power3.out',
-        scrollTrigger: {
-          trigger: '.workflow-cards-grid',
-          start: 'top 80%',
-        },
-      });
+      gsap.fromTo(
+        '.workflow-header',
+        { y: 35, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.workflow-header', start: 'top 85%' } }
+      );
+      gsap.fromTo(
+        '.workflow-step-card',
+        { y: 40, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.5, stagger: 0.1, scrollTrigger: { trigger: '.workflow-steps-grid', start: 'top 85%' } }
+      );
     },
     { scope: sectionRef }
   );
 
   return (
-    <section id="clinical-workflow" ref={sectionRef} className="py-24 border-t border-white/10 relative">
+    <section id="clinical-workflow" ref={sectionRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
       <div className="container-custom">
 
         {/* Section Header */}
-        <div className="workflow-header text-center max-w-3xl mx-auto mb-16 space-y-4">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-red-950/60 border border-red-800/50 text-red-400 font-mono text-xs font-semibold uppercase">
-            <HeartPulse className="w-3.5 h-3.5" />
-            <span>How CardioVision 3D Works</span>
+        <div className="workflow-header text-center max-w-3xl mx-auto mb-14 space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold uppercase">
+            <span>How It Works</span>
           </div>
-          <h2 className="text-3xl sm:text-5xl font-display font-extrabold text-white">
-            From Raw Medical Records to a <span className="text-gradient-vital">Living Digital Twin</span>
+          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
+            From Routine Medical Tests to a <span className="text-gradient-vivid">Living Heart Model</span>
           </h2>
-          <p className="text-slate-400 text-base sm:text-lg">
-            A seamless bridge between complex clinical diagnostics and intuitive visual understanding for clinicians and patients alike.
+          <p className="text-slate-600 text-base sm:text-lg">
+            A clear 4-step pathway that turns medical numbers into an easy-to-understand 3D visual experience.
           </p>
         </div>
 
         {/* 4 Steps Grid */}
-        <div className="workflow-cards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="workflow-steps-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {WORKFLOW_STEPS.map((step, idx) => {
             const Icon = step.icon;
             return (
               <div
                 key={idx}
-                className="workflow-card p-6 rounded-2xl glass-panel relative group hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between"
+                className="workflow-step-card p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
-                  {/* Top Bar with Number & Badge */}
-                  <div className="flex items-center justify-between mb-6">
-                    <span className="font-mono text-2xl font-black text-slate-600 group-hover:text-red-500/80 transition-colors">
+                  {/* Top Bar with Number & Tag */}
+                  <div className="flex items-center justify-between mb-4">
+                    <span className="font-mono text-2xl font-black text-slate-300">
                       {step.step}
                     </span>
-                    <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-mono border ${step.badgeColor}`}>
-                      {step.badge}
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${step.tagColor}`}>
+                      {step.tag}
                     </span>
                   </div>
 
                   {/* Icon */}
-                  <div className="w-12 h-12 rounded-xl bg-slate-900 border border-slate-800 flex items-center justify-center text-slate-200 group-hover:border-red-500/50 group-hover:text-red-400 transition-colors mb-4">
-                    <Icon className="w-6 h-6" />
+                  <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 mb-4">
+                    <Icon className="w-5 h-5 text-rose-600" />
                   </div>
 
                   {/* Content */}
-                  <h3 className="text-lg font-bold font-display text-white mb-1">{step.title}</h3>
-                  <p className="text-xs font-mono text-cyan-400 mb-3">{step.subtitle}</p>
-                  <p className="text-xs text-slate-400 leading-relaxed">{step.desc}</p>
+                  <h3 className="text-base font-bold text-slate-900 mb-1">{step.title}</h3>
+                  <p className="text-xs font-semibold text-rose-600 mb-2">{step.subtitle}</p>
+                  <p className="text-xs text-slate-600 leading-relaxed">{step.desc}</p>
                 </div>
 
-                <div className="pt-4 mt-4 border-t border-slate-800/80 flex items-center gap-1.5 text-xs text-slate-400 group-hover:text-slate-200 transition-colors">
-                  <span>Verified Architecture</span>
-                  <ArrowRight className="w-3.5 h-3.5 group-hover:translate-x-1 transition-transform" />
+                <div className="pt-4 mt-4 border-t border-slate-100 flex items-center gap-1 text-xs text-slate-500 font-medium">
+                  <span>Step {idx + 1} of 4</span>
                 </div>
               </div>
             );
