@@ -41,8 +41,9 @@ export default function HeroConceptA({
   // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers)
   const [viewMode, setViewMode] = useState('surface');
 
-  // Active callout tooltip (null on initial load so the heart displays cleanly)
+  // Active callout tooltip (null on initial load, resets when pointer leaves)
   const [activeCallout, setActiveCallout] = useState(null);
+  const [isHoveringCard, setIsHoveringCard] = useState(false);
   const [tilt, setTilt] = useState({ rx: 0, ry: 0 });
   const [isHoveringHeart, setIsHoveringHeart] = useState(false);
 
@@ -87,22 +88,44 @@ export default function HeroConceptA({
     setTilt({ rx: -normY * 8, ry: normX * 10 });
     setIsHoveringHeart(true);
 
-    // Auto-detect nearest vessel if in surface mode and none manually locked
-    if (viewMode === 'surface') {
-      let nearest = null;
-      let minDistance = Infinity;
-      SURFACE_VESSELS.forEach((v) => {
-        const dx = px - v.coords.x;
-        const dy = py - v.coords.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < minDistance) {
-          minDistance = dist;
-          nearest = v.code;
-        }
-      });
+    // Only update active vessel if user is not currently hovering over the card itself
+    if (!isHoveringCard) {
+      if (viewMode === 'surface') {
+        let nearest = null;
+        let minDistance = Infinity;
+        SURFACE_VESSELS.forEach((v) => {
+          const dx = px - v.coords.x;
+          const dy = py - v.coords.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearest = v.code;
+          }
+        });
 
-      if (minDistance < 18) {
-        setActiveCallout(nearest);
+        if (minDistance < 18) {
+          setActiveCallout(nearest);
+        } else {
+          setActiveCallout(null);
+        }
+      } else if (viewMode === 'dissected') {
+        let nearest = null;
+        let minDistance = Infinity;
+        DISSECTION_LANDMARKS.forEach((l) => {
+          const dx = px - l.coords.x;
+          const dy = py - l.coords.y;
+          const dist = Math.sqrt(dx * dx + dy * dy);
+          if (dist < minDistance) {
+            minDistance = dist;
+            nearest = l.id;
+          }
+        });
+
+        if (minDistance < 18) {
+          setActiveCallout(nearest);
+        } else {
+          setActiveCallout(null);
+        }
       }
     }
   };
@@ -110,6 +133,8 @@ export default function HeroConceptA({
   const handlePointerLeave = () => {
     setTilt({ rx: 0, ry: 0 });
     setIsHoveringHeart(false);
+    setIsHoveringCard(false);
+    setActiveCallout(null);
   };
 
   const LADs = vesselStates?.LAD || 'moderate';
@@ -492,6 +517,11 @@ export default function HeroConceptA({
                     onClose={() => setActiveCallout(null)}
                     onSelectArtery={onSelectArtery}
                     onScrollToSection={onScrollToSection}
+                    onCardMouseEnter={() => setIsHoveringCard(true)}
+                    onCardMouseLeave={() => {
+                      setIsHoveringCard(false);
+                      setActiveCallout(null);
+                    }}
                   />
                 </AnimatePresence>
               </div>

@@ -11,6 +11,8 @@ export default function AnatomicalCalloutTooltip({
   onClose,
   onSelectArtery,
   onScrollToSection,
+  onCardMouseEnter,
+  onCardMouseLeave,
 }) {
   if (viewMode === 'surface' && vesselData) {
     const status = vesselStates?.[vesselData.code] || 'normal';
@@ -19,6 +21,8 @@ export default function AnatomicalCalloutTooltip({
     return (
       <motion.div
         key={`surface-card-${vesselData.code}`}
+        onMouseEnter={onCardMouseEnter}
+        onMouseLeave={onCardMouseLeave}
         initial={{ opacity: 0, scale: 0.94, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 6 }}
@@ -81,6 +85,8 @@ export default function AnatomicalCalloutTooltip({
     return (
       <motion.div
         key={`dissection-card-${dissectionData.id}`}
+        onMouseEnter={onCardMouseEnter}
+        onMouseLeave={onCardMouseLeave}
         initial={{ opacity: 0, scale: 0.94, y: 8 }}
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.94, y: 6 }}
