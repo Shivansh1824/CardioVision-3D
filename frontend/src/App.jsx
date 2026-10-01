@@ -6,9 +6,12 @@ import VesselExplorer from './components/VesselExplorer';
 import PersonaComparison from './components/PersonaComparison';
 import ClinicalWorkflow from './components/ClinicalWorkflow';
 import MetricsSection from './components/MetricsSection';
+import Testimonials from './components/Testimonials';
+import ClinicalFAQ from './components/ClinicalFAQ';
 import SafetyDisclaimer from './components/SafetyDisclaimer';
 import Footer from './components/Footer';
 import SignInModal from './components/SignInModal';
+import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 
 export default function App() {
   // Shared state for the 3 coronary vessels across Anatomical Heart & Explorer
@@ -23,6 +26,9 @@ export default function App() {
   // Sign In modal state
   const [signInOpen, setSignInOpen] = useState(false);
   const [signInRole, setSignInRole] = useState('doctor');
+
+  // Privacy Policy modal state
+  const [privacyOpen, setPrivacyOpen] = useState(false);
 
   // Initialize Lenis smooth scrolling (Modern Immersive standard)
   useEffect(() => {
@@ -64,6 +70,7 @@ export default function App() {
       <Header
         onOpenSignIn={handleOpenSignIn}
         onScrollToSection={handleScrollToSection}
+        onOpenPolicy={() => setPrivacyOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -96,6 +103,12 @@ export default function App() {
         {/* 5-Fold Cross-Validated AI Accuracy & Benchmarks */}
         <MetricsSection />
 
+        {/* Peer Reviews & Clinical Testimonials */}
+        <Testimonials />
+
+        {/* Evidence & Clinical Governance FAQ */}
+        <ClinicalFAQ />
+
         {/* Ethical Medical Notice & Safety Disclaimer */}
         <SafetyDisclaimer />
       </main>
@@ -104,6 +117,7 @@ export default function App() {
       <Footer
         onOpenSignIn={handleOpenSignIn}
         onScrollToSection={handleScrollToSection}
+        onOpenPrivacy={() => setPrivacyOpen(true)}
       />
 
       {/* Sign In / Role Selection Modal */}
@@ -111,6 +125,12 @@ export default function App() {
         isOpen={signInOpen}
         onClose={() => setSignInOpen(false)}
         initialRole={signInRole}
+      />
+
+      {/* Privacy Policy & HIPAA Compliance Modal */}
+      <PrivacyPolicyModal
+        isOpen={privacyOpen}
+        onClose={() => setPrivacyOpen(false)}
       />
 
     </div>

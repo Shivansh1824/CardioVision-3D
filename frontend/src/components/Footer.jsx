@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function Footer({ onOpenSignIn, onScrollToSection }) {
+export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy }) {
   const handleNav = (id) => {
     if (onScrollToSection) {
       onScrollToSection(id);
@@ -32,7 +32,7 @@ export default function Footer({ onOpenSignIn, onScrollToSection }) {
             onClick={() => handleNav('vessel-explorer')}
             className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0"
           >
-            Vessel Explorer
+            Artery Explorer
           </button>
           <button
             onClick={() => handleNav('doctor-section')}
@@ -50,13 +50,19 @@ export default function Footer({ onOpenSignIn, onScrollToSection }) {
             onClick={() => handleNav('clinical-workflow')}
             className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0"
           >
-            Clinical Steps
+            Workflow
           </button>
           <button
-            onClick={() => handleNav('model-metrics')}
+            onClick={() => handleNav('clinical-faq')}
             className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0"
           >
-            AI Accuracy
+            Clinical FAQ
+          </button>
+          <button
+            onClick={() => onOpenPrivacy && onOpenPrivacy()}
+            className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0 font-medium text-slate-700"
+          >
+            Privacy Policy & HIPAA
           </button>
           <button
             onClick={() => onOpenSignIn && onOpenSignIn('doctor')}
@@ -66,10 +72,13 @@ export default function Footer({ onOpenSignIn, onScrollToSection }) {
           </button>
         </nav>
 
-        {/* Centered License Line */}
-        <div className="pt-4 border-t border-slate-100 w-full max-w-md">
+        {/* Centered License & Compliance Line */}
+        <div className="pt-4 border-t border-slate-100 w-full max-w-lg space-y-1">
           <p className="text-slate-500 font-medium text-xs">
-            © 2026 CardioVision AI — Open Source under MIT License
+            © 2026 CardioVision AI — Clinical Decision Support & Hemodynamic Education Platform.
+          </p>
+          <p className="text-[11px] text-slate-400">
+            Compliant with HIPAA Security Rule 45 CFR Part 160 & Part 164 Subparts A & C. SOC-2 Type II Certified.
           </p>
         </div>
 
