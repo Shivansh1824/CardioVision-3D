@@ -14,7 +14,7 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Layers, Droplet } from 'lucide-react';
+import { ArrowRight, Layers, Droplet, Box } from 'lucide-react';
 
 import {
   VESSEL_COLOR,
@@ -22,6 +22,7 @@ import {
   SURFACE_VESSELS,
 } from './cardiacAnatomyData';
 import HeartStageVisualizer from './HeartStageVisualizer';
+import RealisticHeart3DViewer from './RealisticHeart3DViewer';
 
 export default function HeroConceptA({
   onOpenSignIn,
@@ -30,7 +31,7 @@ export default function HeroConceptA({
   selectedArtery,
   onSelectArtery,
 }) {
-  // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers)
+  // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers) or '3d-model'
   const [viewMode, setViewMode] = useState('surface');
 
   const LADs = vesselStates?.LAD || 'moderate';
@@ -152,8 +153,8 @@ export default function HeroConceptA({
           {/* ─── RIGHT: Full-Stage Heart Centerpiece & Dissection ─────────── */}
           <div className="lg:col-span-7 flex flex-col items-center justify-center ca-heart-stage relative">
 
-            {/* Mode Switcher: Surface (Blood Flow) vs Dissected Chambers */}
-            <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm mb-3 z-30">
+            {/* Mode Switcher: Surface (Blood Flow) vs Dissected Chambers vs 3D Model */}
+            <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm mb-3 z-30 flex-wrap justify-center">
               <button
                 type="button"
                 onClick={() => setViewMode('surface')}
@@ -178,16 +179,32 @@ export default function HeroConceptA({
                 <Layers className="w-3.5 h-3.5" />
                 <span>Chamber Dissection</span>
               </button>
+              <button
+                type="button"
+                onClick={() => setViewMode('3d-model')}
+                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === '3d-model'
+                    ? 'bg-rose-600 text-white font-semibold shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <Box className="w-3.5 h-3.5" />
+                <span>3D Model</span>
+              </button>
             </div>
 
-            {/* Interactive Anatomical Dissection & Perfusion Stage */}
-            <HeartStageVisualizer
-              viewMode={viewMode}
-              vesselStates={vesselStates}
-              selectedArtery={selectedArtery}
-              onSelectArtery={onSelectArtery}
-              onScrollToSection={onScrollToSection}
-            />
+            {/* Interactive Anatomical Dissection / Perfusion Stage / 3D Model */}
+            {viewMode === '3d-model' ? (
+              <RealisticHeart3DViewer />
+            ) : (
+              <HeartStageVisualizer
+                viewMode={viewMode}
+                vesselStates={vesselStates}
+                selectedArtery={selectedArtery}
+                onSelectArtery={onSelectArtery}
+                onScrollToSection={onScrollToSection}
+              />
+            )}
 
             {/* Dissection Guidance Footnote */}
             {viewMode === 'dissected' && (
