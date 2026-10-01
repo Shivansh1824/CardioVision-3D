@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { CheckCircle2, Award, Zap, HelpCircle } from 'lucide-react';
+import { CheckCircle2, Zap, HelpCircle } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -88,9 +88,12 @@ export default function MetricsSection() {
 
         {/* Section Header */}
         <div className="metrics-header max-w-3xl mb-12 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200 text-emerald-800 text-xs font-semibold uppercase">
-            <Award className="w-3.5 h-3.5 text-emerald-600" />
-            <span>Tested on Real Patients</span>
+          {/* Style 1: Editorial Monospace Overline */}
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-600"></span>
+            <span className="font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase">
+              Empirical Validation — 5-Fold Stratified
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
             Clinical AI Accuracy: What 5-Fold Validation Means

@@ -70,8 +70,12 @@ export default function ClinicalWorkflow() {
 
         {/* Section Header */}
         <div className="workflow-header text-center max-w-3xl mx-auto mb-14 space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold uppercase">
-            <span>How It Works</span>
+          {/* Style A: Editorial Monospace Overline */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+              Multi-Modal Methodology — How It Works
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
             From Routine Medical Tests to a <span className="text-gradient-vivid">Living Heart Model</span>

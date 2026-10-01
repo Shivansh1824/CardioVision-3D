@@ -37,10 +37,12 @@ export default function Hero({
           {/* Left Column: Rebalanced, Clear, Engaging Copy */}
           <div className="lg:col-span-6 space-y-6">
             
-            {/* Clean Category Badge */}
-            <div className="hero-badge inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-rose-50 border border-rose-200 text-rose-700 text-xs font-semibold">
-              <span className="w-2 h-2 rounded-full bg-rose-600" />
-              <span>Interactive Heart &amp; Artery Health Guide</span>
+            {/* Style 1: Editorial Monospace Overline (No Bubble Pill) */}
+            <div className="hero-badge flex items-center gap-2">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+              <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+                Interactive Heart &amp; Artery Health Guide
+              </span>
             </div>
 
             {/* Headline with Clean Typography */}
@@ -81,7 +83,7 @@ export default function Hero({
             {/* 4 Proof Metric Cards with Clean, Human-Friendly Numbers */}
             <div className="pt-2 grid grid-cols-2 sm:grid-cols-4 gap-3">
               {[
-                { val: '91.2%', label: 'Detection Accuracy', sub: 'Tested on Real Patients', color: 'text-emerald-700' },
+                { val: '91.2%', label: 'Detection Accuracy', sub: '5-Fold Validated', color: 'text-emerald-700' },
                 { val: '3 Vessels', label: 'Main Heart Arteries', sub: 'LAD, LCX & RCA', color: 'text-rose-700' },
                 { val: 'Real-Time', label: 'Instant Visual Updates', sub: 'Immediate 3D feedback', color: 'text-sky-700' },
                 { val: 'Simple', label: 'Plain Language', sub: 'Zero confusing jargon', color: 'text-indigo-700' },

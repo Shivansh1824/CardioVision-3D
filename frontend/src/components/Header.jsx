@@ -19,8 +19,8 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
       {/* Header Container: Left-aligned brand with adjacent nav, balanced actions on the right */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         
-        {/* Left Side: Brand Logo + Primary Navigation grouped together to eliminate dead white space */}
-        <div className="flex items-center gap-6 lg:gap-8">
+        {/* Left: Brand Logo */}
+        <div className="flex items-center gap-4">
           <a href="#" className="flex items-center gap-2.5 no-underline group shrink-0">
             <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-600 p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
               <svg
@@ -38,47 +38,47 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
               CardioVision <span className="text-rose-600">AI</span>
             </span>
           </a>
-
-          {/* Desktop Navigation Links — Adjacent to Brand */}
-          <nav className="hidden lg:flex items-center gap-1 bg-slate-100/90 border border-slate-200/80 px-2.5 py-1 rounded-full">
-            <button
-              onClick={() => handleNavClick('vessel-explorer')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              Artery Explorer
-            </button>
-            <button
-              onClick={() => handleNavClick('doctor-section')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              Doctors
-            </button>
-            <button
-              onClick={() => handleNavClick('patient-section')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              Patients
-            </button>
-            <button
-              onClick={() => handleNavClick('clinical-workflow')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              Workflow
-            </button>
-            <button
-              onClick={() => handleNavClick('clinical-faq')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              FAQ
-            </button>
-            <button
-              onClick={() => handleNavClick('model-metrics')}
-              className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-            >
-              Accuracy
-            </button>
-          </nav>
         </div>
+
+        {/* Center: Primary Navigation Centered */}
+        <nav className="hidden lg:flex items-center gap-1 bg-slate-100/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-2xs">
+          <button
+            onClick={() => handleNavClick('vessel-explorer')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Artery Explorer
+          </button>
+          <button
+            onClick={() => handleNavClick('doctor-section')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Doctors
+          </button>
+          <button
+            onClick={() => handleNavClick('patient-section')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Patients
+          </button>
+          <button
+            onClick={() => handleNavClick('clinical-workflow')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Workflow
+          </button>
+          <button
+            onClick={() => handleNavClick('clinical-faq')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            FAQ
+          </button>
+          <button
+            onClick={() => handleNavClick('model-metrics')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Accuracy
+          </button>
+        </nav>
 
         {/* Right Side: Proportional Action Buttons */}
         <div className="hidden sm:flex items-center gap-2.5 shrink-0">

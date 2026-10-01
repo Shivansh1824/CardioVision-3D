@@ -2,7 +2,7 @@ import React, { useState, useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { Activity, Droplets, Cigarette, Flame, HeartPulse } from 'lucide-react';
+import { Activity, Droplets, Cigarette, Flame } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -119,19 +119,22 @@ export default function VesselExplorer({
   );
 
   return (
-    <section id="vessel-explorer" ref={containerRef} className="py-18 bg-slate-50/60 border-t border-slate-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <section id="vessel-explorer" ref={containerRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
+      <div className="container-custom">
         
         {/* Section Header */}
-        <div className="max-w-3xl mb-10">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200 text-rose-800 text-xs font-semibold uppercase mb-3">
-            <HeartPulse className="w-3.5 h-3.5 text-rose-600" />
-            <span>Interactive Coronary Anatomy</span>
+        <div className="max-w-3xl mb-12 space-y-3">
+          {/* Style A: Editorial Monospace Overline */}
+          <div className="flex items-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+              Interactive Coronary Anatomy
+            </span>
           </div>
           <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
             How the Three Main Heart Arteries Work
           </h2>
-          <p className="mt-2 text-slate-600 text-base leading-relaxed">
+          <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
             Select an artery below to inspect its anatomical role, simulate narrowing stages, and see how blood pressure, blood sugar, and smoking directly impact arterial blood flow.
           </p>
         </div>

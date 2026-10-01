@@ -1,5 +1,5 @@
 import React from 'react';
-import { Quote, Stethoscope, HeartHandshake, Award } from 'lucide-react';
+import { Stethoscope, HeartHandshake, Award } from 'lucide-react';
 
 const TESTIMONIALS = [
   {
@@ -9,7 +9,8 @@ const TESTIMONIALS = [
     quote:
       'In pre-cath triage, CardioVision translates complex hemodynamic parameters into immediate anatomical context. Being able to demonstrate lesion severity to families before stent placement has dramatically reduced procedural consultation anxiety.',
     icon: Stethoscope,
-    badge: 'Clinical Cath Lab Review'
+    tag: 'Clinical Cath Lab Review',
+    tagColor: 'text-sky-700 bg-sky-50 border-sky-200',
   },
   {
     role: 'Cardiac Rehabilitation Nurse Specialist',
@@ -18,7 +19,8 @@ const TESTIMONIALS = [
     quote:
       'For our post-angioplasty patients, visual compliance is everything. When a patient visibly sees how uncontrolled HbA1c and systolic spikes directly restrict their left anterior descending lumen, lifestyle adherence doubles.',
     icon: HeartHandshake,
-    badge: 'Secondary Prevention Lead'
+    tag: 'Secondary Prevention Lead',
+    tagColor: 'text-emerald-700 bg-emerald-50 border-emerald-200',
   },
   {
     role: 'Post-MI Patient & Advocate',
@@ -27,54 +29,60 @@ const TESTIMONIALS = [
     quote:
       'Hearing numbers like "90% occlusion in the RCA" sounded terrifying and abstract. When my doctor showed me the interactive vessel cross-section on CardioVision, I finally understood why blood pressure control was literally keeping my artery open.',
     icon: Award,
-    badge: 'Verified Patient Outcome'
-  }
+    tag: 'Verified Patient Outcome',
+    tagColor: 'text-rose-700 bg-rose-50 border-rose-200',
+  },
 ];
 
 export default function Testimonials() {
   return (
-    <section className="py-20 bg-white border-t border-slate-200">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6">
+    <section className="py-20 bg-white border-t border-slate-200 relative">
+      <div className="container-custom">
         
-        {/* Section Header */}
-        <div className="text-center mb-12">
-          <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-700 text-xs font-semibold mb-3">
-            <Quote className="w-3.5 h-3.5 text-slate-500" />
-            <span>Clinical Evidence & Provider Reviews</span>
+        {/* Section Header — Harmonized to How It Works styling */}
+        <div className="text-center max-w-3xl mx-auto mb-14 space-y-3">
+          {/* Style A: Editorial Monospace Overline */}
+          <div className="flex items-center justify-center gap-2">
+            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+              Clinical Evidence — Provider Reviews
+            </span>
           </div>
-          <h2 className="text-2xl sm:text-3xl font-display font-bold text-slate-900 tracking-tight">
-            Trusted in Cath Labs & Consultations
+          <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900 tracking-tight">
+            Trusted in Cath Labs &amp; Consultations
           </h2>
-          <p className="mt-2 text-sm text-slate-600 max-w-2xl mx-auto">
+          <p className="text-slate-600 text-base sm:text-lg leading-relaxed">
             Real feedback from practicing interventionalists, cardiac care coordinators, and patients on the diagnostic utility of interactive 3D hemodynamics.
           </p>
         </div>
 
-        {/* Testimonial Cards Grid (Clean, balanced 3-column with realistic layout) */}
+        {/* Testimonial Cards Grid (Standardized to How It Works rounded-2xl cards) */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {TESTIMONIALS.map((item, index) => {
             const Icon = item.icon;
             return (
               <div
                 key={index}
-                className="bg-slate-50/80 rounded-xl border border-slate-200/90 p-6 flex flex-col justify-between hover:border-slate-300 transition-colors"
+                className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
               >
                 <div>
                   <div className="flex items-center justify-between mb-4">
-                    <span className="text-[11px] font-mono font-medium px-2 py-0.5 rounded bg-white border border-slate-200 text-slate-600">
-                      {item.badge}
+                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${item.tagColor}`}>
+                      {item.tag}
                     </span>
-                    <Icon className="w-4 h-4 text-slate-400" />
+                    <div className="w-9 h-9 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-rose-600">
+                      <Icon className="w-4 h-4" />
+                    </div>
                   </div>
 
-                  <p className="text-sm text-slate-700 leading-relaxed italic mb-6">
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed italic mb-6">
                     "{item.quote}"
                   </p>
                 </div>
 
-                <div className="pt-4 border-t border-slate-200/80">
+                <div className="pt-4 border-t border-slate-100">
                   <h4 className="text-sm font-bold text-slate-900">{item.name}</h4>
-                  <p className="text-xs text-slate-600 font-medium">{item.role}</p>
+                  <p className="text-xs text-rose-600 font-semibold">{item.role}</p>
                   <p className="text-[11px] text-slate-400 mt-0.5">{item.facility}</p>
                 </div>
               </div>

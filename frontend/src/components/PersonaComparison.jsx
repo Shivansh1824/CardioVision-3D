@@ -2,7 +2,7 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { CheckCircle2, Heart, Activity, FileText, ShieldAlert, Sparkles, ArrowRight } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -37,9 +37,12 @@ export default function PersonaComparison({ onOpenSignIn }) {
           <div className="doctor-block">
             {/* Header */}
             <div className="max-w-3xl mb-12">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-100 border border-sky-200 text-sky-800 text-xs font-semibold uppercase mb-3">
-                <Activity className="w-3.5 h-3.5 text-sky-600" />
-                <span>Clinical Practice</span>
+              {/* Style 1: Editorial Monospace Overline */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
+                <span className="font-mono text-xs font-bold tracking-widest text-sky-700 uppercase">
+                  Clinical Practice — Multi-Vessel Triage
+                </span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
                 How CardioVision Accelerates Daily Cardiology Practice
@@ -84,10 +87,6 @@ export default function PersonaComparison({ onOpenSignIn }) {
                     <h3 className="text-base font-bold text-slate-900 mb-2">{card.title}</h3>
                     <p className="text-xs text-slate-600 leading-relaxed">{card.desc}</p>
                   </div>
-                  <div className="pt-4 mt-4 border-t border-slate-100 flex items-center gap-1.5 text-xs text-sky-700 font-semibold">
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                    <span>Clinical Advantage</span>
-                  </div>
                 </div>
               ))}
             </div>
@@ -119,9 +118,12 @@ export default function PersonaComparison({ onOpenSignIn }) {
           <div className="patient-block">
             {/* Header */}
             <div className="max-w-3xl mb-12">
-              <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-100 border border-rose-200 text-rose-800 text-xs font-semibold uppercase mb-3">
-                <Heart className="w-3.5 h-3.5 text-rose-600" />
-                <span>Patient Empowerment</span>
+              {/* Style A: Editorial Monospace Overline */}
+              <div className="flex items-center gap-2 mb-3">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
+                <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+                  Patient Empowerment — Health Literacy
+                </span>
               </div>
               <h2 className="text-3xl sm:text-4xl font-display font-extrabold text-slate-900">
                 How CardioVision Gives Heart Patients Clarity &amp; Peace of Mind
@@ -165,10 +167,6 @@ export default function PersonaComparison({ onOpenSignIn }) {
                     </span>
                     <h3 className="text-base font-bold text-slate-900 mb-2">{card.title}</h3>
                     <p className="text-xs text-slate-600 leading-relaxed">{card.desc}</p>
-                  </div>
-                  <div className="pt-4 mt-4 border-t border-rose-100 flex items-center gap-1.5 text-xs text-rose-700 font-semibold">
-                    <Heart className="w-3.5 h-3.5 text-rose-600" />
-                    <span>Patient Benefit</span>
                   </div>
                 </div>
               ))}
