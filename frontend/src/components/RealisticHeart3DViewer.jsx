@@ -3,13 +3,12 @@
  * 
  * Features:
  * - Direct WebGL rendering with Three.js & React Three Fiber (No card box, no border, no video)
- * - Large, commanding heart geometry (auto-centered and scaled to eliminate white space)
- * - 3D pins locked 100% to the heart's anatomical surface mesh (rotate & scale synchronously)
- * - Zero-overlap dynamic canvas shift: heart glides left when callout is open on the right
- * - Real-time SVG leader line tracking from the 3D pin to the clinical callout modal
- * - Identical modal design to Surface & Blood Flow with patient overview and clinical pathology
- * - Clean model switcher (Realistic Anatomy vs Beating Cycle) with zero zoom button clutter
- * - 360° mouse / touch orbital rotation
+ * - Large, commanding heart geometry filling the center stage
+ * - Minimal, elegant medical dots (matching Chamber Dissection & Surface flow)
+ * - Modal & leader line ONLY open when pointer hovers over an anatomical dot
+ * - Dynamic zero-overlap shift: heart smoothly glides left when modal opens, centers when idle
+ * - Pure 360° orbital rotation (Zoom-in/zoom-out strictly disabled)
+ * - Seamless switching between Realistic Anatomy and Beating Cycle with automatic camera reset
  */
 
 import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
@@ -55,7 +54,7 @@ function ScreenProjector({ activePinId, pinRefs, onProject, canvasShiftX, stageW
 }
 
 /**
- * 3D Heart Mesh Geometry with auto-centering, dynamic vertex colors & surface-locked pins
+ * 3D Heart Mesh Geometry with auto-centering, dynamic vertex colors & surface-locked dots
  */
 function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
   const groupRef = useRef();
@@ -72,8 +71,8 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     
-    // Scale to 4.2 units for an impressive, prominent heart filling the stage
-    const targetScale = 4.2 / (maxDim || 1);
+    // Scale to 4.3 units for a large, commanding heart filling the stage with minimal white space
+    const targetScale = 4.3 / (maxDim || 1);
 
     if (groupRef.current) {
       groupRef.current.scale.set(targetScale, targetScale, targetScale);
@@ -120,9 +119,11 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
       {/* 3D Heart Mesh Geometry */}
       <primitive object={scene} />
 
-      {/* 3D Pins LOCKED INSIDE the Heart Group (Synchronous 360° Rotation & Scale) */}
+      {/* 3D Medical Pinpoint Dots (Matching Dissection & Surface Views) */}
       {ANATOMICAL_PINS.map((pin) => {
         const isSelected = activePin?.id === pin.id;
+        const dotColor = pin.color || '#e11d48';
+
         return (
           <group
             key={pin.id}
@@ -136,33 +137,34 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, pinRefs }) {
                 onMouseEnter={() => onSelectPin(pin)}
                 onClick={(e) => {
                   e.stopPropagation();
-                  onSelectPin(pin);
+                  onSelectPin(isSelected ? null : pin);
                 }}
-                className={`group relative flex items-center justify-center cursor-pointer transition-transform duration-200 select-none ${
-                  isSelected ? 'scale-125 z-40' : 'hover:scale-115 opacity-95 hover:opacity-100'
-                }`}
-                title={`${pin.number}. ${pin.name}`}
+                className="group relative flex items-center justify-center p-2 cursor-pointer focus:outline-none select-none"
+                aria-label={`Inspect ${pin.name}`}
               >
-                {/* Active radar ping */}
+                {/* Active pulsating radar ring */}
                 {isSelected && (
                   <span
-                    className="absolute -inset-2.5 rounded-full animate-ping opacity-60 pointer-events-none"
-                    style={{ backgroundColor: pin.color }}
+                    className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-45"
+                    style={{ background: dotColor }}
                   />
                 )}
 
-                {/* Medical pinpoint badge with number */}
-                <div
-                  className="flex items-center justify-center w-7 h-7 rounded-full text-white font-mono text-xs font-black shadow-lg border-2 border-white transition-all"
+                {/* Refined Medical Dot (12px idle, 16px active with white border) */}
+                <span
+                  className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
                   style={{
-                    backgroundColor: pin.color,
+                    width: isSelected ? 16 : 12,
+                    height: isSelected ? 16 : 12,
+                    background: dotColor,
+                    border: '2px solid #ffffff',
                     boxShadow: isSelected
-                      ? `0 0 18px ${pin.color}`
-                      : '0 2px 8px rgba(0,0,0,0.4)',
+                      ? `0 0 0 4px ${dotColor}45, 0 0 16px ${dotColor}`
+                      : '0 2px 8px rgba(0,0,0,0.45)',
                   }}
                 >
-                  {pin.number}
-                </div>
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                </span>
               </div>
             </Html>
           </group>
@@ -193,28 +195,38 @@ function Loader() {
 
 /**
  * Main 3D Heart Centerpiece
- * Pure transparent stage, zero card box, zero video, zero overlap
+ * Pure transparent stage, zero card box, zero video, zero zoom, full 360° inspection
  */
 export default function RealisticHeart3DViewer({ vesselStates }) {
   // Realistic Anatomy active by default
   const [selectedModel, setSelectedModel] = useState('realistic');
-  const [activePin, setActivePin] = useState(ANATOMICAL_PINS[0]);
-  const [pin2DPos, setPin2DPos] = useState({ x: 38, y: 50, isFrontFacing: true });
+  
+  // Card ONLY opens when pointer hovers over a pin (null by default)
+  const [activePin, setActivePin] = useState(null);
+  const [pin2DPos, setPin2DPos] = useState({ x: 50, y: 50, isFrontFacing: true });
   const [isHoveringModal, setIsHoveringModal] = useState(false);
   const controlsRef = useRef();
   const pinRefs = useRef({});
 
   const currentModelConfig = HEART_MODELS[selectedModel];
 
-  // Shift heart left when callout modal is active to guarantee ZERO overlap
-  const canvasShiftX = activePin ? -110 : 0;
+  // Dynamic layout shift: heart glides left when callout is active to guarantee ZERO overlap
+  const canvasShiftX = activePin ? -135 : 0;
+
+  // Reset camera view whenever model is switched
+  useEffect(() => {
+    setActivePin(null);
+    if (controlsRef.current) {
+      controlsRef.current.reset();
+    }
+  }, [selectedModel]);
 
   // Prepare callout data formatted identically to Surface & Blood Flow
   const calloutData = activePin
     ? {
         code: activePin.code,
         name: activePin.name,
-        shortName: `${activePin.number} · ${activePin.shortName}`,
+        shortName: activePin.shortName,
         tag: activePin.tag,
         flow: activePin.patientExpl,
         role: activePin.patientExpl,
@@ -256,14 +268,14 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
       </div>
 
       {/* ── Seamless Transparent 3D Stage (No Card Frame, No Video) ── */}
-      <div className="relative w-full h-[500px] sm:h-[540px] flex items-center justify-center overflow-visible">
+      <div className="relative w-full h-[510px] sm:h-[550px] flex items-center justify-center overflow-visible">
         
         {/* Soft volumetric depth glow behind the heart */}
         <div
           aria-hidden="true"
           className="absolute inset-0 pointer-events-none"
           style={{
-            background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.09) 0%, rgba(56,189,248,0.05) 50%, transparent 72%)',
+            background: 'radial-gradient(ellipse at 50% 50%, rgba(244,63,94,0.10) 0%, rgba(56,189,248,0.06) 50%, transparent 72%)',
           }}
         />
 
@@ -274,7 +286,7 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
           className="w-full h-full"
         >
           <Canvas
-            camera={{ position: [0, 0, 3.4], fov: 42 }}
+            camera={{ position: [0, 0, 2.2], fov: 42 }}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             className="w-full h-full cursor-grab active:cursor-grabbing"
           >
@@ -284,13 +296,12 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
             <directionalLight position={[-4, 2, -2]} intensity={1.4} color="#e0f2fe" />
             <directionalLight position={[0, -4, 3]} intensity={0.9} color="#ffe4e6" />
 
-            {/* Smooth 360° Orbit Controls */}
+            {/* Smooth 360° Orbit Controls (Zoom strictly disabled per user request) */}
             <OrbitControls
               ref={controlsRef}
+              enableZoom={false}
               enableDamping={true}
               dampingFactor={0.06}
-              minDistance={2.0}
-              maxDistance={5.0}
               maxPolarAngle={Math.PI - 0.1}
               minPolarAngle={0.1}
             />
@@ -315,7 +326,7 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
           </Canvas>
         </motion.div>
 
-        {/* ── Leader Line & Clinical Callout Modal (Matching Surface & Blood Flow 1:1) ── */}
+        {/* ── Leader Line & Clinical Callout Modal (Only visible on hover/active pin) ── */}
         <AnimatePresence>
           {calloutData && (
             <AnatomicalCalloutTooltip
@@ -325,7 +336,9 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
               pinPos={{ x: pin2DPos.x, y: pin2DPos.y }}
               onClose={() => setActivePin(null)}
               onCardMouseEnter={() => setIsHoveringModal(true)}
-              onCardMouseLeave={() => setIsHoveringModal(false)}
+              onCardMouseLeave={() => {
+                setIsHoveringModal(false);
+              }}
             />
           )}
         </AnimatePresence>
@@ -333,7 +346,7 @@ export default function RealisticHeart3DViewer({ vesselStates }) {
 
       {/* ── Bottom Footnote ── */}
       <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-1 mb-8 text-center">
-        Hover pins (1–5) to inspect pathology · Drag heart to rotate 360°
+        Hover anatomical dots to inspect pathology · Drag heart to rotate 360°
       </p>
 
     </div>
