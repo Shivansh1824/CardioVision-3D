@@ -2,7 +2,7 @@
  * heartModelService.js
  * 
  * Manages Supabase Storage URLs, offline fallbacks,
- * background preloading, and anatomical landmark definitions for 3D cardiac viewing.
+ * background preloading, and clinically validated anatomical landmarks for 3D cardiac viewing.
  */
 
 // Supabase Storage Public URLs
@@ -15,9 +15,7 @@ export const HEART_MODELS = {
     label: 'Beating Cycle',
     url: `${SUPABASE_STORAGE_URL}/beating_heart.glb`,
     fallbackUrl: '/models/beating_heart.glb',
-    scale: 0.038,
-    position: [0, -0.2, 0],
-    rotation: [0, -0.3, 0],
+    targetDim: 2.5,
     hasAnimation: true,
   },
   realistic: {
@@ -26,69 +24,81 @@ export const HEART_MODELS = {
     label: 'Realistic Anatomy',
     url: `${SUPABASE_STORAGE_URL}/human_heart.glb`,
     fallbackUrl: '/models/human_heart.glb',
-    scale: 1.15,
-    position: [0, -0.35, 0],
-    rotation: [0, 0.4, 0],
+    targetDim: 2.5,
     hasAnimation: false,
   },
 };
 
-// Simplified, patient-friendly anatomical sections replacing generic numbers 1, 2, 3, 4
+// Clinically validated anatomical sections with simplified patient explanations + clinical pathology terms
 export const ANATOMICAL_PINS = [
   {
     id: 'lad',
     number: '1',
     code: 'LAD',
-    name: 'Left Anterior Descending (LAD)',
-    subtitle: 'Anterior Wall & Apex Perfusion',
-    desc: 'Runs down the front groove of the heart. Supplies oxygen-rich blood to the entire front muscular wall and the apex (tip). Blockages here are the most critical.',
-    position: [-0.3, 0.2, 1.2],
+    name: 'Left Anterior Descending Artery',
+    shortName: 'Anterior Perfuser',
+    tag: 'Coronary Artery',
+    vesselKey: 'LAD',
+    // Position on centered 2.5-unit heart model
+    position: [-0.18, 0.08, 1.15],
     color: '#f43f5e', // Rose
-    accent: 'Coronary Artery',
+    patientExpl: 'Runs directly down the front groove of your heart. It delivers oxygen-rich blood to the entire front muscle wall and the main pumping tip (apex). A healthy LAD is essential for your heart’s pumping strength.',
+    pathology: 'Known clinically as the "Widow Maker". Stenosis restricts anterior blood flow, posing immediate risk of extensive anterior STEMI, apical aneurysm, and acute cardiogenic shock.',
+    bloodTerritory: '~50% of Left Ventricular Myocardium & Anterior Septum',
   },
   {
     id: 'lcx',
     number: '2',
     code: 'LCX',
-    name: 'Left Circumflex Artery (LCX)',
-    subtitle: 'Lateral Left Ventricular Wall',
-    desc: 'Branches off to encircle the left side of the heart muscle, supplying the lateral and posterior walls of the main pumping chamber.',
-    position: [0.9, 0.35, 0.4],
+    name: 'Left Circumflex Artery',
+    shortName: 'Lateral Perfusion',
+    tag: 'Coronary Artery',
+    vesselKey: 'LCX',
+    position: [0.88, 0.28, 0.32],
     color: '#0284c7', // Sky Blue
-    accent: 'Coronary Artery',
+    patientExpl: 'Curves around the left side of the heart like a belt. It feeds the side and posterior walls of the heart muscle so it can relax and contract efficiently.',
+    pathology: 'Stenosis often presents with subtle or silent exertional angina. Severe occlusion can provoke posterolateral ischemia and acute mitral valve regurgitation via papillary muscle hypoperfusion.',
+    bloodTerritory: 'Lateral & Posterior Left Ventricular Free Walls',
   },
   {
     id: 'rca',
     number: '3',
     code: 'RCA',
-    name: 'Right Coronary Artery (RCA)',
-    subtitle: 'Right Heart & Inferior Wall',
-    desc: 'Travels down the right groove to nourish the right atrium, right ventricle, and electrical pacemaker nodes that regulate your rhythm.',
-    position: [-0.95, 0.15, 0.3],
+    name: 'Right Coronary Artery',
+    shortName: 'Inferior & Conduction',
+    tag: 'Coronary Artery',
+    vesselKey: 'RCA',
+    position: [-0.88, -0.05, 0.32],
     color: '#10b981', // Emerald
-    accent: 'Coronary Artery',
+    patientExpl: 'Travels down the right groove of your heart. It nourishes the right pumping chambers, the bottom of the heart, and powers your heart’s natural electrical pacemaker.',
+    pathology: 'Occlusion causes inferior myocardial infarction and frequently interrupts cardiac conduction, resulting in severe sinus bradycardia and high-grade AV heart blocks.',
+    bloodTerritory: 'Right Atrium, Right Ventricle, Inferior Wall & SA/AV Nodes',
   },
   {
     id: 'lv',
     number: '4',
     code: 'LV',
-    name: 'Left Ventricle (LV Chamber)',
-    subtitle: 'Primary Systemic Muscular Pump',
-    desc: 'The thickest and strongest chamber. Contracts with high pressure to drive oxygenated blood across the aorta and throughout the entire body.',
-    position: [0.15, -0.55, 0.95],
+    name: 'Left Ventricle Chamber',
+    shortName: 'Primary Systemic Pump',
+    tag: 'Cardiac Chamber',
+    position: [0.18, -0.62, 0.82],
     color: '#8b5cf6', // Violet
-    accent: 'Cardiac Chamber',
+    patientExpl: 'The thickest and most powerful chamber of your heart. It takes freshly oxygenated blood and forcefully pumps it through the aorta out to your brain and body.',
+    pathology: 'Bears the highest pressure workload (120 mmHg systolic). Chronic coronary hypoperfusion causes left ventricular remodeling, ischemic cardiomyopathy, and reduced ejection fraction (HFrEF).',
+    bloodTerritory: 'Generates Systemic Cardiac Output (~5 Liters/min)',
   },
   {
     id: 'aorta',
     number: '5',
     code: 'AORTA',
-    name: 'Ascending Aorta',
-    subtitle: 'Main Systemic Arterial Trunk',
-    desc: 'The largest blood vessel in the body. Directly receives high-velocity blood during ventricular contraction and distributes it systemically.',
-    position: [-0.1, 0.9, 0.2],
+    name: 'Ascending Aorta & Arch',
+    shortName: 'Main Arterial Highway',
+    tag: 'Great Vessel',
+    position: [-0.08, 0.98, 0.12],
     color: '#f59e0b', // Amber
-    accent: 'Great Vessel',
+    patientExpl: 'The largest blood vessel in your body. It acts as the central highway distributing oxygenated blood from your heart to every vital organ and tissue.',
+    pathology: 'High-compliance vessel exposed to maximal systolic pressure waves. Subject to calcific aortic stenosis, ascending aneurysms, and acute Type-A aortic dissection.',
+    bloodTerritory: 'Systemic Arterial Network & Coronary Ostia Inflow',
   },
 ];
 
@@ -114,10 +124,10 @@ export function preloadHeartModels() {
         return res.blob();
       })
       .then(() => {
-        // Pre-cached in browser
+        // Pre-cached in browser cache
       })
       .catch(() => {
-        // Fetch failed, browser will use local fallback
+        // Fallback to local files if offline
       });
   });
 }

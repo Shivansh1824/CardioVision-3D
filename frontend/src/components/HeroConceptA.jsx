@@ -202,7 +202,7 @@ export default function HeroConceptA({
 
             {/* Interactive Anatomical Dissection / Perfusion Stage / 3D Model */}
             {viewMode === '3d-model' ? (
-              <RealisticHeart3DViewer />
+              <RealisticHeart3DViewer vesselStates={vesselStates} />
             ) : (
               <HeartStageVisualizer
                 viewMode={viewMode}
