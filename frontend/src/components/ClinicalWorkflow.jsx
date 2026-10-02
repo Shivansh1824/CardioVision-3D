@@ -2,14 +2,12 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { FileText, Cpu, Heart, CheckCircle2 } from 'lucide-react';
 
 gsap.registerPlugin(ScrollTrigger);
 
 const WORKFLOW_STEPS = [
   {
     step: '01',
-    icon: FileText,
     title: 'Standard Medical Tests Collected',
     subtitle: 'ECG, Ultrasound & Blood Work',
     desc: 'Uses the routine tests you already take at the clinic: ECG heart rhythm, echocardiogram ultrasound of heart muscle movement, and standard cholesterol blood panels. Zero needles or invasive catheters needed.',
@@ -18,7 +16,6 @@ const WORKFLOW_STEPS = [
   },
   {
     step: '02',
-    icon: Cpu,
     title: 'AI Evaluates Each Artery',
     subtitle: 'Under 30 Milliseconds',
     desc: 'The trained clinical algorithm cross-references your test markers to determine the individual blood flow health of your front (LAD), side (LCX), and right (RCA) coronary arteries.',
@@ -27,7 +24,6 @@ const WORKFLOW_STEPS = [
   },
   {
     step: '03',
-    icon: Heart,
     title: '3D Heart Twin Updates',
     subtitle: 'Clear Visual Color Coding',
     desc: 'Your personalized 3D heart shows how blood flows in real time: green where arteries are clear and unobstructed, amber for mild plaque, and red where narrowing needs clinical care.',
@@ -36,7 +32,6 @@ const WORKFLOW_STEPS = [
   },
   {
     step: '04',
-    icon: CheckCircle2,
     title: 'Shared Doctor-Patient Care Plan',
     subtitle: 'Empowered Health Decisions',
     desc: 'Doctor and patient look at the same clear visual model together to plan next steps—whether simple daily habit changes, targeted medication, or advanced cardiology consultation.',
@@ -100,7 +95,6 @@ export default function ClinicalWorkflow() {
         {/* 4 Steps Grid */}
         <div className="workflow-steps-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           {WORKFLOW_STEPS.map((step, idx) => {
-            const Icon = step.icon;
             return (
               <div
                 key={idx}
@@ -115,11 +109,6 @@ export default function ClinicalWorkflow() {
                     <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${step.tagColor}`}>
                       {step.tag}
                     </span>
-                  </div>
-
-                  {/* Icon */}
-                  <div className="w-10 h-10 rounded-xl bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-700 mb-4">
-                    <Icon className="w-5 h-5 text-rose-600" />
                   </div>
 
                   {/* Content */}
