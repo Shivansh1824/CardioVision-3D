@@ -12,7 +12,9 @@
  * - 3D parallax pointer tilt & organic 72 BPM cardiac cycle pulse
  */
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
@@ -23,13 +25,33 @@ export default function HeroConceptA({
   onOpenSignIn,
   onScrollToSection,
 }) {
+  const containerRef = useRef(null);
+
   // Background preload 3D models immediately when site opens
   useEffect(() => {
     preloadHeartModels();
   }, []);
 
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        '.hero-anim-item',
+        { y: 25, opacity: 0 },
+        {
+          y: 0,
+          opacity: 1,
+          duration: 0.75,
+          stagger: 0.08,
+          ease: 'power3.out',
+        }
+      );
+    },
+    { scope: containerRef }
+  );
+
   return (
     <section
+      ref={containerRef}
       className="relative overflow-hidden"
       style={{
         minHeight: '92vh',
@@ -56,26 +78,26 @@ export default function HeroConceptA({
 
           {/* ─── LEFT: Editorial copy & Proof Metric Cards ─────────────────── */}
           <div className="lg:col-span-5 space-y-6">
-            <div className="ca-overline inline-flex items-center gap-2">
+            <div className="hero-anim-item ca-overline inline-flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               <span className="font-mono text-xs font-bold text-rose-600 uppercase tracking-widest">
                 Interactive Heart &amp; Artery Health Guide
               </span>
             </div>
 
-            <h1 className="ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.06]">
+            <h1 className="hero-anim-item ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.06]">
               Understand <br />
               Your Heart <br />
               &amp; <span className="text-gradient-vivid">Coronary Arteries</span>
             </h1>
 
-            <p className="ca-sub text-base sm:text-lg text-slate-600 leading-relaxed max-w-md">
+            <p className="hero-anim-item ca-sub text-base sm:text-lg text-slate-600 leading-relaxed max-w-md">
               An intuitive visual platform that helps doctors triage coronary disease
               and helps patients clearly see how blood flows through their heart.
               Explore the three main arteries with zero medical confusion.
             </p>
 
-            <div className="ca-cta flex flex-wrap items-center gap-3">
+            <div className="hero-anim-item ca-cta flex flex-wrap items-center gap-3">
               <button
                 onClick={() => onScrollToSection?.('vessel-explorer')}
                 className="ca-cta btn-primary-vibrant text-sm cursor-pointer shadow-md"
@@ -94,7 +116,7 @@ export default function HeroConceptA({
             </div>
 
             {/* 4 Stat Proof Metric Cards (Matching Design Specification) */}
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
+            <div className="hero-anim-item grid grid-cols-2 sm:grid-cols-4 gap-2.5 pt-1">
               <div className="p-3 sm:p-3.5 rounded-2xl bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-xs flex flex-col justify-between">
                 <span className="font-display text-lg sm:text-xl font-extrabold text-slate-900 leading-tight">
                   91.2%
