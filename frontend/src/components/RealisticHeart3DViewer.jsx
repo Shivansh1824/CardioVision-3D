@@ -31,7 +31,15 @@ function HeartMesh({ modelConfig, activePin, onSelectPin }) {
   useLayoutEffect(() => {
     if (!scene) return;
 
-    // Calculate scene bounding box
+    // CRITICAL: Reset group transform to identity before measuring so re-renders / double-mounts
+    // never compute bounding box on an already scaled or translated matrix
+    if (groupRef.current) {
+      groupRef.current.scale.set(1, 1, 1);
+      groupRef.current.position.set(0, 0, 0);
+      groupRef.current.updateMatrixWorld(true);
+    }
+
+    // Calculate scene bounding box in clean local space
     const box = new THREE.Box3().setFromObject(scene);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
