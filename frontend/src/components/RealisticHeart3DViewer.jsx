@@ -2,13 +2,13 @@
  * RealisticHeart3DViewer — Native WebGL 3D Heart Centerpiece
  * 
  * Features:
- * - Direct WebGL rendering with Three.js & React Three Fiber (No card box, no border, no video)
- * - 3D Heart model permanently centered with generous padding (never cut off, never eaten up)
- * - Minimal, elegant medical dots anchored 100% to the anatomical mesh surface
- * - Connected dotted reference line & clinical modal anchored directly to the 3D pin
- * - Seamless animation: when the model rotates or beats, the dot, line, and modal move together
- * - Smooth 360° orbital rotation (Zoom strictly disabled)
- * - Seamless switching between Realistic Anatomy and Beating Cycle with automatic camera reset
+ * - Direct WebGL rendering with Three.js & React Three Fiber
+ * - 3D Heart model centered with generous padding (never cut off, never eaten up)
+ * - Minimal, elegant medical dots anchored to anatomical mesh surfaces (Human Heart & Beating Heart)
+ * - UI/UX law compliant button cards (Fitts's Law, clear click affordance, distinct cards in grid)
+ * - Dual terminology: easy, intuitive terms for patients + precise medical terms for clinicians
+ * - Smooth 360° orbital rotation with GSAP cinematic camera targeting
+ * - Simple mode switcher: "Human Heart" vs "Beating Heart"
  */
 
 import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
@@ -17,11 +17,12 @@ import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import gsap from 'gsap';
-import { Layers, Activity, Heart, X, AlertTriangle, ShieldCheck, Zap } from 'lucide-react';
+import { Layers, Activity, Heart } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS, CARDIAC_CYCLE_PHASES } from '../services/heartModelService';
+import HeartCalloutCard from './HeartCalloutCard';
 
 /**
- * 3D Camera Orbit Presets for each anatomical landmark
+ * 3D Camera Orbit Presets for each anatomical landmark & cardiac cycle phase
  */
 const CAMERA_PRESETS = {
   overview: { pos: [2.85, 0, 0.03], target: [0, 0, 0] },
@@ -31,14 +32,16 @@ const CAMERA_PRESETS = {
   lv: { pos: [2.45, -0.45, 0.55], target: [0.05, -0.12, 0.10] },
   aorta: { pos: [2.30, 0.85, 0.18], target: [0.02, 0.22, 0.05] },
   beating_overview: { pos: [0, 0, 2.85], target: [0, 0, 0] },
-  beating_ejection: { pos: [0.4, -0.2, 2.6], target: [0, -0.1, 0] },
-  beating_filling: { pos: [-0.3, 0.2, 2.6], target: [0, 0.1, 0] },
+  filling: { pos: [0.35, 0.35, 2.50], target: [0.10, 0.20, 0.05] },
+  contraction: { pos: [0.05, 0.15, 2.55], target: [0.02, 0.10, 0.05] },
+  ejection: { pos: [-0.20, 0.45, 2.50], target: [-0.05, 0.25, 0.05] },
+  relaxation: { pos: [0.10, -0.25, 2.55], target: [0.02, -0.10, 0.05] },
 };
 
 /**
  * 3D Heart Mesh Geometry with auto-centering, dynamic vertex colors & surface-locked dots
  */
-function HeartMesh({ modelConfig, activePin, onSelectPin }) {
+function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase }) {
   const groupRef = useRef();
   const { scene, animations } = useGLTF(modelConfig.url, '/draco/');
   const { actions, names } = useAnimations(animations, groupRef);
@@ -92,77 +95,138 @@ function HeartMesh({ modelConfig, activePin, onSelectPin }) {
       const action = actions[actionName];
       if (action) {
         action.reset().fadeIn(0.3).play();
-        action.setEffectiveTimeScale(1.1); // Natural 72 BPM resting cardiac rhythm
+        action.setEffectiveTimeScale(1.1);
       }
       return () => action?.fadeOut(0.2);
     }
   }, [actions, names, modelConfig.hasAnimation]);
 
   return (
-    <group ref={groupRef}>
-      <primitive object={scene} />
+    <>
+      <group ref={groupRef}>
+        <primitive object={scene} />
 
-      {/* 3D Medical Pinpoint Dots locked to heart surface (Realistic Anatomy) */}
-      {modelConfig.id === 'realistic' && ANATOMICAL_PINS.map((pin) => {
-        const isSelected = activePin?.id === pin.id;
-        const dotColor = pin.color || '#e11d48';
+        {/* 3D Medical Pinpoint Dots locked to heart surface (Human Heart) */}
+        {modelConfig.id === 'realistic' && ANATOMICAL_PINS.map((pin) => {
+          const isSelected = activePin?.id === pin.id;
+          const dotColor = pin.color || '#e11d48';
 
-        return (
-          <group key={pin.id} position={pin.position}>
-            <Html
-              center={true}
-              sprite={false}
-              zIndexRange={isSelected ? [100, 50] : [40, 10]}
-              style={{ pointerEvents: 'auto' }}
-            >
-              <button
-                type="button"
-                id={`pin-marker-${pin.id}`}
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onSelectPin(pin);
-                }}
-                className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
-                aria-label={`Inspect ${pin.name}`}
+          return (
+            <group key={pin.id} position={pin.position}>
+              <Html
+                center={true}
+                sprite={false}
+                zIndexRange={isSelected ? [100, 50] : [40, 10]}
+                style={{ pointerEvents: 'auto' }}
               >
-                {/* Pulsating radar ring when active */}
-                {isSelected && (
-                  <span
-                    className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
-                    style={{ background: dotColor }}
-                  />
-                )}
-
-                {/* Minimal Medical Dot */}
-                <span
-                  className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
-                  style={{
-                    width: isSelected ? 16 : 12,
-                    height: isSelected ? 16 : 12,
-                    background: dotColor,
-                    border: '2px solid #ffffff',
-                    boxShadow: isSelected
-                      ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
-                      : '0 2px 8px rgba(0,0,0,0.4)',
+                <button
+                  type="button"
+                  id={`pin-marker-${pin.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onSelectPin(pin);
                   }}
+                  className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
+                  aria-label={`Inspect ${pin.patientName}`}
                 >
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                </span>
+                  {isSelected && (
+                    <span
+                      className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
+                      style={{ background: dotColor }}
+                    />
+                  )}
 
-                {/* Landmark Code Pill on Hover (when not selected) */}
-                {!isSelected && (
-                  <div
-                    className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
+                  <span
+                    className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
+                    style={{
+                      width: isSelected ? 16 : 12,
+                      height: isSelected ? 16 : 12,
+                      background: dotColor,
+                      border: '2px solid #ffffff',
+                      boxShadow: isSelected
+                        ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
+                        : '0 2px 8px rgba(0,0,0,0.4)',
+                    }}
                   >
-                    {pin.code}
-                  </div>
-                )}
-              </button>
-            </Html>
-          </group>
-        );
-      })}
-    </group>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+
+                  {!isSelected && (
+                    <div
+                      className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-mono font-bold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
+                    >
+                      {pin.code}
+                    </div>
+                  )}
+                </button>
+              </Html>
+            </group>
+          );
+        })}
+      </group>
+
+      {/* 3D Medical Pinpoint Dots locked to beating cycle landmarks in normalized world space */}
+      {modelConfig.id === 'beating' && (
+        <group position={[0, 0, 0]}>
+          {CARDIAC_CYCLE_PHASES.map((phase) => {
+            const isSelected = activePhase?.id === phase.id;
+            const dotColor = phase.color || '#0284c7';
+
+            return (
+              <group key={phase.id} position={phase.worldPosition || phase.position}>
+                <Html
+                  center={true}
+                  sprite={false}
+                  zIndexRange={isSelected ? [100, 50] : [40, 10]}
+                  style={{ pointerEvents: 'auto' }}
+                >
+                  <button
+                    type="button"
+                    id={`phase-marker-${phase.id}`}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onSelectPhase(phase);
+                    }}
+                    className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
+                    aria-label={`Inspect ${phase.patientName}`}
+                  >
+                    {isSelected && (
+                      <span
+                        className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
+                        style={{ background: dotColor }}
+                      />
+                    )}
+
+                    <span
+                      className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
+                      style={{
+                        width: isSelected ? 16 : 12,
+                        height: isSelected ? 16 : 12,
+                        background: dotColor,
+                        border: '2px solid #ffffff',
+                        boxShadow: isSelected
+                          ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
+                          : '0 2px 8px rgba(0,0,0,0.4)',
+                      }}
+                    >
+                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    </span>
+
+                    {!isSelected && (
+                      <div
+                        className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-semibold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
+                      >
+                        {phase.patientName}
+                      </div>
+                    )}
+                  </button>
+                </Html>
+              </group>
+            );
+          })}
+        </group>
+      )}
+    </>
   );
 }
 
@@ -187,7 +251,6 @@ function Loader() {
 
 /**
  * Main 3D Heart Centerpiece
- * Guided 5-option selector dock, cinematic GSAP camera orbit, right-side modal, and beating cycle mechanics
  */
 export default function RealisticHeart3DViewer() {
   const [selectedModel, setSelectedModel] = useState('realistic');
@@ -246,8 +309,7 @@ export default function RealisticHeart3DViewer() {
       animateCameraTo('beating_overview');
     } else {
       setActivePhase(phase);
-      const targetPreset = phase.id === 'ejection' ? 'beating_ejection' : phase.id === 'filling' ? 'beating_filling' : 'beating_overview';
-      animateCameraTo(targetPreset);
+      animateCameraTo(phase.id);
     }
   };
 
@@ -270,7 +332,7 @@ export default function RealisticHeart3DViewer() {
       className="relative w-full max-w-[760px] flex flex-col items-center select-none overflow-visible"
     >
       
-      {/* ── Top Model Switcher: Realistic Anatomy vs Beating Cycle ── */}
+      {/* ── Top Model Switcher: Human Heart vs Beating Heart ── */}
       <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/85 backdrop-blur-md border border-slate-200/90 shadow-xs mb-2 z-30">
         <button
           type="button"
@@ -282,7 +344,7 @@ export default function RealisticHeart3DViewer() {
           }`}
         >
           <Layers className="w-3.5 h-3.5" />
-          <span>Realistic Anatomy</span>
+          <span>Human Heart</span>
         </button>
 
         <button
@@ -295,7 +357,7 @@ export default function RealisticHeart3DViewer() {
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>Beating Cycle</span>
+          <span>Beating Heart</span>
         </button>
       </div>
 
@@ -334,13 +396,11 @@ export default function RealisticHeart3DViewer() {
               }
             }}
           >
-            {/* Medical Studio Lighting */}
             <ambientLight intensity={1.5} />
             <directionalLight position={[4, 5, 4]} intensity={2.2} color="#fff1f2" />
             <directionalLight position={[-4, 2, -2]} intensity={1.4} color="#e0f2fe" />
             <directionalLight position={[0, -4, 3]} intensity={0.9} color="#ffe4e6" />
 
-            {/* Orbit Controls with zoom strictly disabled */}
             <OrbitControls
               ref={controlsRef}
               enableZoom={false}
@@ -356,183 +416,36 @@ export default function RealisticHeart3DViewer() {
                 modelConfig={currentModelConfig}
                 activePin={activePin}
                 onSelectPin={handleTogglePin}
+                activePhase={activePhase}
+                onSelectPhase={handleTogglePhase}
               />
             </Suspense>
           </Canvas>
         </motion.div>
 
-        {/* ── Right-Side Clinical Explanation Modal (Opens on Click, Toggles on Re-Click) ── */}
+        {/* ── Right-Side Clinical Explanation Modal ── */}
         <AnimatePresence>
-          {selectedModel === 'realistic' && activePin && (
-            <motion.div
-              key={activePin.id}
-              initial={{ opacity: 0, x: 30, scale: 0.94 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, scale: 0.94 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[280px] sm:w-[310px]"
-              style={{
-                boxShadow: '0 20px 40px -10px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.06)',
-              }}
-            >
-              {/* Header Bar */}
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse"
-                    style={{ background: activePin.color }}
-                  />
-                  <span className="font-mono text-xs font-bold text-slate-900">
-                    [{activePin.code}]
-                  </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-                    {activePin.shortName || activePin.tag}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActivePin(null);
-                    animateCameraTo('overview');
-                  }}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                  aria-label="Close callout"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Landmark Full Name */}
-              <h4 className="font-display text-xs sm:text-sm font-bold text-slate-900 leading-tight mb-2">
-                {activePin.name}
-              </h4>
-
-              {/* Hemodynamic Flow Section */}
-              <div className="mb-2 bg-sky-50/70 rounded-xl p-2.5 border border-sky-100/90">
-                <div className="flex items-center gap-1.5 mb-1 text-sky-800">
-                  <Activity className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
-                    Hemodynamic Flow
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                  {activePin.patientExpl}
-                </p>
-              </div>
-
-              {/* Clinical Pathology Section */}
-              <div className="bg-rose-50/70 rounded-xl p-2.5 border border-rose-100/90">
-                <div className="flex items-center gap-1.5 mb-1 text-rose-800">
-                  <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
-                  <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
-                    Clinical Pathology
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                  {activePin.pathology}
-                </p>
-              </div>
-
-              {/* Territory Note */}
-              {activePin.bloodTerritory && (
-                <div className="mt-2 pt-1.5 border-t border-slate-100 text-[9px] font-mono text-slate-400">
-                  Territory: {activePin.bloodTerritory}
-                </div>
-              )}
-            </motion.div>
-          )}
-
-          {/* Right-Side Beating Cycle Phase Modal */}
-          {selectedModel === 'beating' && activePhase && (
-            <motion.div
-              key={activePhase.id}
-              initial={{ opacity: 0, x: 30, scale: 0.94 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 30, scale: 0.94 }}
-              transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-              className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[280px] sm:w-[310px]"
-              style={{
-                boxShadow: '0 20px 40px -10px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.06)',
-              }}
-            >
-              {/* Header Bar */}
-              <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
-                <div className="flex items-center gap-1.5 flex-wrap">
-                  <span
-                    className="w-2.5 h-2.5 rounded-full flex-shrink-0 animate-pulse"
-                    style={{ background: activePhase.color }}
-                  />
-                  <span className="font-mono text-xs font-bold text-slate-900">
-                    [{activePhase.code}]
-                  </span>
-                  <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-600 font-semibold border border-slate-200">
-                    {activePhase.timing}
-                  </span>
-                </div>
-
-                <button
-                  type="button"
-                  onClick={() => {
-                    setActivePhase(null);
-                    animateCameraTo('beating_overview');
-                  }}
-                  className="p-1 rounded-md text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                  aria-label="Close phase callout"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-              </div>
-
-              {/* Phase Title */}
-              <h4 className="font-display text-xs sm:text-sm font-bold text-slate-900 leading-tight mb-2">
-                {activePhase.name}
-              </h4>
-
-              {/* Valve Mechanics Bar */}
-              <div className="mb-2 bg-slate-50 rounded-lg p-2 border border-slate-200/80">
-                <span className="block font-mono text-[9px] font-bold text-slate-500 uppercase tracking-wider mb-0.5">
-                  Cardiac Valve Mechanics
-                </span>
-                <p className="text-[10px] font-semibold text-slate-800">
-                  {activePhase.valves}
-                </p>
-              </div>
-
-              {/* Hemodynamics */}
-              <div className="mb-2 bg-sky-50/70 rounded-xl p-2.5 border border-sky-100/90">
-                <div className="flex items-center gap-1.5 mb-1 text-sky-800">
-                  <Activity className="w-3 h-3 text-sky-600 shrink-0" />
-                  <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
-                    Pumping Action
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                  {activePhase.patientExpl}
-                </p>
-              </div>
-
-              {/* Clinical Pathology */}
-              <div className="bg-rose-50/70 rounded-xl p-2.5 border border-rose-100/90">
-                <div className="flex items-center gap-1.5 mb-1 text-rose-800">
-                  <AlertTriangle className="w-3 h-3 text-rose-600 shrink-0" />
-                  <span className="font-mono text-[9px] font-bold tracking-wider uppercase">
-                    Clinical Diagnostic Impact
-                  </span>
-                </div>
-                <p className="text-[10.5px] text-slate-700 leading-relaxed font-medium">
-                  {activePhase.clinicalPathology}
-                </p>
-              </div>
-            </motion.div>
-          )}
+          <HeartCalloutCard
+            selectedModel={selectedModel}
+            activePin={activePin}
+            activePhase={activePhase}
+            onClose={() => {
+              if (selectedModel === 'realistic') {
+                setActivePin(null);
+                animateCameraTo('overview');
+              } else {
+                setActivePhase(null);
+                animateCameraTo('beating_overview');
+              }
+            }}
+          />
         </AnimatePresence>
 
       </div>
 
-      {/* ── Bottom Selector Dock: 5 Anatomical Options (Realistic) OR 4 Cycle Stages (Beating) ── */}
+      {/* ── Bottom Selector Dock: UI/UX Law Compliant Button Cards ── */}
       {selectedModel === 'realistic' ? (
-        <div className="inline-flex items-center gap-1.5 p-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-md mt-2 z-30 flex-wrap justify-center max-w-full">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 w-full max-w-[720px] mt-2 z-30 px-2">
           {ANATOMICAL_PINS.map((pin) => {
             const isCurrent = activePin?.id === pin.id;
             return (
@@ -541,77 +454,69 @@ export default function RealisticHeart3DViewer() {
                 type="button"
                 id={`dock-pin-${pin.id}`}
                 onClick={() => handleTogglePin(pin)}
-                className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
+                className={`flex items-center gap-2 p-2 sm:px-2.5 sm:py-2 rounded-xl border text-left transition-all duration-200 cursor-pointer shadow-xs select-none ${
                   isCurrent
-                    ? 'bg-slate-900 text-white shadow-md scale-105'
-                    : 'bg-white/70 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-md ring-2 ring-slate-900/10 scale-[1.02]'
+                    : 'bg-white/95 border-slate-200/90 text-slate-800 hover:border-slate-300 hover:bg-slate-50/80 hover:shadow-sm hover:-translate-y-0.5'
                 }`}
               >
                 <span
-                  className={`w-2.5 h-2.5 rounded-full transition-transform ${isCurrent ? 'scale-125 animate-pulse' : ''}`}
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform ${isCurrent ? 'scale-125 animate-pulse' : ''}`}
                   style={{ background: pin.color }}
                 />
-                <span className="font-mono text-[11px] font-bold tracking-tight">
-                  {pin.code}
-                </span>
-                <span className="hidden sm:inline text-[10px] opacity-75 font-normal">
-                  {pin.shortName}
-                </span>
+                <div className="flex flex-col min-w-0">
+                  <span className={`font-mono text-xs font-bold leading-tight truncate ${isCurrent ? 'text-white' : 'text-slate-900'}`}>
+                    {pin.code}
+                  </span>
+                  <span className={`text-[10px] leading-tight truncate ${isCurrent ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {pin.patientName}
+                  </span>
+                </div>
               </button>
             );
           })}
         </div>
       ) : (
-        <div className="flex flex-col items-center gap-2 mt-2 z-30 w-full max-w-full">
-          {/* Live Hemodynamic Telemetry Strip */}
-          <div className="inline-flex items-center gap-3 px-3 py-1 rounded-full bg-slate-900/90 text-white text-[10px] font-mono shadow-sm">
-            <span className="flex items-center gap-1 text-rose-400 font-bold">
-              <Heart className="w-3 h-3 animate-pulse" /> 72 BPM
-            </span>
-            <span className="text-slate-400">|</span>
-            <span className="text-sky-400">120/80 mmHg</span>
-            <span className="text-slate-400">|</span>
-            <span className="text-emerald-400">SV: 70 mL</span>
-            <span className="text-slate-400">|</span>
-            <span className="text-amber-400">CO: 5.0 L/min</span>
-          </div>
-
-          {/* 4 Pumping Cycle Stages */}
-          <div className="inline-flex items-center gap-1.5 p-1.5 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-md flex-wrap justify-center">
-            {CARDIAC_CYCLE_PHASES.map((phase) => {
-              const isCurrent = activePhase?.id === phase.id;
-              return (
-                <button
-                  key={phase.id}
-                  type="button"
-                  id={`dock-phase-${phase.id}`}
-                  onClick={() => handleTogglePhase(phase)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold transition-all duration-200 cursor-pointer ${
-                    isCurrent
-                      ? 'bg-slate-900 text-white shadow-md scale-105'
-                      : 'bg-white/70 text-slate-700 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
-                >
-                  <span
-                    className={`w-2.5 h-2.5 rounded-full transition-transform ${isCurrent ? 'scale-125 animate-pulse' : ''}`}
-                    style={{ background: phase.color }}
-                  />
-                  <span className="text-[11px] font-bold">
-                    {phase.shortName}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 w-full max-w-[720px] mt-2 z-30 px-2">
+          {CARDIAC_CYCLE_PHASES.map((phase) => {
+            const isCurrent = activePhase?.id === phase.id;
+            return (
+              <button
+                key={phase.id}
+                type="button"
+                id={`dock-phase-${phase.id}`}
+                onClick={() => handleTogglePhase(phase)}
+                className={`flex items-center gap-2 p-2 sm:px-2.5 sm:py-2 rounded-xl border text-left transition-all duration-200 cursor-pointer shadow-xs select-none ${
+                  isCurrent
+                    ? 'bg-slate-900 border-slate-900 text-white shadow-md ring-2 ring-slate-900/10 scale-[1.02]'
+                    : 'bg-white/95 border-slate-200/90 text-slate-800 hover:border-slate-300 hover:bg-slate-50/80 hover:shadow-sm hover:-translate-y-0.5'
+                }`}
+              >
+                <span
+                  className={`w-2.5 h-2.5 rounded-full shrink-0 transition-transform ${isCurrent ? 'scale-125 animate-pulse' : ''}`}
+                  style={{ background: phase.color }}
+                />
+                <div className="flex flex-col min-w-0">
+                  <span className={`text-xs font-bold leading-tight truncate ${isCurrent ? 'text-white' : 'text-slate-900'}`}>
+                    {phase.patientName}
                   </span>
-                </button>
-              );
-            })}
-          </div>
+                  <span className={`text-[10px] leading-tight truncate font-mono ${isCurrent ? 'text-slate-300' : 'text-slate-500'}`}>
+                    {phase.doctorTerm}
+                  </span>
+                </div>
+              </button>
+            );
+          })}
         </div>
       )}
 
       {/* ── Bottom Footnote ── */}
-      <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-2 text-center">
+      <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-2.5 text-center">
         Click any landmark below to orbit camera 360° · Click again to close modal
       </p>
 
     </div>
   );
 }
+
 
