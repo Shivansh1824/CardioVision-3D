@@ -93,8 +93,8 @@ function HeartMesh({ modelConfig, activePin, onSelectPin }) {
       {/* 3D Heart Mesh Geometry */}
       <primitive object={scene} />
 
-      {/* 3D Medical Pinpoint Dots & Surface-Connected Callouts */}
-      {ANATOMICAL_PINS.map((pin) => {
+      {/* 3D Medical Pinpoint Dots & Surface-Connected Callouts (Active on Realistic Anatomy) */}
+      {modelConfig.id === 'realistic' && ANATOMICAL_PINS.map((pin) => {
         const isSelected = activePin?.id === pin.id;
         const dotColor = pin.color || '#e11d48';
 
@@ -357,11 +357,17 @@ export default function RealisticHeart3DViewer() {
 
   const currentModelConfig = HEART_MODELS[selectedModel];
 
-  // Reset camera view whenever model is switched
+  // Reset camera view to optimal perspective whenever model is switched
   useEffect(() => {
     setActivePin(null);
     if (controlsRef.current) {
-      controlsRef.current.reset();
+      if (selectedModel === 'realistic') {
+        controlsRef.current.object.position.set(2.85, 0, 0.03);
+      } else {
+        controlsRef.current.object.position.set(0, 0, 2.85);
+      }
+      controlsRef.current.target.set(0, 0, 0);
+      controlsRef.current.update();
     }
   }, [selectedModel]);
 
@@ -415,7 +421,7 @@ export default function RealisticHeart3DViewer() {
         {/* 3D WebGL Canvas */}
         <div className="w-full h-full">
           <Canvas
-            camera={{ position: [0, 0, 2.85], fov: 40 }}
+            camera={{ position: [2.85, 0, 0.03], fov: 40 }}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             className="w-full h-full cursor-grab active:cursor-grabbing"
             onClick={() => setActivePin(null)}
