@@ -1,6 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import Lenis from 'lenis';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from './components/Header';
+
+gsap.registerPlugin(ScrollTrigger);
 import Hero from './components/Hero';
 import VesselExplorer from './components/VesselExplorer';
 import PersonaComparison from './components/PersonaComparison';
@@ -31,7 +35,7 @@ export default function App() {
   // Privacy Policy modal state
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
-  // Initialize Lenis smooth scrolling (Modern Immersive standard)
+  // Initialize Lenis smooth scrolling synchronized with GSAP ScrollTrigger (60fps standard)
   useEffect(() => {
     const lenis = new Lenis({
       duration: 1.2,
@@ -39,15 +43,16 @@ export default function App() {
       smoothWheel: true,
     });
 
-    function raf(time) {
-      lenis.raf(time);
-      requestAnimationFrame(raf);
-    }
+    lenis.on('scroll', ScrollTrigger.update);
 
-    const animId = requestAnimationFrame(raf);
+    const tickerCallback = (time) => {
+      lenis.raf(time * 1000);
+    };
+    gsap.ticker.add(tickerCallback);
+    gsap.ticker.lagSmoothing(0);
 
     return () => {
-      cancelAnimationFrame(animId);
+      gsap.ticker.remove(tickerCallback);
       lenis.destroy();
     };
   }, []);

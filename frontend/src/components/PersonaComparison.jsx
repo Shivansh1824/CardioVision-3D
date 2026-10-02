@@ -11,15 +11,28 @@ export default function PersonaComparison({ onOpenSignIn }) {
 
   useGSAP(
     () => {
+      // Doctor section staggered entrance
       gsap.fromTo(
-        '.doctor-block',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.doctor-block', start: 'top 85%' } }
+        '.doctor-header',
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', scrollTrigger: { trigger: '.doctor-block', start: 'top 85%' } }
       );
       gsap.fromTo(
-        '.patient-block',
+        '.doctor-card',
         { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.patient-block', start: 'top 85%' } }
+        { y: 0, opacity: 1, duration: 0.65, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%' } }
+      );
+
+      // Patient section staggered entrance
+      gsap.fromTo(
+        '.patient-header',
+        { y: 30, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', scrollTrigger: { trigger: '.patient-block', start: 'top 85%' } }
+      );
+      gsap.fromTo(
+        '.patient-card',
+        { y: 35, opacity: 0 },
+        { y: 0, opacity: 1, duration: 0.65, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%' } }
       );
     },
     { scope: sectionRef }
@@ -36,7 +49,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           
           <div className="doctor-block">
             {/* Header */}
-            <div className="max-w-3xl mb-12">
+            <div className="doctor-header max-w-3xl mb-12">
               {/* Style 1: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
@@ -53,7 +66,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
             </div>
 
             {/* 4 Doctor Workflow Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="doctor-cards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
                   title: 'Rapid Pre-Cath Triage',
@@ -78,7 +91,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
               ].map((card, i) => (
                 <div
                   key={i}
-                  className="p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                  className="doctor-card p-6 rounded-2xl bg-white border border-slate-200/90 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between"
                 >
                   <div>
                     <span className="text-[11px] font-bold text-sky-700 bg-sky-50 px-2 py-0.5 rounded-md border border-sky-100 inline-block mb-3">
@@ -117,7 +130,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           
           <div className="patient-block">
             {/* Header */}
-            <div className="max-w-3xl mb-12">
+            <div className="patient-header max-w-3xl mb-12">
               {/* Style A: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
                 <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
@@ -134,7 +147,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
             </div>
 
             {/* 4 Patient Benefit Cards */}
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <div className="patient-cards-grid grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
                 {
                   title: 'See Your Heart in 3D',
@@ -159,7 +172,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
               ].map((card, i) => (
                 <div
                   key={i}
-                  className="p-6 rounded-2xl bg-rose-50/40 border border-rose-100 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between"
+                  className="patient-card p-6 rounded-2xl bg-rose-50/40 border border-rose-100 shadow-2xs hover:shadow-md hover:-translate-y-1 transition-all flex flex-col justify-between"
                 >
                   <div>
                     <span className="text-[11px] font-bold text-rose-700 bg-rose-100/70 px-2 py-0.5 rounded-md border border-rose-200 inline-block mb-3">
