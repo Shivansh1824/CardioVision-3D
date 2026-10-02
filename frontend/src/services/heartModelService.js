@@ -104,6 +104,58 @@ export const ANATOMICAL_PINS = [
   },
 ];
 
+// Clinically validated phases of the human cardiac cycle for beating model inspection
+export const CARDIAC_CYCLE_PHASES = [
+  {
+    id: 'filling',
+    code: 'DIASTOLE',
+    name: 'Ventricular Filling & Atrial Kick',
+    shortName: 'Diastolic Filling',
+    timing: '0.0s – 0.5s',
+    color: '#38bdf8', // Sky Blue
+    valves: 'Mitral & Tricuspid: OPEN · Aortic & Pulmonic: CLOSED',
+    hemodynamics: 'Passive influx of ~100 mL blood into ventricles + 30 mL atrial kick. Reaches End-Diastolic Volume (~130 mL).',
+    patientExpl: 'Your heart chambers relax and fill up with fresh blood. The top chambers give a gentle final squeeze to top off the main pumping chambers before the big beat.',
+    clinicalPathology: 'Diastolic dysfunction stiffens the heart wall, requiring abnormally elevated filling pressures and causing pulmonary congestion (HFpEF).',
+  },
+  {
+    id: 'contraction',
+    code: 'ISO-CONTRACTION',
+    name: 'Isovolumic Contraction (S1 Lub)',
+    shortName: 'Early Systole',
+    timing: '0.5s – 0.55s',
+    color: '#fbbf24', // Amber
+    valves: 'ALL VALVES CLOSED · Ventricular Chamber Sealed',
+    hemodynamics: 'Ventricles contract against closed valves. Pressure surges from 8 mmHg to 80 mmHg with zero volume change.',
+    patientExpl: 'The heart muscles tense up like a coiled spring with all valves closed. Pressure builds intensely until it is strong enough to push blood out.',
+    clinicalPathology: 'Ischemic myocardium increases Isovolumic Contraction Time (IVCT), delaying systolic onset and reducing peak mechanical rate of pressure rise (dP/dt).',
+  },
+  {
+    id: 'ejection',
+    code: 'SYSTOLE',
+    name: 'Rapid Ventricular Ejection',
+    shortName: 'Peak Systolic Pump',
+    timing: '0.55s – 0.75s',
+    color: '#f43f5e', // Rose
+    valves: 'Aortic & Pulmonic: OPEN · Mitral & Tricuspid: CLOSED',
+    hemodynamics: 'Ventricles forcefully pump ~70 mL Stroke Volume into aorta (120 mmHg) and pulmonary trunk. Ejection Fraction ~55–65%.',
+    patientExpl: 'The main squeeze! The heart forcefully pumps fresh oxygenated blood through the aorta out to your brain, muscles, and organs.',
+    clinicalPathology: 'Coronary artery disease (CAD) produces regional wall hypokinesis, depressing Stroke Volume and causing heart failure with reduced ejection fraction (HFrEF).',
+  },
+  {
+    id: 'relaxation',
+    code: 'ISO-RELAXATION',
+    name: 'Isovolumic Relaxation (S2 Dub)',
+    shortName: 'Early Diastole',
+    timing: '0.75s – 0.80s',
+    color: '#a855f7', // Purple
+    valves: 'ALL VALVES CLOSED · Semilunar Snap Shut',
+    hemodynamics: 'Ventricles cease contraction; pressure plummets below arterial pressure. Aortic closure marks end of systole.',
+    patientExpl: 'The heart valves snap shut with the second heartbeat sound ("dub"), and the muscle begins relaxing to prepare for the next beat.',
+    clinicalPathology: 'Aortic regurgitation causes rapid diastolic back-leak into the left ventricle, causing volume overload and left ventricular dilation.',
+  },
+];
+
 let preloaded = false;
 
 export function preloadHeartModels() {

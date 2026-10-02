@@ -14,7 +14,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { ArrowRight, Layers, Droplet, Box } from 'lucide-react';
+import { ArrowRight, Layers, Box } from 'lucide-react';
 
 import {
   VESSEL_COLOR,
@@ -32,8 +32,8 @@ export default function HeroConceptA({
   selectedArtery,
   onSelectArtery,
 }) {
-  // View Mode: 'surface' (external vessels + blood flow) or 'dissected' (interior chambers) or '3d-model'
-  const [viewMode, setViewMode] = useState('surface');
+  // View Mode: '3d-model' (primary 3D interactive twin) or 'dissected' (coronal chamber dissection)
+  const [viewMode, setViewMode] = useState('3d-model');
 
   // Background preload 3D models immediately when site opens
   useEffect(() => {
@@ -160,24 +160,27 @@ export default function HeroConceptA({
           {/* ─── RIGHT: Full-Stage Heart Centerpiece & Dissection ─────────── */}
           <div className="lg:col-span-7 flex flex-col items-center justify-center ca-heart-stage relative">
 
-            {/* Mode Switcher: Surface (Blood Flow) vs Dissected Chambers vs 3D Model */}
+            {/* Mode Switcher: 3D Model Centerpiece vs Dissected Chambers */}
             <div className="inline-flex items-center gap-1.5 p-1 rounded-full bg-white/90 backdrop-blur-md border border-slate-200/90 shadow-sm mb-3 z-30 flex-wrap justify-center">
               <button
                 type="button"
-                onClick={() => setViewMode('surface')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  viewMode === 'surface'
+                id="hero-3d-model-tab"
+                onClick={() => setViewMode('3d-model')}
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                  viewMode === '3d-model'
                     ? 'bg-rose-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <Droplet className="w-3.5 h-3.5" />
-                <span>Surface &amp; Blood Flow</span>
+                <Box className="w-3.5 h-3.5" />
+                <span>3D Cardiovascular Twin</span>
               </button>
+
               <button
                 type="button"
+                id="hero-dissected-tab"
                 onClick={() => setViewMode('dissected')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
+                className={`flex items-center gap-1.5 px-4 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
                   viewMode === 'dissected'
                     ? 'bg-rose-600 text-white font-semibold shadow-xs'
                     : 'text-slate-600 hover:text-slate-900'
@@ -185,18 +188,6 @@ export default function HeroConceptA({
               >
                 <Layers className="w-3.5 h-3.5" />
                 <span>Chamber Dissection</span>
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('3d-model')}
-                className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-full text-xs font-medium transition-all cursor-pointer ${
-                  viewMode === '3d-model'
-                    ? 'bg-rose-600 text-white font-semibold shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900'
-                }`}
-              >
-                <Box className="w-3.5 h-3.5" />
-                <span>3D Model</span>
               </button>
             </div>
 
