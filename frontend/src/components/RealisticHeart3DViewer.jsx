@@ -12,7 +12,7 @@
  */
 
 import { useState, useEffect, useLayoutEffect, useMemo, useRef, Suspense } from 'react';
-import { Canvas } from '@react-three/fiber';
+import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
@@ -44,6 +44,7 @@ const CAMERA_PRESETS = {
  */
 function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase }) {
   const groupRef = useRef();
+  const beatRef = useRef();
   const [pinsVisible, setPinsVisible] = useState(false);
   const { scene: rawScene, animations } = useGLTF(modelConfig.url, '/draco/');
   const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
@@ -167,10 +168,46 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
     }
   }, [actions, names, modelConfig.hasAnimation]);
 
+  // Procedural 72 BPM Lub-Dub cardiac cycle pumping for the Human Heart model
+  useFrame(({ clock }) => {
+    if (!beatRef.current) return;
+    if (modelConfig.id !== 'realistic') {
+      beatRef.current.scale.set(1, 1, 1);
+      beatRef.current.rotation.y = 0;
+      return;
+    }
+
+    const t = clock.getElapsedTime();
+    // 72 BPM resting cardiac rhythm: cycle duration = 60 / 72 = 0.8333s
+    const period = 0.8333;
+    const cycle = (t % period) / period;
+
+    let pulse = 0;
+    let twist = 0;
+
+    if (cycle < 0.14) {
+      // Lub (S1: Isovolumetric contraction & early ventricular systole)
+      const p = cycle / 0.14;
+      pulse = Math.sin(p * Math.PI) * 0.038;
+      twist = Math.sin(p * Math.PI) * 0.016;
+    } else if (cycle >= 0.18 && cycle < 0.38) {
+      // Dub (S2: Peak ventricular ejection & myocardial wringing)
+      const p = (cycle - 0.18) / 0.20;
+      pulse = Math.sin(p * Math.PI) * 0.055;
+      twist = -Math.sin(p * Math.PI) * 0.022;
+    }
+    // Diastolic rest occupies the remaining ~60% of the cycle
+
+    // 3D physiological deformation: radial expansion/contraction + longitudinal shortening
+    beatRef.current.scale.set(1 + pulse, 1 - pulse * 0.40, 1 + pulse);
+    beatRef.current.rotation.y = twist;
+  });
+
   return (
     <>
       <group ref={groupRef}>
-        <primitive object={scene} />
+        <group ref={beatRef}>
+          <primitive object={scene} />
 
         {/* 3D Medical Pinpoint Dots locked to heart surface (Human Heart) */}
         {ANATOMICAL_PINS.map((pin) => {
@@ -235,6 +272,7 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
             </group>
           );
         })}
+        </group>
       </group>
 
       {/* 3D Medical Pinpoint Dots locked to beating cycle landmarks in normalized world space */}
