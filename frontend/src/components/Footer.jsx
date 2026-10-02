@@ -1,6 +1,34 @@
-import React from 'react';
+import React, { useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import { ScrollTrigger } from 'gsap/ScrollTrigger';
+
+gsap.registerPlugin(ScrollTrigger);
 
 export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy }) {
+  const footerRef = useRef(null);
+
+  useGSAP(
+    () => {
+      gsap.fromTo(
+        '.footer-content',
+        { y: 20, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.65,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: footerRef.current,
+            start: 'top 95%',
+            toggleActions: 'play none none reverse',
+          },
+        }
+      );
+    },
+    { scope: footerRef }
+  );
+
   const handleNav = (id) => {
     if (onScrollToSection) {
       onScrollToSection(id);
@@ -11,8 +39,8 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
   };
 
   return (
-    <footer className="border-t border-slate-200 bg-white py-12 text-slate-500 text-xs">
-      <div className="container-custom flex flex-col items-center justify-center text-center space-y-6">
+    <footer ref={footerRef} className="border-t border-slate-200 bg-white py-12 text-slate-500 text-xs">
+      <div className="footer-content container-custom flex flex-col items-center justify-center text-center space-y-6">
         
         {/* Brand Center */}
         <div className="flex items-center gap-2 text-slate-900 font-display font-extrabold text-xl">

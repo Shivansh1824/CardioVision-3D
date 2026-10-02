@@ -56,14 +56,27 @@ export default function MetricsSection() {
     () => {
       gsap.fromTo(
         '.metrics-header',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.metrics-header', start: 'top 85%' } }
+        { y: 30, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
 
       gsap.fromTo(
         '.metric-card',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, scrollTrigger: { trigger: '.metrics-grid', start: 'top 85%' } }
+        { y: 35, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.65,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.metrics-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
 
       gsap.fromTo(
@@ -72,10 +85,10 @@ export default function MetricsSection() {
         {
           scaleX: 1,
           transformOrigin: 'left center',
-          duration: 1.0,
-          stagger: 0.1,
+          duration: 1.1,
+          stagger: 0.12,
           ease: 'power2.out',
-          scrollTrigger: { trigger: '.metrics-grid', start: 'top 85%' },
+          scrollTrigger: { trigger: '.metrics-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
         }
       );
     },

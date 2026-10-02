@@ -73,6 +73,12 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
             FAQ
           </button>
           <button
+            onClick={() => handleNavClick('testimonials')}
+            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
+          >
+            Reviews
+          </button>
+          <button
             onClick={() => handleNavClick('model-metrics')}
             className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
           >
@@ -152,6 +158,12 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
             className="w-full text-left py-2 text-slate-800 text-sm font-medium"
           >
             Clinical FAQ
+          </button>
+          <button
+            onClick={() => handleNavClick('testimonials')}
+            className="w-full text-left py-2 text-slate-800 text-sm font-medium"
+          >
+            Clinical Reviews
           </button>
           <button
             onClick={() => handleNavClick('model-metrics')}

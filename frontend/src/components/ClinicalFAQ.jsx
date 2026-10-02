@@ -49,13 +49,26 @@ export default function ClinicalFAQ() {
     () => {
       gsap.fromTo(
         '.faq-header',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.faq-header', start: 'top 85%' } }
+        { y: 30, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
       gsap.fromTo(
         '.faq-item',
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.5, stagger: 0.08, scrollTrigger: { trigger: '.faq-list', start: 'top 85%' } }
+        { y: 35, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.65,
+          stagger: 0.08,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.faq-list', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
     },
     { scope: sectionRef }

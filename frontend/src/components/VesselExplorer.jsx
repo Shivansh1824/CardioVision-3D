@@ -87,9 +87,34 @@ export default function VesselExplorer({
   useGSAP(
     () => {
       gsap.fromTo(
+        '.vessel-header',
+        { y: 30, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
+        }
+      );
+      gsap.fromTo(
         '.vessel-module',
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.6, scrollTrigger: { trigger: '.vessel-module', start: 'top 85%' } }
+        { y: 35, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: {
+            trigger: '.vessel-module',
+            start: 'top 88%',
+            toggleActions: 'play none none reverse',
+          },
+        }
       );
     },
     { scope: containerRef }
@@ -121,11 +146,11 @@ export default function VesselExplorer({
   );
 
   return (
-    <section id="vessel-explorer" ref={containerRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
+    <section id="vessel-explorer" ref={containerRef} className="pt-10 pb-20 bg-slate-50/70 border-t border-slate-200 relative">
       <div className="container-custom">
         
         {/* Section Header */}
-        <div className="max-w-3xl mb-12 space-y-3">
+        <div className="vessel-header max-w-3xl mb-10 space-y-3">
           {/* Style A: Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
             <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>

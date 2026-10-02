@@ -47,25 +47,25 @@ export default function ClinicalWorkflow() {
     () => {
       gsap.fromTo(
         '.workflow-header',
-        { y: 30, opacity: 0 },
+        { y: 30, autoAlpha: 0 },
         {
           y: 0,
-          opacity: 1,
+          autoAlpha: 1,
           duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
         }
       );
       gsap.fromTo(
         '.workflow-step-card',
-        { y: 35, opacity: 0 },
+        { y: 35, autoAlpha: 0 },
         {
           y: 0,
-          opacity: 1,
+          autoAlpha: 1,
           duration: 0.65,
           stagger: 0.12,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
         }
       );
     },

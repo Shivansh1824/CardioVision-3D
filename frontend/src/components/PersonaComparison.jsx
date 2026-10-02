@@ -14,25 +14,51 @@ export default function PersonaComparison({ onOpenSignIn }) {
       // Doctor section staggered entrance
       gsap.fromTo(
         '.doctor-header',
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', scrollTrigger: { trigger: '.doctor-block', start: 'top 85%' } }
+        { y: 30, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.doctor-block', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
       gsap.fromTo(
         '.doctor-card',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.65, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%' } }
+        { y: 35, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.65,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
 
       // Patient section staggered entrance
       gsap.fromTo(
         '.patient-header',
-        { y: 30, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.75, ease: 'power3.out', scrollTrigger: { trigger: '.patient-block', start: 'top 85%' } }
+        { y: 30, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.75,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.patient-block', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
       gsap.fromTo(
         '.patient-card',
-        { y: 35, opacity: 0 },
-        { y: 0, opacity: 1, duration: 0.65, stagger: 0.1, ease: 'power3.out', scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%' } }
+        { y: 35, autoAlpha: 0 },
+        {
+          y: 0,
+          autoAlpha: 1,
+          duration: 0.65,
+          stagger: 0.1,
+          ease: 'power3.out',
+          scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+        }
       );
     },
     { scope: sectionRef }

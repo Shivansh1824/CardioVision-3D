@@ -46,25 +46,33 @@ export default function Testimonials() {
     () => {
       gsap.fromTo(
         '.testimonials-header',
-        { y: 30, opacity: 0 },
+        { y: 30, autoAlpha: 0 },
         {
           y: 0,
-          opacity: 1,
+          autoAlpha: 1,
           duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
         }
       );
       gsap.fromTo(
         '.testimonial-card',
-        { y: 35, opacity: 0 },
+        { y: 35, autoAlpha: 0 },
         {
           y: 0,
-          opacity: 1,
+          autoAlpha: 1,
           duration: 0.7,
           stagger: 0.14,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 80%' },
+          scrollTrigger: {
+            trigger: sectionRef.current,
+            start: 'top 85%',
+            toggleActions: 'play none none reverse',
+          },
         }
       );
     },
@@ -72,7 +80,7 @@ export default function Testimonials() {
   );
 
   return (
-    <section ref={sectionRef} className="py-20 bg-white border-t border-slate-200 relative">
+    <section id="testimonials" ref={sectionRef} className="py-20 bg-white border-t border-slate-200 relative">
       <div className="container-custom">
         
         {/* Section Header */}

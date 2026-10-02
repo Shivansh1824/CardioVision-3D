@@ -364,7 +364,7 @@ export default function RealisticHeart3DViewer() {
       </div>
 
       {/* ── 3D Stage (Dynamic shift leftward when modal is open to balance composition) ── */}
-      <div className="relative w-full h-[520px] sm:h-[560px] flex items-center justify-center overflow-visible">
+      <div className="relative w-full h-[470px] sm:h-[510px] flex items-center justify-center overflow-visible">
         
         {/* Soft volumetric depth glow */}
         <div

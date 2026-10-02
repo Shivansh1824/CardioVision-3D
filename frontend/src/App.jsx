@@ -38,11 +38,12 @@ export default function App() {
   // Initialize Lenis smooth scrolling synchronized with GSAP ScrollTrigger (60fps standard)
   useEffect(() => {
     const lenis = new Lenis({
-      duration: 1.2,
+      duration: 1.1,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       smoothWheel: true,
     });
 
+    // Notify ScrollTrigger on every Lenis scroll
     lenis.on('scroll', ScrollTrigger.update);
 
     const tickerCallback = (time) => {
@@ -51,7 +52,25 @@ export default function App() {
     gsap.ticker.add(tickerCallback);
     gsap.ticker.lagSmoothing(0);
 
+    // Refresh ScrollTrigger positions after fonts, 3D models, and dynamic content settle
+    const refreshST = () => {
+      ScrollTrigger.refresh();
+    };
+
+    window.addEventListener('resize', refreshST);
+    window.addEventListener('load', refreshST);
+
+    // Staggered refreshes to ensure all 3D WebGL canvases have accurate offsets
+    const t1 = setTimeout(refreshST, 300);
+    const t2 = setTimeout(refreshST, 1000);
+    const t3 = setTimeout(refreshST, 2500);
+
     return () => {
+      window.removeEventListener('resize', refreshST);
+      window.removeEventListener('load', refreshST);
+      clearTimeout(t1);
+      clearTimeout(t2);
+      clearTimeout(t3);
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
     };
