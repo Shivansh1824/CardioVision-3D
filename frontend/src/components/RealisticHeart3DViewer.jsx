@@ -44,17 +44,19 @@ const CAMERA_PRESETS = {
  */
 function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase }) {
   const groupRef = useRef();
+  const [pinsVisible, setPinsVisible] = useState(false);
   const { scene: rawScene, animations } = useGLTF(modelConfig.url, '/draco/');
   const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
   const { actions, names } = useAnimations(animations, groupRef);
 
-  // Auto-center precisely at (0, 0, 0) and scale to match reference height with generous padding
+  // Auto-center precisely at (0, 0, 0) and animate organic bloom entrance
   useLayoutEffect(() => {
     if (!scene) return;
 
     if (groupRef.current) {
       groupRef.current.scale.set(1, 1, 1);
       groupRef.current.position.set(0, 0, 0);
+      groupRef.current.rotation.set(0, 0, 0);
       groupRef.current.updateMatrixWorld(true);
     }
 
@@ -65,29 +67,91 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
     
     const targetScale = 1.55 / (maxDim || 1);
 
+    // Initial appearance state: compact, gentle offset, slight tilt, transparent
     if (groupRef.current) {
-      groupRef.current.scale.set(targetScale, targetScale, targetScale);
+      groupRef.current.scale.set(targetScale * 0.72, targetScale * 0.72, targetScale * 0.72);
       groupRef.current.position.set(
         -center.x * targetScale,
-        -center.y * targetScale,
+        -center.y * targetScale - 0.16,
         -center.z * targetScale
       );
+      groupRef.current.rotation.y = -0.45;
     }
 
+    // Prepare mesh materials for smooth fade-in
     scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
+      if (child.isMesh && child.material) {
+        child.material.roughness = 0.42;
+        child.material.metalness = 0.10;
+        child.material.transparent = true;
+        child.material.opacity = 0;
         if (child.geometry?.attributes?.color) {
           child.material.vertexColors = true;
         }
-        if (child.material) {
-          child.material.roughness = 0.42;
-          child.material.metalness = 0.10;
-          child.material.needsUpdate = true;
-        }
+        child.material.needsUpdate = true;
       }
     });
+
+    // 1. Smooth bloom scale-in
+    gsap.to(groupRef.current.scale, {
+      x: targetScale,
+      y: targetScale,
+      z: targetScale,
+      duration: 1.15,
+      ease: 'power3.out',
+    });
+
+    // 2. Smooth vertical rise into centered resting equilibrium
+    gsap.to(groupRef.current.position, {
+      x: -center.x * targetScale,
+      y: -center.y * targetScale,
+      z: -center.z * targetScale,
+      duration: 1.25,
+      ease: 'power3.out',
+    });
+
+    // 3. Elegant rotational settling glide
+    gsap.to(groupRef.current.rotation, {
+      y: 0,
+      duration: 1.35,
+      ease: 'power3.out',
+    });
+
+    // 4. Material opacity fade-in
+    scene.traverse((child) => {
+      if (child.isMesh && child.material) {
+        gsap.to(child.material, {
+          opacity: 1,
+          duration: 0.85,
+          ease: 'power2.out',
+          onComplete: () => {
+            if (child.material && !child.material.vertexColors) {
+              child.material.transparent = false;
+            }
+          },
+        });
+      }
+    });
+
+    // 5. Illuminate landmark surface pins gently after model arrives
+    setPinsVisible(false);
+    const pinTimer = setTimeout(() => {
+      setPinsVisible(true);
+    }, 550);
+
+    return () => {
+      clearTimeout(pinTimer);
+      if (groupRef.current) {
+        gsap.killTweensOf(groupRef.current.scale);
+        gsap.killTweensOf(groupRef.current.position);
+        gsap.killTweensOf(groupRef.current.rotation);
+      }
+      scene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          gsap.killTweensOf(child.material);
+        }
+      });
+    };
   }, [scene]);
 
   // Auto-play rhythmic contraction animation for beating model
@@ -119,7 +183,7 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
                 center={true}
                 sprite={false}
                 zIndexRange={isSelected ? [100, 50] : [40, 10]}
-                style={{ pointerEvents: 'auto' }}
+                style={{ pointerEvents: pinsVisible ? 'auto' : 'none', opacity: pinsVisible ? 1 : 0, transition: 'opacity 0.45s ease-out' }}
               >
                 <button
                   type="button"
@@ -180,7 +244,7 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
                   center={true}
                   sprite={false}
                   zIndexRange={isSelected ? [100, 50] : [40, 10]}
-                  style={{ pointerEvents: 'auto' }}
+                  style={{ pointerEvents: pinsVisible ? 'auto' : 'none', opacity: pinsVisible ? 1 : 0, transition: 'opacity 0.45s ease-out' }}
                 >
                   <button
                     type="button"
@@ -385,6 +449,7 @@ export default function RealisticHeart3DViewer() {
         >
           <Canvas
             camera={{ position: [2.85, 0, 0.03], fov: 40 }}
+            dpr={[1, 1.75]}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             style={{ overflow: 'visible' }}
             className="w-full h-full overflow-visible cursor-grab active:cursor-grabbing"

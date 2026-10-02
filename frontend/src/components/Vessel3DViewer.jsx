@@ -21,6 +21,7 @@ const STAGE_COLOR = {
 
 function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
   const groupRef = useRef();
+  const [pinsVisible, setPinsVisible] = useState(false);
   const { scene: rawScene } = useGLTF(HEART_MODELS.realistic.url, '/draco/');
   const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
 
@@ -30,6 +31,7 @@ function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
     if (groupRef.current) {
       groupRef.current.scale.set(1, 1, 1);
       groupRef.current.position.set(0, 0, 0);
+      groupRef.current.rotation.set(0, 0, 0);
       groupRef.current.updateMatrixWorld(true);
     }
 
@@ -40,25 +42,84 @@ function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
     const targetScale = 1.55 / (maxDim || 1);
 
     if (groupRef.current) {
-      groupRef.current.scale.set(targetScale, targetScale, targetScale);
+      groupRef.current.scale.set(targetScale * 0.72, targetScale * 0.72, targetScale * 0.72);
       groupRef.current.position.set(
         -center.x * targetScale,
-        -center.y * targetScale,
+        -center.y * targetScale - 0.16,
         -center.z * targetScale
       );
+      groupRef.current.rotation.y = -0.45;
     }
 
     scene.traverse((child) => {
-      if (child.isMesh) {
-        child.castShadow = true;
-        child.receiveShadow = true;
-        if (child.material) {
-          child.material.roughness = 0.42;
-          child.material.metalness = 0.10;
-          child.material.needsUpdate = true;
-        }
+      if (child.isMesh && child.material) {
+        child.material.roughness = 0.42;
+        child.material.metalness = 0.10;
+        child.material.transparent = true;
+        child.material.opacity = 0;
+        child.material.needsUpdate = true;
       }
     });
+
+    // 1. Smooth bloom scale
+    gsap.to(groupRef.current.scale, {
+      x: targetScale,
+      y: targetScale,
+      z: targetScale,
+      duration: 1.15,
+      ease: 'power3.out',
+    });
+
+    // 2. Smooth vertical rise
+    gsap.to(groupRef.current.position, {
+      x: -center.x * targetScale,
+      y: -center.y * targetScale,
+      z: -center.z * targetScale,
+      duration: 1.25,
+      ease: 'power3.out',
+    });
+
+    // 3. Elegant rotational settling glide
+    gsap.to(groupRef.current.rotation, {
+      y: 0,
+      duration: 1.35,
+      ease: 'power3.out',
+    });
+
+    // 4. Material fade-in
+    scene.traverse((child) => {
+      if (child.isMesh && child.material) {
+        gsap.to(child.material, {
+          opacity: 1,
+          duration: 0.85,
+          ease: 'power2.out',
+          onComplete: () => {
+            if (child.material) {
+              child.material.transparent = false;
+            }
+          },
+        });
+      }
+    });
+
+    setPinsVisible(false);
+    const pinTimer = setTimeout(() => {
+      setPinsVisible(true);
+    }, 550);
+
+    return () => {
+      clearTimeout(pinTimer);
+      if (groupRef.current) {
+        gsap.killTweensOf(groupRef.current.scale);
+        gsap.killTweensOf(groupRef.current.position);
+        gsap.killTweensOf(groupRef.current.rotation);
+      }
+      scene.traverse((child) => {
+        if (child.isMesh && child.material) {
+          gsap.killTweensOf(child.material);
+        }
+      });
+    };
   }, [scene]);
 
   // Only render the 3 coronary arteries (LAD, LCX, RCA)
@@ -75,7 +136,7 @@ function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
 
         return (
           <group key={pin.id} position={pin.position}>
-            <Html center sprite={false} zIndexRange={isCurrent ? [100, 50] : [40, 10]}>
+            <Html center sprite={false} zIndexRange={isCurrent ? [100, 50] : [40, 10]} style={{ pointerEvents: pinsVisible ? 'auto' : 'none', opacity: pinsVisible ? 1 : 0, transition: 'opacity 0.45s ease-out' }}>
               <button
                 type="button"
                 id={`vessel-pin-${pin.id}`}
@@ -189,6 +250,7 @@ export default function Vessel3DViewer({
 
       <Canvas
         camera={{ position: [2.65, 0.12, 0.70], fov: 40 }}
+        dpr={[1, 1.75]}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         className="w-full h-full cursor-grab active:cursor-grabbing"
       >

@@ -182,27 +182,6 @@ export default function HeroConceptA({
             <RealisticHeart3DViewer />
           </div>
         </div>
-
-        {/* ─── Modern 2026 Artery Flow Indicator / Connector ─── */}
-        <div className="flex justify-center mt-6 pt-1">
-          <button
-            type="button"
-            onClick={() => onScrollToSection?.('vessel-explorer')}
-            className="hero-anim-item group inline-flex items-center gap-2.5 px-4 py-2 rounded-full bg-white/85 hover:bg-white backdrop-blur-md border border-slate-200/90 shadow-2xs hover:shadow-md text-xs font-semibold text-slate-700 hover:text-rose-600 transition-all duration-200 cursor-pointer hover:-translate-y-0.5"
-            id="hero-scroll-arteries-btn"
-          >
-            <span className="flex items-center gap-1.5 font-mono text-[11px] text-slate-500 group-hover:text-slate-700">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
-              Explore the 3 Main Coronary Arteries:
-            </span>
-            <span className="font-bold text-slate-900 group-hover:text-rose-600">
-              LAD · LCX · RCA
-            </span>
-            <span className="w-4 h-4 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 group-hover:text-rose-600 group-hover:bg-rose-50 transition-colors">
-              ↓
-            </span>
-          </button>
-        </div>
       </div>
 
       {/* Blood Flow Keyframe Styles */}
