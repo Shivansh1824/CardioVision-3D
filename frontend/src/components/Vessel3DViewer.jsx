@@ -1,7 +1,8 @@
-import React, { useRef, useEffect, useLayoutEffect, Suspense } from 'react';
+import React, { useRef, useEffect, useLayoutEffect, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
 import { Heart } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS } from '../services/heartModelService';
@@ -20,7 +21,8 @@ const STAGE_COLOR = {
 
 function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
   const groupRef = useRef();
-  const { scene } = useGLTF(HEART_MODELS.realistic.url, '/draco/');
+  const { scene: rawScene } = useGLTF(HEART_MODELS.realistic.url, '/draco/');
+  const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
 
   useLayoutEffect(() => {
     if (!scene) return;

@@ -11,11 +11,12 @@
  * - Simple mode switcher: "Human Heart" vs "Beating Heart"
  */
 
-import React, { useState, useEffect, useLayoutEffect, useRef, Suspense } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
+import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
 import { Layers, Activity, Heart } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS, CARDIAC_CYCLE_PHASES } from '../services/heartModelService';
@@ -43,7 +44,8 @@ const CAMERA_PRESETS = {
  */
 function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase }) {
   const groupRef = useRef();
-  const { scene, animations } = useGLTF(modelConfig.url, '/draco/');
+  const { scene: rawScene, animations } = useGLTF(modelConfig.url, '/draco/');
+  const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
   const { actions, names } = useAnimations(animations, groupRef);
 
   // Auto-center precisely at (0, 0, 0) and scale to match reference height with generous padding
