@@ -107,12 +107,14 @@ export default function App() {
         </ErrorBoundary>
 
         {/* Live Multi-Vessel Staging & What-If Simulator */}
-        <VesselExplorer
-          vesselStates={vesselStates}
-          setVesselStates={setVesselStates}
-          selectedArtery={selectedArtery}
-          setSelectedArtery={setSelectedArtery}
-        />
+        <ErrorBoundary>
+          <VesselExplorer
+            vesselStates={vesselStates}
+            setVesselStates={setVesselStates}
+            selectedArtery={selectedArtery}
+            setSelectedArtery={setSelectedArtery}
+          />
+        </ErrorBoundary>
 
         {/* Dual Persona Architecture (Doctor View vs Patient View) */}
         <PersonaComparison
