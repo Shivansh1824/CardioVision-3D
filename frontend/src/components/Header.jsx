@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { LogIn, Menu, X, ArrowUpRight } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 

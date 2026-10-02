@@ -1,5 +1,3 @@
-import React from 'react';
-
 /**
  * BrandLogo — Official CardioVision AI Brand Identity
  * 

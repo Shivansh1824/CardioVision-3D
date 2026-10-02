@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import Header from './components/Header';
 
 gsap.registerPlugin(ScrollTrigger);
-import Hero from './components/Hero';
+import Hero from './components/HeroConceptA';
 import VesselExplorer from './components/VesselExplorer';
 import PersonaComparison from './components/PersonaComparison';
 import ClinicalWorkflow from './components/ClinicalWorkflow';

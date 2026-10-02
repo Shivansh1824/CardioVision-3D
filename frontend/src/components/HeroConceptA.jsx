@@ -12,7 +12,7 @@
  * - 3D parallax pointer tilt & organic 72 BPM cardiac cycle pulse
  */
 
-import React, { useEffect, useRef } from 'react';
+import { useEffect, useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { motion } from 'framer-motion';
@@ -96,9 +96,8 @@ export default function HeroConceptA({
             </div>
 
             <h1 className="hero-anim-item ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.06]">
-              Understand <br />
-              Your Heart <br />
-              &amp; <span className="text-gradient-vivid">Coronary Arteries</span>
+              Understand Your Heart and <br />
+              <span className="text-gradient-vivid">Coronary Arteries</span>
             </h1>
 
             <p className="hero-anim-item ca-sub text-base sm:text-lg text-slate-600 leading-relaxed max-w-md">

@@ -11,14 +11,14 @@
  * - Simple mode switcher: "Human Heart" vs "Beating Heart"
  */
 
-import React, { useState, useEffect, useLayoutEffect, useMemo, useRef, Suspense } from 'react';
+import { useState, useEffect, useLayoutEffect, useMemo, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, useAnimations, Html } from '@react-three/drei';
 import { motion, AnimatePresence } from 'framer-motion';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
-import { Layers, Activity, Heart } from 'lucide-react';
+import { Layers, Activity } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS, CARDIAC_CYCLE_PHASES } from '../services/heartModelService';
 import HeartCalloutCard from './HeartCalloutCard';
 
@@ -303,25 +303,6 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
         })}
       </group>
     </>
-  );
-}
-
-/**
- * WebGL Canvas Loading Fallback
- */
-function Loader() {
-  return (
-    <Html center>
-      <div className="flex flex-col items-center justify-center gap-2 p-4 text-center select-none">
-        <div className="relative w-12 h-12 flex items-center justify-center">
-          <span className="absolute inset-0 rounded-full border-2 border-rose-500/30 border-t-rose-600 animate-spin" />
-          <Heart className="w-5 h-5 text-rose-500 animate-pulse" />
-        </div>
-        <p className="font-mono text-[11px] font-semibold text-slate-500 tracking-wider">
-          Rendering 3D Cardiac Anatomy...
-        </p>
-      </div>
-    </Html>
   );
 }
 

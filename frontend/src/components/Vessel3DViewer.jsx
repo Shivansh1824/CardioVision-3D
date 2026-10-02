@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect, useLayoutEffect, useMemo, Suspense } from 'react';
+import { useState, useRef, useEffect, useLayoutEffect, useMemo, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
-import { Heart } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS } from '../services/heartModelService';
 
 const ARTERY_CAMERA_PRESETS = {
@@ -187,17 +186,6 @@ function VesselHeartMesh({ selectedArtery, vesselStates, onSelectArtery }) {
         );
       })}
     </group>
-  );
-}
-
-function VesselLoader() {
-  return (
-    <Html center>
-      <div className="flex flex-col items-center justify-center gap-1.5 p-3 text-center select-none">
-        <Heart className="w-5 h-5 text-rose-500 animate-pulse" />
-        <p className="font-mono text-[10px] font-semibold text-slate-400">Loading 3D Vessel Anatomy...</p>
-      </div>
-    </Html>
   );
 }
 
