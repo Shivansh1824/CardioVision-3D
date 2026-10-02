@@ -19,8 +19,8 @@ export const HEART_MODELS = {
   },
   beating: {
     id: 'beating',
-    name: 'Beating Heart',
-    label: 'Beating Heart',
+    name: 'Dissected Heart',
+    label: 'Dissected Heart (Internal Chambers)',
     url: `${SUPABASE_STORAGE_URL}/beating_heart.glb`,
     fallbackUrl: '/models/beating_heart.glb',
     hasAnimation: true,

@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { LogIn, Menu, X, ArrowUpRight } from 'lucide-react';
+import BrandLogo from './BrandLogo';
 
 export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -22,18 +23,7 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
         {/* Left: Brand Logo */}
         <div className="flex items-center gap-4">
           <a href="#" className="flex items-center gap-2.5 no-underline group shrink-0">
-            <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-rose-600 p-1.5 shadow-sm transition-transform duration-200 group-hover:scale-105">
-              <svg
-                viewBox="0 0 48 48"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-                className="w-full h-full text-white"
-              >
-                <path d="M21 6V14M25 6V13M29 7V14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                <path d="M17 14C17 9.5 21 8 26 8C31 8 34 11 34 16C34 18 33 20 31 22" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-                <path d="M14 20C9.5 21 7 26 8.5 32C10.5 40 22 44 26 44C30 44 41 38 41 28C41 21 36 17 31 17C27 17 24 19 23 21" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            </div>
+            <BrandLogo size={32} />
             <span className="font-display font-bold text-base sm:text-lg tracking-tight text-slate-900 group-hover:text-rose-600 transition-colors whitespace-nowrap">
               CardioVision <span className="text-rose-600">AI</span>
             </span>

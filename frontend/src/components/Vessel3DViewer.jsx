@@ -268,7 +268,7 @@ export default function Vessel3DViewer({
           minPolarAngle={0.1}
         />
 
-        <Suspense fallback={<VesselLoader />}>
+        <Suspense fallback={null}>
           <VesselHeartMesh
             selectedArtery={selectedArtery}
             vesselStates={vesselStates}

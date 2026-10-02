@@ -173,9 +173,10 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
         <primitive object={scene} />
 
         {/* 3D Medical Pinpoint Dots locked to heart surface (Human Heart) */}
-        {modelConfig.id === 'realistic' && ANATOMICAL_PINS.map((pin) => {
+        {ANATOMICAL_PINS.map((pin) => {
           const isSelected = activePin?.id === pin.id;
           const dotColor = pin.color || '#e11d48';
+          const isCurrentModel = modelConfig.id === 'realistic';
 
           return (
             <group key={pin.id} position={pin.position}>
@@ -183,14 +184,19 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
                 center={true}
                 sprite={false}
                 zIndexRange={isSelected ? [100, 50] : [40, 10]}
-                style={{ pointerEvents: pinsVisible ? 'auto' : 'none', opacity: pinsVisible ? 1 : 0, transition: 'opacity 0.45s ease-out' }}
+                style={{
+                  display: isCurrentModel ? 'block' : 'none',
+                  pointerEvents: isCurrentModel && pinsVisible ? 'auto' : 'none',
+                  opacity: isCurrentModel && pinsVisible ? 1 : 0,
+                  transition: 'opacity 0.45s ease-out',
+                }}
               >
                 <button
                   type="button"
                   id={`pin-marker-${pin.id}`}
                   onClick={(e) => {
                     e.stopPropagation();
-                    onSelectPin(pin);
+                    if (isCurrentModel) onSelectPin(pin);
                   }}
                   className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
                   aria-label={`Inspect ${pin.patientName}`}
@@ -232,66 +238,70 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
       </group>
 
       {/* 3D Medical Pinpoint Dots locked to beating cycle landmarks in normalized world space */}
-      {modelConfig.id === 'beating' && (
-        <group position={[0, 0, 0]}>
-          {CARDIAC_CYCLE_PHASES.map((phase) => {
-            const isSelected = activePhase?.id === phase.id;
-            const dotColor = phase.color || '#0284c7';
+      <group position={[0, 0, 0]}>
+        {CARDIAC_CYCLE_PHASES.map((phase) => {
+          const isSelected = activePhase?.id === phase.id;
+          const dotColor = phase.color || '#0284c7';
+          const isCurrentModel = modelConfig.id === 'beating';
 
-            return (
-              <group key={phase.id} position={phase.worldPosition || phase.position}>
-                <Html
-                  center={true}
-                  sprite={false}
-                  zIndexRange={isSelected ? [100, 50] : [40, 10]}
-                  style={{ pointerEvents: pinsVisible ? 'auto' : 'none', opacity: pinsVisible ? 1 : 0, transition: 'opacity 0.45s ease-out' }}
+          return (
+            <group key={phase.id} position={phase.worldPosition || phase.position}>
+              <Html
+                center={true}
+                sprite={false}
+                zIndexRange={isSelected ? [100, 50] : [40, 10]}
+                style={{
+                  display: isCurrentModel ? 'block' : 'none',
+                  pointerEvents: isCurrentModel && pinsVisible ? 'auto' : 'none',
+                  opacity: isCurrentModel && pinsVisible ? 1 : 0,
+                  transition: 'opacity 0.45s ease-out',
+                }}
+              >
+                <button
+                  type="button"
+                  id={`phase-marker-${phase.id}`}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    if (isCurrentModel) onSelectPhase(phase);
+                  }}
+                  className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
+                  aria-label={`Inspect ${phase.patientName}`}
                 >
-                  <button
-                    type="button"
-                    id={`phase-marker-${phase.id}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onSelectPhase(phase);
-                    }}
-                    className="group relative flex items-center justify-center p-3 cursor-pointer focus:outline-none select-none"
-                    aria-label={`Inspect ${phase.patientName}`}
-                  >
-                    {isSelected && (
-                      <span
-                        className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
-                        style={{ background: dotColor }}
-                      />
-                    )}
-
+                  {isSelected && (
                     <span
-                      className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
-                      style={{
-                        width: isSelected ? 16 : 12,
-                        height: isSelected ? 16 : 12,
-                        background: dotColor,
-                        border: '2px solid #ffffff',
-                        boxShadow: isSelected
-                          ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
-                          : '0 2px 8px rgba(0,0,0,0.4)',
-                      }}
-                    >
-                      <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                    </span>
+                      className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
+                      style={{ background: dotColor }}
+                    />
+                  )}
 
-                    {!isSelected && (
-                      <div
-                        className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-semibold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
-                      >
-                        {phase.patientName}
-                      </div>
-                    )}
-                  </button>
-                </Html>
-              </group>
-            );
-          })}
-        </group>
-      )}
+                  <span
+                    className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
+                    style={{
+                      width: isSelected ? 16 : 12,
+                      height: isSelected ? 16 : 12,
+                      background: dotColor,
+                      border: '2px solid #ffffff',
+                      boxShadow: isSelected
+                        ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
+                        : '0 2px 8px rgba(0,0,0,0.4)',
+                    }}
+                  >
+                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  </span>
+
+                  {!isSelected && (
+                    <div
+                      className="absolute left-full ml-1.5 px-2 py-0.5 rounded-md border text-[10px] font-semibold whitespace-nowrap shadow-sm pointer-events-none transition-all duration-200 bg-white/95 text-slate-700 border-slate-200/90 opacity-0 group-hover:opacity-100 group-hover:translate-x-0 -translate-x-1"
+                    >
+                      {phase.patientName}
+                    </div>
+                  )}
+                </button>
+              </Html>
+            </group>
+          );
+        })}
+      </group>
     </>
   );
 }
@@ -423,7 +433,7 @@ export default function RealisticHeart3DViewer() {
           }`}
         >
           <Activity className="w-3.5 h-3.5" />
-          <span>Beating Heart</span>
+          <span>Dissected Heart</span>
         </button>
       </div>
 
@@ -477,9 +487,8 @@ export default function RealisticHeart3DViewer() {
               minPolarAngle={0.1}
             />
 
-            <Suspense fallback={<Loader />}>
+            <Suspense fallback={null}>
               <HeartMesh
-                key={selectedModel}
                 modelConfig={currentModelConfig}
                 activePin={activePin}
                 onSelectPin={handleTogglePin}
@@ -579,7 +588,9 @@ export default function RealisticHeart3DViewer() {
 
       {/* ── Bottom Footnote ── */}
       <p className="font-mono text-[10px] text-slate-400 tracking-wider mt-2.5 text-center">
-        Click any landmark below to orbit camera 360° · Click again to close modal
+        {selectedModel === 'realistic'
+          ? 'Click any landmark below to orbit camera 360° · Click again to close modal'
+          : 'Inspect internal heart chambers & valve mechanics · Click again to close modal'}
       </p>
 
     </div>

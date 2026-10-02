@@ -2,6 +2,7 @@ import React, { useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
+import BrandLogo from './BrandLogo';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -43,14 +44,8 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
       <div className="footer-content container-custom flex flex-col items-center justify-center text-center space-y-6">
         
         {/* Brand Center */}
-        <div className="flex items-center gap-2 text-slate-900 font-display font-extrabold text-xl">
-          <div className="w-7 h-7 rounded-lg bg-rose-600 flex items-center justify-center text-white p-1">
-            <svg viewBox="0 0 48 48" fill="none" className="w-full h-full">
-              <path d="M21 6V14M25 6V13M29 7V14" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              <path d="M17 14C17 9.5 21 8 26 8C31 8 34 11 34 16C34 18 33 20 31 22" stroke="currentColor" strokeWidth="3" strokeLinecap="round" />
-              <path d="M14 20C9.5 21 7 26 8.5 32C10.5 40 22 44 26 44C30 44 41 38 41 28C41 21 36 17 31 17C27 17 24 19 23 21" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            </svg>
-          </div>
+        <div className="flex items-center gap-2.5 text-slate-900 font-display font-extrabold text-xl">
+          <BrandLogo size={28} />
           <span>CardioVision <span className="text-rose-600">AI</span></span>
         </div>
 
