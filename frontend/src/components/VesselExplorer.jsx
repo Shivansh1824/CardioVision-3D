@@ -3,6 +3,7 @@ import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { Activity, Droplets, Cigarette, Flame } from 'lucide-react';
+import Vessel3DViewer from './Vessel3DViewer';
 
 gsap.registerPlugin(ScrollTrigger);
 
@@ -81,6 +82,7 @@ export default function VesselExplorer({
   const [systolicBP, setSystolicBP] = useState(130);
   const [bloodSugarA1c, setBloodSugarA1c] = useState(6.2);
   const [isSmoker, setIsSmoker] = useState(false);
+  const [rightViewMode, setRightViewMode] = useState('3d');
 
   useGSAP(
     () => {
@@ -327,58 +329,91 @@ export default function VesselExplorer({
 
               </div>
 
-              {/* Right Column: Artery Lumen Cross-Section Visualizer */}
-              <div className="lg:col-span-5 flex flex-col items-center justify-center p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
-                <span className="text-xs font-bold text-slate-600 uppercase tracking-wider mb-5">
-                  {activeVessel.code} Artery Cross-Section
-                </span>
+              {/* Right Column: Connected 3D Heart Vessel Inspector & Lumen Cross-Section */}
+              <div className="lg:col-span-5 flex flex-col items-center p-5 sm:p-6 rounded-2xl bg-slate-50 border border-slate-200 text-center">
+                
+                {/* View Mode Toggle: 3D Heart Anatomy vs Internal Lumen */}
+                <div className="flex items-center justify-between w-full mb-3.5 pb-2.5 border-b border-slate-200">
+                  <div className="inline-flex items-center p-0.5 rounded-lg bg-slate-200/80 text-xs">
+                    <button
+                      type="button"
+                      onClick={() => setRightViewMode('3d')}
+                      className={`px-3 py-1 rounded-md font-semibold text-xs transition-all cursor-pointer ${
+                        rightViewMode === '3d'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      3D Heart Model
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setRightViewMode('lumen')}
+                      className={`px-3 py-1 rounded-md font-semibold text-xs transition-all cursor-pointer ${
+                        rightViewMode === 'lumen'
+                          ? 'bg-white text-slate-900 shadow-xs'
+                          : 'text-slate-600 hover:text-slate-900'
+                      }`}
+                    >
+                      Artery Lumen (2D)
+                    </button>
+                  </div>
 
-                {/* Artery Lumen SVG Diagram */}
-                <div className="relative w-44 h-44 flex items-center justify-center">
-                  <svg viewBox="0 0 160 160" className="w-full h-full drop-shadow-md">
-                    {/* Outer Muscular Artery Wall (Adventitia / Media) */}
-                    <circle cx="80" cy="80" r="74" fill="#be123c" stroke="#881337" strokeWidth="4" />
-                    <circle cx="80" cy="80" r="64" fill="#9f1239" />
-
-                    {/* Endothelium / Plaque layer */}
-                    {currentStageKey === 'normal' && (
-                      /* Clear open lumen */
-                      <circle cx="80" cy="80" r="56" fill="#e11d48" />
-                    )}
-
-                    {currentStageKey === 'moderate' && (
-                      /* Crescent Atherosclerotic Plaque (Yellow Lipid Core) */
-                      <>
-                        <circle cx="80" cy="80" r="56" fill="#f59e0b" />
-                        <circle cx="92" cy="80" r="38" fill="#e11d48" />
-                      </>
-                    )}
-
-                    {currentStageKey === 'critical' && (
-                      /* Heavy calcified plaque narrowing lumen to pinhole */
-                      <>
-                        <circle cx="80" cy="80" r="56" fill="#d97706" />
-                        <path
-                          d="M80 26 C120 30 134 80 120 120 C100 134 60 134 40 110 C26 70 40 30 80 26 Z"
-                          fill="#b45309"
-                        />
-                        <circle cx="88" cy="82" r="18" fill="#be123c" />
-                      </>
-                    )}
-
-                    {/* Flowing Red Blood Cells */}
-                    <circle cx="88" cy="82" r="4" fill="#ffffff" opacity="0.9" />
-                    {currentStageKey !== 'critical' && (
-                      <>
-                        <circle cx="75" cy="74" r="3.5" fill="#ffffff" opacity="0.8" />
-                        <circle cx="94" cy="92" r="3.5" fill="#ffffff" opacity="0.8" />
-                      </>
-                    )}
-                  </svg>
+                  <span className="font-mono text-xs font-bold text-slate-700 bg-white px-2 py-0.5 rounded border border-slate-200">
+                    {activeVessel.code}
+                  </span>
                 </div>
 
-                {/* Lumen Statistics */}
-                <div className="mt-5 w-full space-y-2">
+                {rightViewMode === '3d' ? (
+                  <div className="w-full">
+                    <Vessel3DViewer
+                      selectedArtery={selectedArtery}
+                      vesselStates={vesselStates}
+                      onSelectArtery={setSelectedArtery}
+                    />
+                  </div>
+                ) : (
+                  /* Artery Lumen SVG Diagram */
+                  <div className="relative w-44 h-44 my-4 flex items-center justify-center">
+                    <svg viewBox="0 0 160 160" className="w-full h-full drop-shadow-md">
+                      <circle cx="80" cy="80" r="74" fill="#be123c" stroke="#881337" strokeWidth="4" />
+                      <circle cx="80" cy="80" r="64" fill="#9f1239" />
+
+                      {currentStageKey === 'normal' && (
+                        <circle cx="80" cy="80" r="56" fill="#e11d48" />
+                      )}
+
+                      {currentStageKey === 'moderate' && (
+                        <>
+                          <circle cx="80" cy="80" r="56" fill="#f59e0b" />
+                          <circle cx="92" cy="80" r="38" fill="#e11d48" />
+                        </>
+                      )}
+
+                      {currentStageKey === 'critical' && (
+                        <>
+                          <circle cx="80" cy="80" r="56" fill="#d97706" />
+                          <path
+                            d="M80 26 C120 30 134 80 120 120 C100 134 60 134 40 110 C26 70 40 30 80 26 Z"
+                            fill="#b45309"
+                          />
+                          <circle cx="88" cy="82" r="18" fill="#be123c" />
+                        </>
+                      )}
+
+                      <circle cx="88" cy="82" r="4" fill="#ffffff" opacity="0.9" />
+                      {currentStageKey !== 'critical' && (
+                        <>
+                          <circle cx="75" cy="74" r="3.5" fill="#ffffff" opacity="0.8" />
+                          <circle cx="94" cy="92" r="3.5" fill="#ffffff" opacity="0.8" />
+                        </>
+                      )}
+                    </svg>
+                  </div>
+                )}
+
+                {/* Lumen Statistics & Real-Time CAD Probability */}
+                <div className="mt-4 w-full space-y-2">
                   <div className="flex items-center justify-between text-xs px-2 text-slate-600">
                     <span>Patent Bloodway Diameter:</span>
                     <strong className="text-slate-900 font-mono">
