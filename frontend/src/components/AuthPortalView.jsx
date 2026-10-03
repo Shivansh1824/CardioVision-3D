@@ -167,40 +167,22 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     }
 
     try {
-      if (isSupabaseConfigured()) {
-        const { error } = await supabase.auth.signInWithOAuth({
-          provider: 'google',
-          options: {
-            redirectTo: `${window.location.origin}/`,
-            queryParams: {
-              access_type: 'offline',
-              prompt: 'consent',
-            },
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+        options: {
+          redirectTo: `${window.location.origin}/`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'select_account',
           },
-        });
-        if (error) throw error;
-      } else {
-        setTimeout(() => {
-          setIsLoading(false);
-          setAuthStatus({
-            type: 'success',
-            message: `Google identity verified for ${role === 'doctor' ? 'Cardiologist' : 'Patient'}. Connecting...`,
-          });
-          if (onSignInSuccess) {
-            setTimeout(() => {
-              onSignInSuccess({
-                email: 'doctor@hospital.org',
-                user_metadata: { role, full_name: role === 'doctor' ? 'Dr. Sarah Jenkins, MD' : 'Alex Johnson' },
-              }, role);
-            }, 500);
-          }
-        }, 750);
-      }
+        },
+      });
+      if (error) throw error;
     } catch (err) {
       setIsLoading(false);
       setAuthStatus({
         type: 'error',
-        message: err.message || 'Google authentication failed.',
+        message: err.message || 'Google authentication failed. Please try again.',
       });
     }
   };
