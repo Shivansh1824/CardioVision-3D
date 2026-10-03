@@ -166,6 +166,15 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
       // ignore
     }
 
+    if (!supabase) {
+      setIsLoading(false);
+      setAuthStatus({
+        type: 'error',
+        message: 'Supabase configuration is missing. Please check your environment variables.',
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
