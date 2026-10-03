@@ -18,7 +18,54 @@ import SignInModal from './components/SignInModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import ErrorBoundary from './components/ErrorBoundary';
 
+import AuthPortalView from './components/AuthPortalView';
+import DoctorDashboard from './components/dashboard/DoctorDashboard';
+import PatientDashboard from './components/dashboard/PatientDashboard';
+import { supabase } from './services/supabaseClient';
+
+// Clean up malformed double-hash if OAuth redirected with #dashboard#access_token
+if (typeof window !== 'undefined' && window.location.hash.includes('#dashboard#access_token=')) {
+  window.location.hash = window.location.hash.replace('#dashboard#', '#');
+}
+
 export default function App() {
+  // Navigation view state ('landing' | 'auth' | 'dashboard') initialized from URL hash
+  const [currentView, setCurrentView] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      if (
+        hash.startsWith('#dashboard') || 
+        hash.includes('access_token') || 
+        hash.includes('refresh_token')
+      ) {
+        return 'dashboard';
+      }
+      if (hash.startsWith('#portal-signin') || hash === '#login') return 'auth';
+      return 'landing';
+    }
+    return 'landing';
+  });
+
+  const [authRole, setAuthRole] = useState(() => {
+    try {
+      return localStorage.getItem('cardiovision_role') || 'doctor';
+    } catch {
+      return 'doctor';
+    }
+  });
+
+  const [currentUser, setCurrentUser] = useState(null);
+  const [userRole, setUserRole] = useState(() => {
+    if (typeof window !== 'undefined' && window.location.hash.includes('patient')) {
+      return 'patient';
+    }
+    try {
+      return localStorage.getItem('cardiovision_role') || 'doctor';
+    } catch {
+      return 'doctor';
+    }
+  });
+
   // Shared state for the 3 coronary vessels across Anatomical Heart & Explorer
   const [vesselStates, setVesselStates] = useState({
     LAD: 'moderate',
@@ -28,15 +75,84 @@ export default function App() {
 
   const [selectedArtery, setSelectedArtery] = useState('LAD');
 
-  // Sign In modal state
+  // Sign In modal state (retained for backward compatibility)
   const [signInOpen, setSignInOpen] = useState(false);
   const [signInRole, setSignInRole] = useState('doctor');
 
   // Privacy Policy modal state
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
+  // Sync hash navigation (#portal-signin, #login, #dashboard, #dashboard-patient, access_token)
+  useEffect(() => {
+    const handleHashSync = () => {
+      const hash = window.location.hash;
+      if (
+        hash.startsWith('#dashboard') || 
+        hash.includes('access_token') || 
+        hash.includes('refresh_token')
+      ) {
+        if (hash.includes('patient') || localStorage.getItem('cardiovision_role') === 'patient') {
+          setUserRole('patient');
+        } else {
+          setUserRole('doctor');
+        }
+        setCurrentView('dashboard');
+      } else if (hash.startsWith('#portal-signin') || hash === '#login') {
+        setCurrentView('auth');
+      } else {
+        setCurrentView('landing');
+      }
+    };
+
+    window.addEventListener('popstate', handleHashSync);
+    window.addEventListener('hashchange', handleHashSync);
+
+    return () => {
+      window.removeEventListener('popstate', handleHashSync);
+      window.removeEventListener('hashchange', handleHashSync);
+    };
+  }, []);
+
+  // Supabase Auth State Listener for Google OAuth and Email Session persistence
+  useEffect(() => {
+    if (!supabase) return;
+
+    // Check initial existing session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setCurrentUser(session.user);
+        const resolvedRole = localStorage.getItem('cardiovision_role') || session.user.user_metadata?.role || 'doctor';
+        setUserRole(resolvedRole);
+        setCurrentView('dashboard');
+        window.history.replaceState(null, '', resolvedRole === 'patient' ? '#dashboard-patient' : '#dashboard');
+      }
+    });
+
+    // Listen for sign-in events (including Google OAuth redirects)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session?.user) {
+        setCurrentUser(session.user);
+        const resolvedRole = localStorage.getItem('cardiovision_role') || session.user.user_metadata?.role || 'doctor';
+        setUserRole(resolvedRole);
+        setCurrentView('dashboard');
+        window.history.replaceState(null, '', resolvedRole === 'patient' ? '#dashboard-patient' : '#dashboard');
+      } else if (event === 'SIGNED_OUT') {
+        setCurrentUser(null);
+        setCurrentView('landing');
+        try {
+          localStorage.removeItem('cardiovision_role');
+        } catch {}
+        window.history.replaceState(null, '', window.location.pathname);
+      }
+    });
+
+    return () => subscription?.unsubscribe();
+  }, []);
+
   // Initialize Lenis smooth scrolling synchronized with GSAP ScrollTrigger (60fps standard)
   useEffect(() => {
+    if (currentView === 'auth' || currentView === 'dashboard') return;
+
     const lenis = new Lenis({
       duration: 1.0,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
@@ -69,19 +185,97 @@ export default function App() {
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
     };
-  }, []);
+  }, [currentView]);
 
   const handleOpenSignIn = (role = 'doctor') => {
+    setAuthRole(role);
     setSignInRole(role);
-    setSignInOpen(true);
+    setCurrentView('auth');
+    window.history.pushState({ view: 'auth', role }, '', '#portal-signin');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleBackToLanding = () => {
+    setCurrentView('landing');
+    if (window.location.hash === '#portal-signin' || window.location.hash === '#login' || window.location.hash === '#dashboard') {
+      window.history.pushState(null, '', window.location.pathname);
+    }
+    setTimeout(() => {
+      ScrollTrigger.refresh();
+    }, 100);
+  };
+
+  const handleSignInSuccess = (user, role) => {
+    setCurrentUser(user);
+    const targetRole = role || user?.user_metadata?.role || userRole || 'doctor';
+    setUserRole(targetRole);
+    try {
+      localStorage.setItem('cardiovision_role', targetRole);
+    } catch {}
+    setCurrentView('dashboard');
+    window.history.pushState({ view: 'dashboard', role: targetRole }, '', '#dashboard');
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  };
+
+  const handleSignOut = async () => {
+    if (supabase) {
+      try {
+        await supabase.auth.signOut();
+      } catch {}
+    }
+    setCurrentUser(null);
+    try {
+      localStorage.removeItem('cardiovision_role');
+    } catch {}
+    setCurrentView('landing');
+    window.history.pushState(null, '', window.location.pathname);
+    window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
   const handleScrollToSection = (sectionId) => {
+    if (currentView !== 'landing') {
+      handleBackToLanding();
+      setTimeout(() => {
+        const el = document.getElementById(sectionId);
+        if (el) el.scrollIntoView({ behavior: 'smooth' });
+      }, 150);
+      return;
+    }
     const el = document.getElementById(sectionId);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth' });
     }
   };
+
+  // Render Doctor or Patient Dashboard when authenticated
+  if (currentView === 'dashboard') {
+    if (userRole === 'patient') {
+      return (
+        <PatientDashboard
+          user={currentUser}
+          onSignOut={handleSignOut}
+          onBackToLanding={handleBackToLanding}
+        />
+      );
+    }
+    return (
+      <DoctorDashboard
+        user={currentUser}
+        onSignOut={handleSignOut}
+        onBackToLanding={handleBackToLanding}
+      />
+    );
+  }
+
+  if (currentView === 'auth') {
+    return (
+      <AuthPortalView
+        onBack={handleBackToLanding}
+        initialRole={authRole}
+        onSignInSuccess={handleSignInSuccess}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-luminous-mesh text-slate-900 flex flex-col font-body selection:bg-rose-500/20 selection:text-rose-900">
