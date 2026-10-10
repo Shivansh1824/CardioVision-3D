@@ -18,10 +18,13 @@ import AuthContentStage from './auth/AuthContentStage';
 import AuthLoadingOverlay from './auth/AuthLoadingOverlay';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
+gsap.registerPlugin(useGSAP);
+
 export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignInSuccess }) {
   const authContainerRef = useRef(null);
   const cardRef = useRef(null);
   const cardGlowRef = useRef(null);
+  const tabIndicatorRef = useRef(null);
 
   // Auth Mode: false = Sign In, true = Create Account
   const [isSignUp, setIsSignUp] = useState(false);
@@ -52,45 +55,41 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     }
   };
 
-  // GSAP A+ Graded Card Entrance Timeline
+  // GSAP Smooth Card Entrance Timeline (Rock-Solid Clinical Standard)
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    // Ambient glow pulse-in behind card
+    // Ambient glow expands softly behind card
     if (cardGlowRef.current) {
       tl.fromTo(
         cardGlowRef.current,
-        { scale: 0.84, autoAlpha: 0 },
-        { scale: 1, autoAlpha: 0.8, duration: 1.0, ease: 'power2.out' },
+        { scale: 0.9, autoAlpha: 0 },
+        { scale: 1, autoAlpha: 0.8, duration: 0.95, ease: 'power2.out' },
         0
       );
     }
 
-    // 3D Perspective Card Entrance with smooth physics-like ease
+    // Smooth, stable vertical entrance for the card (no 3D tilt)
     if (cardRef.current) {
       tl.fromTo(
         cardRef.current,
         {
-          y: 42,
-          scale: 0.94,
-          autoAlpha: 0,
-          rotationX: 8,
-          transformPerspective: 1200,
-          transformOrigin: '50% 60%'
+          y: 28,
+          scale: 0.97,
+          autoAlpha: 0
         },
         {
           y: 0,
           scale: 1,
           autoAlpha: 1,
-          rotationX: 0,
-          duration: 0.85,
+          duration: 0.7,
           ease: 'power3.out'
         },
         0.05
       );
     }
 
-    // Staggered reveal of internal controls for rich, seamless choreography
+    // Refined micro-stagger of internal controls
     tl.fromTo(
       [
         '.auth-card-header',
@@ -101,41 +100,21 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
         '.auth-google-btn',
         '.auth-footer-toggle'
       ],
-      { y: 14, autoAlpha: 0 },
-      { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.05, ease: 'power2.out' },
-      0.22
+      { y: 10, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.045, ease: 'power2.out' },
+      0.18
     );
   }, { scope: authContainerRef });
 
-  // Senior Frontend Craft: Interactive 3D Card Hover Tilt with GSAP
-  const handleCardMouseMove = (e) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    const centerX = rect.width / 2;
-    const centerY = rect.height / 2;
-    const rotateX = ((y - centerY) / centerY) * -4.5;
-    const rotateY = ((x - centerX) / centerX) * 4.5;
-
-    gsap.to(cardRef.current, {
-      rotationX: rotateX,
-      rotationY: rotateY,
+  // GSAP Smooth Tab Slider Animation
+  useGSAP(() => {
+    if (!tabIndicatorRef.current) return;
+    gsap.to(tabIndicatorRef.current, {
+      xPercent: role === 'doctor' ? 0 : 100,
       duration: 0.35,
-      ease: 'power2.out',
-      transformPerspective: 1200
+      ease: 'power3.out'
     });
-  };
-
-  const handleCardMouseLeave = () => {
-    if (!cardRef.current) return;
-    gsap.to(cardRef.current, {
-      rotationX: 0,
-      rotationY: 0,
-      duration: 0.6,
-      ease: 'power2.out'
-    });
-  };
+  }, { scope: authContainerRef, dependencies: [role] });
 
   // ─── Email & Password Authentication (Sign In & Sign Up) ───────────────
   const handleAuthSubmit = async (e) => {
@@ -386,11 +365,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               RIGHT COLUMN: Enlarged, Well-Spaced Authentication Card
               (Email on TOP, Password, Submit, Divider, Google below)
               ───────────────────────────────────────────────────────────── */}
-          <div 
-            className="lg:col-span-5 flex justify-center lg:justify-end"
-            onMouseMove={handleCardMouseMove}
-            onMouseLeave={handleCardMouseLeave}
-          >
+          <div className="lg:col-span-5 flex justify-center lg:justify-end">
             <div className="relative w-full max-w-[480px]">
               {/* Luminous Ambient Depth Glow */}
               <div 
@@ -402,11 +377,10 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 }`}
               />
 
-              {/* 3D Animated Frosted Card */}
+              {/* Smooth Frosted Card */}
               <div 
                 ref={cardRef}
                 className="relative w-full bg-white/95 backdrop-blur-2xl rounded-3xl border border-slate-200/90 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.10),0_4px_6px_-2px_rgba(15,23,42,0.03)] p-8 sm:p-10 text-left will-change-transform"
-                style={{ transformStyle: 'preserve-3d' }}
               >
               
               {/* Card Header: Welcome Back */}
@@ -421,33 +395,43 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 </p>
               </div>
 
-              {/* ─── Portal Role Switcher: Spacious & Well-Padded ─────────── */}
-              <div className="auth-role-tabs grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 mb-6">
+              {/* ─── Portal Role Switcher: Apple-grade Sliding Pill ─────────── */}
+              <div className="auth-role-tabs relative grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 mb-6 select-none">
+                {/* GSAP Sliding Indicator Pill */}
+                <div 
+                  ref={tabIndicatorRef}
+                  className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-xl pointer-events-none transition-colors duration-300 ${
+                    role === 'doctor'
+                      ? 'bg-white shadow-sm border border-slate-200/60'
+                      : 'bg-rose-600 shadow-sm shadow-rose-600/30'
+                  }`} 
+                />
+
                 <button
                   type="button"
                   onClick={() => handleRoleChange('doctor')}
-                  className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`relative z-10 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
                     role === 'doctor'
-                      ? 'bg-white text-slate-900 shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-slate-900'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                   id="auth-doctor-tab-btn"
                 >
-                  <Stethoscope className="w-4 h-4 text-sky-600" />
+                  <Stethoscope className={`w-4 h-4 transition-colors duration-200 ${role === 'doctor' ? 'text-sky-600' : 'text-slate-400'}`} />
                   <span>Cardiologist</span>
                 </button>
 
                 <button
                   type="button"
                   onClick={() => handleRoleChange('patient')}
-                  className={`py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-all cursor-pointer ${
+                  className={`relative z-10 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
                     role === 'patient'
-                      ? 'bg-rose-600 text-white shadow-sm'
-                      : 'text-slate-600 hover:text-slate-900'
+                      ? 'text-white'
+                      : 'text-slate-500 hover:text-slate-800'
                   }`}
                   id="auth-patient-tab-btn"
                 >
-                  <HeartHandshake className="w-4 h-4 text-white" />
+                  <HeartHandshake className={`w-4 h-4 transition-colors duration-200 ${role === 'patient' ? 'text-white' : 'text-slate-400'}`} />
                   <span>Heart Patient</span>
                 </button>
               </div>
@@ -504,7 +488,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
                         placeholder={role === 'doctor' ? 'Dr. Sarah Jenkins, MD' : 'Alex Johnson'}
-                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:bg-white transition-all"
+                        className={`w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                          role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
+                        }`}
                       />
                     </div>
                   </div>
@@ -527,7 +513,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       placeholder={role === 'doctor' ? 'doctor@hospital.org' : 'patient@example.com'}
-                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:bg-white transition-all"
+                      className={`w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                        role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
+                      }`}
                     />
                   </div>
                 </div>
@@ -545,7 +533,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       <button 
                         type="button"
                         onClick={handleForgotPassword}
-                        className="text-xs font-semibold text-rose-600 hover:text-rose-700 cursor-pointer bg-transparent border-0 p-0"
+                        className={`text-xs font-semibold cursor-pointer bg-transparent border-0 p-0 transition-colors ${
+                          role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
+                        }`}
                       >
                         Forgot?
                       </button>
@@ -561,7 +551,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
                       minLength={6}
-                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:border-rose-500 focus:ring-2 focus:ring-rose-500/20 focus:bg-white transition-all"
+                      className={`w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
+                        role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
+                      }`}
                     />
                     <button
                       type="button"
@@ -578,20 +570,20 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`auth-submit-btn w-full py-3.5 px-5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 mt-2 ${
+                  className={`auth-submit-btn w-full mt-2 justify-center cursor-pointer disabled:opacity-50 ${
                     role === 'doctor'
-                      ? 'bg-slate-900 hover:bg-slate-800'
-                      : 'btn-primary-vibrant justify-center w-full'
+                      ? 'btn-cardiologist-vibrant'
+                      : 'btn-primary-vibrant'
                   }`}
                   id="auth-submit-btn"
                 >
                   {isLoading ? (
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 text-white">
                       <span className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>{isSignUp ? 'Creating Account...' : 'Authenticating...'}</span>
+                      <span className="text-white">{isSignUp ? 'Creating Account...' : 'Authenticating...'}</span>
                     </div>
                   ) : (
-                    <span>
+                    <span className="text-white">
                       {isSignUp
                         ? `Create ${role === 'doctor' ? 'Cardiologist' : 'Patient'} Account`
                         : `Sign In to ${role === 'doctor' ? 'Cardiologist Portal' : 'Patient Heart Guide'}`}
@@ -651,7 +643,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         setIsSignUp(false);
                         setAuthStatus(null);
                       }}
-                      className="font-bold text-rose-600 hover:text-rose-700 cursor-pointer bg-transparent border-0 p-0 ml-1"
+                      className={`font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors ${
+                        role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
+                      }`}
                       id="auth-toggle-signin-btn"
                     >
                       Sign In
@@ -666,7 +660,9 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         setIsSignUp(true);
                         setAuthStatus(null);
                       }}
-                      className="font-bold text-rose-600 hover:text-rose-700 cursor-pointer bg-transparent border-0 p-0 ml-1"
+                      className={`font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors ${
+                        role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
+                      }`}
                       id="auth-toggle-signup-btn"
                     >
                       Create an Account
