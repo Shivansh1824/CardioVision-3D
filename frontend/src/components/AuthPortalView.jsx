@@ -1,4 +1,6 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
+import gsap from 'gsap';
+import { useGSAP } from '@gsap/react';
 import { 
   ArrowLeft, 
   Mail, 
@@ -17,6 +19,10 @@ import AuthLoadingOverlay from './auth/AuthLoadingOverlay';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignInSuccess }) {
+  const authContainerRef = useRef(null);
+  const cardRef = useRef(null);
+  const cardGlowRef = useRef(null);
+
   // Auth Mode: false = Sign In, true = Create Account
   const [isSignUp, setIsSignUp] = useState(false);
 
@@ -44,6 +50,91 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     } catch {
       // ignore storage errors
     }
+  };
+
+  // GSAP A+ Graded Card Entrance Timeline
+  useGSAP(() => {
+    const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
+
+    // Ambient glow pulse-in behind card
+    if (cardGlowRef.current) {
+      tl.fromTo(
+        cardGlowRef.current,
+        { scale: 0.84, autoAlpha: 0 },
+        { scale: 1, autoAlpha: 0.8, duration: 1.0, ease: 'power2.out' },
+        0
+      );
+    }
+
+    // 3D Perspective Card Entrance with smooth physics-like ease
+    if (cardRef.current) {
+      tl.fromTo(
+        cardRef.current,
+        {
+          y: 42,
+          scale: 0.94,
+          autoAlpha: 0,
+          rotationX: 8,
+          transformPerspective: 1200,
+          transformOrigin: '50% 60%'
+        },
+        {
+          y: 0,
+          scale: 1,
+          autoAlpha: 1,
+          rotationX: 0,
+          duration: 0.85,
+          ease: 'power3.out'
+        },
+        0.05
+      );
+    }
+
+    // Staggered reveal of internal controls for rich, seamless choreography
+    tl.fromTo(
+      [
+        '.auth-card-header',
+        '.auth-role-tabs',
+        '.auth-form-field',
+        '.auth-submit-btn',
+        '.auth-divider-line',
+        '.auth-google-btn',
+        '.auth-footer-toggle'
+      ],
+      { y: 14, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.45, stagger: 0.05, ease: 'power2.out' },
+      0.22
+    );
+  }, { scope: authContainerRef });
+
+  // Senior Frontend Craft: Interactive 3D Card Hover Tilt with GSAP
+  const handleCardMouseMove = (e) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const x = e.clientX - rect.left;
+    const y = e.clientY - rect.top;
+    const centerX = rect.width / 2;
+    const centerY = rect.height / 2;
+    const rotateX = ((y - centerY) / centerY) * -4.5;
+    const rotateY = ((x - centerX) / centerX) * 4.5;
+
+    gsap.to(cardRef.current, {
+      rotationX: rotateX,
+      rotationY: rotateY,
+      duration: 0.35,
+      ease: 'power2.out',
+      transformPerspective: 1200
+    });
+  };
+
+  const handleCardMouseLeave = () => {
+    if (!cardRef.current) return;
+    gsap.to(cardRef.current, {
+      rotationX: 0,
+      rotationY: 0,
+      duration: 0.6,
+      ease: 'power2.out'
+    });
   };
 
   // ─── Email & Password Authentication (Sign In & Sign Up) ───────────────
@@ -251,8 +342,8 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
   return (
     <div className="min-h-screen bg-luminous-mesh flex flex-col font-body selection:bg-rose-500/20 selection:text-rose-900">
       
-      {/* ─── Top Global Navigation Header ─────────────────────────────────── */}
-      <header className="w-full bg-white/85 backdrop-blur-md border-b border-slate-200/80 sticky top-0 z-40">
+      {/* ─── Top Global Transparent Glass Header ─────────────────────────── */}
+      <header className="w-full bg-white/40 backdrop-blur-xl border-b border-slate-200/50 sticky top-0 z-40 transition-colors shadow-2xs supports-backdrop-filter:bg-white/35">
         <div className="max-w-[1512px] mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           
           {/* Left: CardioVision Brand in its original place */}
@@ -270,7 +361,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
           {/* Right: Back to Overview Action */}
           <button
             onClick={onBack}
-            className="btn-secondary-glass text-xs py-1.5 px-3.5 cursor-pointer shadow-xs inline-flex items-center gap-2 shrink-0"
+            className="btn-secondary-glass text-xs py-1.5 px-3.5 cursor-pointer shadow-xs inline-flex items-center gap-2 shrink-0 bg-white/80 hover:bg-white text-slate-700 font-semibold border-slate-300/80"
             id="auth-back-to-overview-btn"
           >
             <ArrowLeft className="w-3.5 h-3.5 text-slate-600" />
@@ -281,7 +372,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
       </header>
 
       {/* ─── Main Content Split-Stage ────────────────────────────────────── */}
-      <main className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 flex items-center justify-center">
+      <main ref={authContainerRef} className="flex-1 max-w-[1400px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-8 lg:py-12 flex items-center justify-center">
         <div className="w-full grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-14 items-center">
           
           {/* ─────────────────────────────────────────────────────────────
@@ -295,11 +386,31 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               RIGHT COLUMN: Enlarged, Well-Spaced Authentication Card
               (Email on TOP, Password, Submit, Divider, Google below)
               ───────────────────────────────────────────────────────────── */}
-          <div className="lg:col-span-5 flex justify-center lg:justify-end">
-            <div className="w-full max-w-[480px] bg-white rounded-3xl border border-slate-200/90 shadow-2xl p-8 sm:p-10 text-left relative">
+          <div 
+            className="lg:col-span-5 flex justify-center lg:justify-end"
+            onMouseMove={handleCardMouseMove}
+            onMouseLeave={handleCardMouseLeave}
+          >
+            <div className="relative w-full max-w-[480px]">
+              {/* Luminous Ambient Depth Glow */}
+              <div 
+                ref={cardGlowRef}
+                className={`absolute -inset-2.5 rounded-[36px] blur-2xl transition-colors duration-700 pointer-events-none ${
+                  role === 'doctor'
+                    ? 'bg-gradient-to-tr from-sky-400/25 via-indigo-300/20 to-teal-200/20'
+                    : 'bg-gradient-to-tr from-rose-400/25 via-amber-300/20 to-pink-200/20'
+                }`}
+              />
+
+              {/* 3D Animated Frosted Card */}
+              <div 
+                ref={cardRef}
+                className="relative w-full bg-white/95 backdrop-blur-2xl rounded-3xl border border-slate-200/90 shadow-[0_25px_60px_-15px_rgba(15,23,42,0.10),0_4px_6px_-2px_rgba(15,23,42,0.03)] p-8 sm:p-10 text-left will-change-transform"
+                style={{ transformStyle: 'preserve-3d' }}
+              >
               
-              {/* Card Header: Welcome Back (no top toggle pills) */}
-              <div className="mb-6">
+              {/* Card Header: Welcome Back */}
+              <div className="auth-card-header mb-6">
                 <h2 className="text-2xl sm:text-3xl font-bold font-display text-slate-900 tracking-tight">
                   Welcome Back
                 </h2>
@@ -311,7 +422,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               </div>
 
               {/* ─── Portal Role Switcher: Spacious & Well-Padded ─────────── */}
-              <div className="grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 mb-6">
+              <div className="auth-role-tabs grid grid-cols-2 gap-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 mb-6">
                 <button
                   type="button"
                   onClick={() => handleRoleChange('doctor')}
@@ -377,7 +488,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 
                 {/* Full Name Field (Sign Up only) */}
                 {isSignUp && (
-                  <div>
+                  <div className="auth-form-field">
                     <label 
                       htmlFor="register-fullname" 
                       className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5"
@@ -400,7 +511,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 )}
 
                 {/* Email Field (Always on top) */}
-                <div>
+                <div className="auth-form-field">
                   <label 
                     htmlFor="login-email" 
                     className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5"
@@ -422,7 +533,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 </div>
 
                 {/* Password Field */}
-                <div>
+                <div className="auth-form-field">
                   <div className="flex items-center justify-between mb-1.5">
                     <label 
                       htmlFor="login-password" 
@@ -467,7 +578,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`w-full py-3.5 px-5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 mt-2 ${
+                  className={`auth-submit-btn w-full py-3.5 px-5 rounded-xl font-bold text-sm text-white flex items-center justify-center gap-2 transition-all cursor-pointer shadow-sm hover:shadow active:scale-[0.99] disabled:opacity-50 mt-2 ${
                     role === 'doctor'
                       ? 'bg-slate-900 hover:bg-slate-800'
                       : 'btn-primary-vibrant justify-center w-full'
@@ -491,7 +602,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               </form>
 
               {/* ─── Divider: or continue with ────────────────────────────── */}
-              <div className="relative my-6">
+              <div className="auth-divider-line relative my-6">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-slate-200" />
                 </div>
@@ -505,7 +616,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 type="button"
                 onClick={handleGoogleSignIn}
                 disabled={isLoading}
-                className="w-full py-3 px-5 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50/80 text-slate-800 text-sm font-semibold flex items-center justify-center gap-3 transition-all cursor-pointer shadow-2xs active:scale-[0.99] disabled:opacity-50"
+                className="auth-google-btn w-full py-3 px-5 rounded-xl border border-slate-300 hover:border-slate-400 bg-white hover:bg-slate-50/80 text-slate-800 text-sm font-semibold flex items-center justify-center gap-3 transition-all cursor-pointer shadow-2xs active:scale-[0.99] disabled:opacity-50"
                 id="auth-google-signin-btn"
               >
                 <svg className="w-4 h-4 shrink-0" viewBox="0 0 24 24">
@@ -530,7 +641,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               </button>
 
               {/* ─── Mode Switcher: Sign In <-> Create Account ─────────────── */}
-              <div className="mt-6 pt-5 border-t border-slate-200/80 text-center text-xs sm:text-sm text-slate-500">
+              <div className="auth-footer-toggle mt-6 pt-5 border-t border-slate-200/80 text-center text-xs sm:text-sm text-slate-500">
                 {isSignUp ? (
                   <span>
                     Already have an account?{' '}
@@ -566,13 +677,14 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
 
             </div>
           </div>
-
         </div>
-      </main>
 
-      {/* ─── Footer: Centered CardioVision 3D • 2026 ─────────────────────── */}
-      <footer className="w-full py-4 border-t border-slate-200/80 bg-white/50 text-center text-xs text-slate-500 font-medium">
-        CardioVision 3D • 2026
+      </div>
+    </main>
+
+      {/* ─── Transparent Glass Footer with Reserved Rights ─────────────── */}
+      <footer className="w-full py-4 border-t border-slate-200/50 bg-white/40 backdrop-blur-xl text-center text-xs text-slate-600 font-medium tracking-wide supports-backdrop-filter:bg-white/35">
+        CardioVision 3D • © 2026 • All rights reserved.
       </footer>
 
       {/* ─── Full-Screen Luminous Loading Overlay ─────────────────────── */}

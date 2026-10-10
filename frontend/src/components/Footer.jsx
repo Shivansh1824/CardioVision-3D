@@ -40,7 +40,7 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
   };
 
   return (
-    <footer ref={footerRef} className="border-t border-slate-200 bg-white py-12 text-slate-500 text-xs">
+    <footer ref={footerRef} className="border-t border-slate-200/50 bg-white/45 backdrop-blur-xl py-12 text-slate-600 text-xs supports-backdrop-filter:bg-white/35">
       <div className="footer-content container-custom flex flex-col items-center justify-center text-center space-y-6">
         
         {/* Brand Center */}
@@ -96,11 +96,11 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
         </nav>
 
         {/* Centered License & Compliance Line */}
-        <div className="pt-4 border-t border-slate-100 w-full max-w-lg space-y-1">
-          <p className="text-slate-500 font-medium text-xs">
-            © 2026 CardioVision AI — Clinical Decision Support & Hemodynamic Education Platform.
+        <div className="pt-4 border-t border-slate-200/60 w-full max-w-lg space-y-1">
+          <p className="text-slate-600 font-medium text-xs">
+            CardioVision 3D • © 2026 • All rights reserved. Clinical Decision Support & Hemodynamic Education Platform.
           </p>
-          <p className="text-[11px] text-slate-400">
+          <p className="text-[11px] text-slate-500">
             Compliant with HIPAA Security Rule 45 CFR Part 160 & Part 164 Subparts A & C. SOC-2 Type II Certified.
           </p>
         </div>

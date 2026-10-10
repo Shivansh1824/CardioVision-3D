@@ -17,17 +17,23 @@ export default function AuthContentStage({ role }) {
 
   // GSAP Smooth Staggered Entrance & Role Transitions
   useGSAP(() => {
+    gsap.fromTo(
+      '.stage-header',
+      { y: 16, autoAlpha: 0 },
+      { y: 0, autoAlpha: 1, duration: 0.5, ease: 'power3.out' }
+    );
+
     // Smooth fade & gentle upward slide for the 3 explanation cards
     gsap.fromTo(
       '.explanation-card',
-      { y: 18, opacity: 0, scale: 0.98 },
+      { y: 20, autoAlpha: 0, scale: 0.97 },
       { 
         y: 0, 
-        opacity: 1, 
+        autoAlpha: 1, 
         scale: 1, 
-        duration: 0.45, 
+        duration: 0.5, 
         stagger: 0.08, 
-        ease: 'power2.out' 
+        ease: 'power3.out' 
       }
     );
   }, { scope: containerRef, dependencies: [role] });
@@ -36,9 +42,8 @@ export default function AuthContentStage({ role }) {
     <div ref={containerRef} className="flex flex-col space-y-6 text-left max-w-xl">
       
       {/* ─── Header: Overline, Headline, and Simple Subtitle ─────────────── */}
-      <div className="space-y-2">
-        <div className="inline-flex items-center gap-2">
-          <span className={`w-2 h-2 rounded-full ${role === 'doctor' ? 'bg-sky-500' : 'bg-rose-500'} animate-pulse`} />
+      <div className="stage-header space-y-2">
+        <div className="inline-flex items-center">
           <span className={`font-mono text-xs font-bold tracking-widest uppercase ${role === 'doctor' ? 'text-sky-700' : 'text-rose-600'}`}>
             {role === 'doctor' ? 'Doctor Clinical Decision Support' : 'Heart Patient Visual Guide'}
           </span>

@@ -16,7 +16,7 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
   };
 
   return (
-    <header className="sticky top-0 z-50 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 transition-all shadow-xs">
+    <header className="sticky top-0 z-50 w-full bg-white/45 backdrop-blur-xl border-b border-slate-200/50 transition-all shadow-2xs supports-backdrop-filter:bg-white/35">
       {/* Header Container: Left-aligned brand with adjacent nav, balanced actions on the right */}
       <div className="max-w-[1512px] mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between h-16">
         
@@ -31,7 +31,7 @@ export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }
         </div>
 
         {/* Center: Primary Navigation Centered */}
-        <nav className="hidden lg:flex items-center gap-1 bg-slate-100/90 border border-slate-200/80 px-3 py-1 rounded-full shadow-2xs">
+        <nav className="hidden lg:flex items-center gap-1 bg-white/60 backdrop-blur-md border border-slate-200/60 px-3 py-1 rounded-full shadow-2xs">
           <button
             onClick={() => handleNavClick('vessel-explorer')}
             className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
