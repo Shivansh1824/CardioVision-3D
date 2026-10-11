@@ -61,7 +61,8 @@ export default function HeroConceptA({
   return (
     <section
       ref={containerRef}
-      className="relative overflow-hidden pt-6 sm:pt-8 lg:pt-8 pb-12 sm:pb-16"
+      id="hero-section"
+      className="relative overflow-hidden min-h-[calc(100vh-4rem)] flex flex-col justify-center py-8 sm:py-10 lg:py-12"
       style={{
         background:
           'radial-gradient(ellipse 90% 70% at 65% 45%, rgba(225,29,72,0.08) 0%, transparent 60%),' +

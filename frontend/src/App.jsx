@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import Lenis from 'lenis';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -14,6 +14,7 @@ import Testimonials from './components/Testimonials';
 import ClinicalFAQ from './components/ClinicalFAQ';
 import SafetyDisclaimer from './components/SafetyDisclaimer';
 import Footer from './components/Footer';
+import SectionScrollSpy from './components/SectionScrollSpy';
 import SignInModal from './components/SignInModal';
 import PrivacyPolicyModal from './components/PrivacyPolicyModal';
 import ErrorBoundary from './components/ErrorBoundary';
@@ -149,12 +150,14 @@ export default function App() {
     return () => subscription?.unsubscribe();
   }, []);
 
+  const lenisRef = useRef(null);
+
   // Initialize Lenis smooth scrolling synchronized with GSAP ScrollTrigger (60fps standard)
   useEffect(() => {
     if (currentView === 'auth' || currentView === 'dashboard') return;
 
     const lenis = new Lenis({
-      duration: 0.85,
+      duration: 0.95,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
       orientation: 'vertical',
       gestureOrientation: 'vertical',
@@ -162,6 +165,7 @@ export default function App() {
       wheelMultiplier: 1.1,
       touchMultiplier: 1.2,
     });
+    lenisRef.current = lenis;
 
     // Notify ScrollTrigger on every Lenis scroll
     lenis.on('scroll', ScrollTrigger.update);
@@ -188,6 +192,7 @@ export default function App() {
       clearTimeout(initialSyncTimer);
       gsap.ticker.remove(tickerCallback);
       lenis.destroy();
+      lenisRef.current = null;
     };
   }, [currentView]);
 
@@ -237,17 +242,28 @@ export default function App() {
   };
 
   const handleScrollToSection = (sectionId) => {
+    const targetSelector = '#' + sectionId;
     if (currentView !== 'landing') {
       handleBackToLanding();
       setTimeout(() => {
         const el = document.getElementById(sectionId);
-        if (el) el.scrollIntoView({ behavior: 'smooth' });
+        if (el) {
+          if (lenisRef.current) {
+            lenisRef.current.scrollTo(el, { duration: 1.15, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+          } else {
+            el.scrollIntoView({ behavior: 'smooth' });
+          }
+        }
       }, 150);
       return;
     }
     const el = document.getElementById(sectionId);
     if (el) {
-      el.scrollIntoView({ behavior: 'smooth' });
+      if (lenisRef.current) {
+        lenisRef.current.scrollTo(el, { duration: 1.15, easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)) });
+      } else {
+        el.scrollIntoView({ behavior: 'smooth' });
+      }
     }
   };
 
@@ -289,6 +305,9 @@ export default function App() {
         onOpenSignIn={handleOpenSignIn}
         onScrollToSection={handleScrollToSection}
       />
+
+      {/* Right-Side Floating Section Indicator Rail (Desktop) */}
+      <SectionScrollSpy onScrollToSection={handleScrollToSection} />
 
       {/* Main Page Content */}
       <main className="flex-1">

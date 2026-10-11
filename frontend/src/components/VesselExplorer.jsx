@@ -146,11 +146,11 @@ export default function VesselExplorer({
   );
 
   return (
-    <section id="vessel-explorer" ref={containerRef} className="pt-12 sm:pt-14 pb-20 sm:pb-24 bg-slate-50/70 border-t border-slate-200/90 relative">
+    <section id="vessel-explorer" ref={containerRef} className="py-24 lg:py-28 bg-slate-50/70 border-t border-slate-200/90 relative">
       <div className="container-custom">
         
         {/* Section Header */}
-        <div className="vessel-header max-w-3xl mb-14 sm:mb-16 lg:mb-20 space-y-3">
+        <div className="vessel-header max-w-3xl mb-12 sm:mb-14 space-y-3">
           {/* Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
             <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
