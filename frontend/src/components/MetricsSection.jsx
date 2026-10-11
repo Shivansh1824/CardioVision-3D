@@ -102,8 +102,7 @@ export default function MetricsSection() {
         <div className="metrics-header max-w-3xl mb-12 sm:mb-14 space-y-3">
           {/* Style 1: Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/90 font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
+            <span className="font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase">
               Empirical Validation — 5-Fold Stratified
             </span>
           </div>

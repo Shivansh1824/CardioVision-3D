@@ -79,8 +79,7 @@ export default function ClinicalWorkflow() {
         {/* Section Header */}
         <div className="workflow-header text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/90 font-mono text-xs font-bold tracking-widest text-rose-600 uppercase shadow-2xs">
-              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
+            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
               Multi-Modal Methodology — How It Works
             </span>
           </div>
