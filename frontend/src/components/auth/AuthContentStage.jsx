@@ -8,7 +8,6 @@ import {
   Heart, 
   Smile, 
   Users, 
-  Sparkles,
   ShieldCheck
 } from 'lucide-react';
 

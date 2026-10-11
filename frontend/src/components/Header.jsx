@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { LogIn, Menu, X, ArrowUpRight } from 'lucide-react';
 import BrandLogo from './BrandLogo';
 
-export default function Header({ onOpenSignIn, onScrollToSection, onOpenPolicy }) {
+export default function Header({ onOpenSignIn, onScrollToSection }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const handleNavClick = (sectionId) => {

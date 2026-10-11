@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Heart, Lock, ArrowRight, ShieldCheck, Mail, Key } from 'lucide-react';
+import { X, Lock, ArrowRight, ShieldCheck, Mail, Key } from 'lucide-react';
 
 export default function SignInModal({ isOpen, onClose, initialRole = 'doctor' }) {
   const [role, setRole] = useState(initialRole);

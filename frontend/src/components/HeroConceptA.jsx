@@ -15,7 +15,6 @@
 import { useEffect, useRef } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 
 import RealisticHeart3DViewer from './RealisticHeart3DViewer';
@@ -181,20 +180,6 @@ export default function HeroConceptA({
           </div>
         </div>
       </div>
-
-      {/* Blood Flow Keyframe Styles */}
-      <style>{`
-        @keyframes bloodFlowAnimation {
-          0% { stroke-dashoffset: 36; }
-          100% { stroke-dashoffset: 0; }
-        }
-        .animate-blood-flow {
-          animation: bloodFlowAnimation 1.1s linear infinite;
-        }
-        .animate-blood-flow-fast {
-          animation: bloodFlowAnimation 0.85s linear infinite;
-        }
-      `}</style>
     </section>
   );
 }

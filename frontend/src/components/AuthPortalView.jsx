@@ -18,8 +18,6 @@ import AuthContentStage from './auth/AuthContentStage';
 import AuthLoadingOverlay from './auth/AuthLoadingOverlay';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
-gsap.registerPlugin(useGSAP);
-
 export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignInSuccess }) {
   const authContainerRef = useRef(null);
   const cardRef = useRef(null);

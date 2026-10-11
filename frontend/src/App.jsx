@@ -288,7 +288,6 @@ export default function App() {
       <Header
         onOpenSignIn={handleOpenSignIn}
         onScrollToSection={handleScrollToSection}
-        onOpenPolicy={() => setPrivacyOpen(true)}
       />
 
       {/* Main Page Content */}
@@ -298,9 +297,6 @@ export default function App() {
           <Hero
             onOpenSignIn={handleOpenSignIn}
             onScrollToSection={handleScrollToSection}
-            vesselStates={vesselStates}
-            selectedArtery={selectedArtery}
-            onSelectArtery={setSelectedArtery}
           />
         </ErrorBoundary>
 

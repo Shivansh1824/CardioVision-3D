@@ -623,7 +623,6 @@ export default function RealisticHeart3DViewer() {
           ? 'Click any landmark below to orbit camera 360° · Click again to close modal'
           : 'Inspect internal heart chambers & valve mechanics · Click again to close modal'}
       </p>
-
     </div>
   );
 }
