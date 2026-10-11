@@ -95,14 +95,15 @@ export default function MetricsSection() {
   );
 
   return (
-    <section id="model-metrics" ref={sectionRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
+    <section id="model-metrics" ref={sectionRef} className="py-24 lg:py-28 bg-slate-50/70 border-t border-slate-200/90 relative">
       <div className="container-custom">
 
         {/* Section Header */}
-        <div className="metrics-header max-w-3xl mb-12 space-y-3">
+        <div className="metrics-header max-w-3xl mb-12 sm:mb-14 space-y-3">
           {/* Style 1: Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-50 border border-emerald-200/90 font-mono text-xs font-bold tracking-widest text-emerald-700 uppercase shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-600 animate-pulse" />
               Empirical Validation — 5-Fold Stratified
             </span>
           </div>

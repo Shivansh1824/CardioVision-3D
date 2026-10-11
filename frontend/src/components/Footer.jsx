@@ -40,7 +40,7 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
   };
 
   return (
-    <footer ref={footerRef} className="border-t border-slate-200/50 bg-white/45 backdrop-blur-xl py-12 text-slate-600 text-xs supports-backdrop-filter:bg-white/35">
+    <footer ref={footerRef} className="border-t border-slate-200/90 bg-white/45 backdrop-blur-xl py-12 text-slate-600 text-xs supports-backdrop-filter:bg-white/35">
       <div className="footer-content container-custom flex flex-col items-center justify-center text-center space-y-6">
         
         {/* Brand Center */}

@@ -31,7 +31,7 @@ export default function SafetyDisclaimer() {
   );
 
   return (
-    <section id="safety-disclaimer" ref={sectionRef} className="py-12 bg-slate-50 border-t border-slate-200 relative">
+    <section id="safety-disclaimer" ref={sectionRef} className="py-16 lg:py-20 bg-slate-50/70 border-t border-slate-200/90 relative">
       <div className="container-custom">
         <div className="safety-card p-6 sm:p-7 rounded-2xl bg-white border border-slate-200 shadow-2xs">
           <div className="flex flex-col sm:flex-row items-start gap-4">

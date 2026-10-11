@@ -70,15 +70,16 @@ export default function PersonaComparison({ onOpenSignIn }) {
       {/* ============================================================
           SECTION 1: FOR CARDIOLOGISTS & CLINICIANS (Dedicated)
           ============================================================ */}
-      <section id="doctor-section" className="py-20 bg-slate-50/70 border-t border-slate-200">
+      <section id="doctor-section" className="py-24 lg:py-28 bg-slate-50/70 border-t border-slate-200/90 relative">
         <div className="container-custom">
           
           <div className="doctor-block">
             {/* Header */}
-            <div className="doctor-header max-w-3xl mb-12">
+            <div className="doctor-header max-w-3xl mb-12 sm:mb-14">
               {/* Style 1: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="font-mono text-xs font-bold tracking-widest text-sky-700 uppercase">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-sky-50 border border-sky-200/90 font-mono text-xs font-bold tracking-widest text-sky-700 uppercase shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-sky-600 animate-pulse" />
                   Clinical Practice — Multi-Vessel Triage
                 </span>
               </div>
@@ -150,15 +151,16 @@ export default function PersonaComparison({ onOpenSignIn }) {
       {/* ============================================================
           SECTION 2: FOR HEART PATIENTS & FAMILIES (Dedicated)
           ============================================================ */}
-      <section id="patient-section" className="py-20 bg-slate-50/70 border-t border-slate-200">
+      <section id="patient-section" className="py-24 lg:py-28 bg-slate-50/70 border-t border-slate-200/90 relative">
         <div className="container-custom">
           
           <div className="patient-block">
             {/* Header */}
-            <div className="patient-header max-w-3xl mb-12">
+            <div className="patient-header max-w-3xl mb-12 sm:mb-14">
               {/* Style A: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+                <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/90 font-mono text-xs font-bold tracking-widest text-rose-600 uppercase shadow-2xs">
+                  <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
                   Patient Empowerment — Health Literacy
                 </span>
               </div>

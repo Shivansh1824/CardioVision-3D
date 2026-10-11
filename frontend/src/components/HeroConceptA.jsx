@@ -61,10 +61,8 @@ export default function HeroConceptA({
   return (
     <section
       ref={containerRef}
-      className="relative overflow-hidden"
+      className="relative overflow-hidden pt-6 sm:pt-8 lg:pt-8 pb-12 sm:pb-16"
       style={{
-        paddingTop: '3.5rem',
-        paddingBottom: '2.5rem',
         background:
           'radial-gradient(ellipse 90% 70% at 65% 45%, rgba(225,29,72,0.08) 0%, transparent 60%),' +
           'radial-gradient(ellipse 65% 55% at 15% 60%, rgba(186,230,253,0.25) 0%, transparent 60%),' +
@@ -87,7 +85,8 @@ export default function HeroConceptA({
           {/* ─── LEFT: Editorial copy & Proof Metric Cards ─────────────────── */}
           <div className="lg:col-span-5 space-y-6">
             <div className="hero-anim-item ca-overline inline-flex items-center gap-2">
-              <span className="font-mono text-xs font-bold text-rose-600 uppercase tracking-widest">
+              <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/90 font-mono text-xs font-bold text-rose-600 uppercase tracking-widest shadow-2xs">
+                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
                 Interactive Heart &amp; Artery Health Guide
               </span>
             </div>

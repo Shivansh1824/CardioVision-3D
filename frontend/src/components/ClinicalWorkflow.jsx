@@ -73,13 +73,14 @@ export default function ClinicalWorkflow() {
   );
 
   return (
-    <section id="clinical-workflow" ref={sectionRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
+    <section id="clinical-workflow" ref={sectionRef} className="py-24 lg:py-28 bg-slate-50/70 border-t border-slate-200/90 relative">
       <div className="container-custom">
 
         {/* Section Header */}
         <div className="workflow-header text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/90 font-mono text-xs font-bold tracking-widest text-rose-600 uppercase shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
               Multi-Modal Methodology — How It Works
             </span>
           </div>

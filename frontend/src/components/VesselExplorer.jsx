@@ -146,14 +146,15 @@ export default function VesselExplorer({
   );
 
   return (
-    <section id="vessel-explorer" ref={containerRef} className="pt-10 pb-20 bg-slate-50/70 border-t border-slate-200 relative">
+    <section id="vessel-explorer" ref={containerRef} className="pt-12 sm:pt-14 pb-20 sm:pb-24 bg-slate-50/70 border-t border-slate-200/90 relative">
       <div className="container-custom">
         
         {/* Section Header */}
-        <div className="vessel-header max-w-3xl mb-10 space-y-3">
-          {/* Style A: Editorial Monospace Overline */}
+        <div className="vessel-header max-w-3xl mb-14 sm:mb-16 lg:mb-20 space-y-3">
+          {/* Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
-            <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
+            <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-rose-50 border border-rose-200/90 font-mono text-xs font-bold tracking-widest text-rose-600 uppercase shadow-2xs">
+              <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse" />
               Interactive Coronary Anatomy
             </span>
           </div>
