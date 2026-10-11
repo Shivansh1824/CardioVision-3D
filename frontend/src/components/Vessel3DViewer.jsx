@@ -5,6 +5,7 @@ import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
 import { HEART_MODELS, ANATOMICAL_PINS } from '../services/heartModelService';
+import HeartStreamingFallback from './HeartStreamingFallback';
 
 const ARTERY_CAMERA_PRESETS = {
   LAD: { pos: [2.65, 0.12, 0.70], target: [0.03, 0.10, 0.10] },
@@ -238,7 +239,8 @@ export default function Vessel3DViewer({
 
       <Canvas
         camera={{ position: [2.65, 0.12, 0.70], fov: 40 }}
-        dpr={[1, 1.75]}
+        dpr={[1, 1.5]}
+        performance={{ min: 0.5 }}
         gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         className="w-full h-full cursor-grab active:cursor-grabbing"
       >
@@ -251,12 +253,12 @@ export default function Vessel3DViewer({
           ref={controlsRef}
           enableZoom={false}
           enableDamping={true}
-          dampingFactor={0.06}
+          dampingFactor={0.05}
           maxPolarAngle={Math.PI - 0.1}
           minPolarAngle={0.1}
         />
 
-        <Suspense fallback={null}>
+        <Suspense fallback={<HeartStreamingFallback />}>
           <VesselHeartMesh
             selectedArtery={selectedArtery}
             vesselStates={vesselStates}

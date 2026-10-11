@@ -42,10 +42,15 @@ export default function AuthContentStage({ role }) {
     <div ref={containerRef} className="flex flex-col space-y-6 text-left max-w-xl">
       
       {/* ─── Header: Overline, Headline, and Simple Subtitle ─────────────── */}
-      <div className="stage-header space-y-2">
-        <div className="inline-flex items-center">
-          <span className={`font-mono text-xs font-bold tracking-widest uppercase ${role === 'doctor' ? 'text-sky-700' : 'text-rose-600'}`}>
-            {role === 'doctor' ? 'Doctor Clinical Decision Support' : 'Heart Patient Visual Guide'}
+      <div className="stage-header space-y-3">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/80 border border-slate-200/80 shadow-2xs backdrop-blur-sm">
+          {role === 'doctor' ? (
+            <Stethoscope className="w-3.5 h-3.5 text-sky-600" />
+          ) : (
+            <Heart className="w-3.5 h-3.5 text-rose-500 fill-rose-500/20" />
+          )}
+          <span className={`text-xs font-semibold tracking-tight ${role === 'doctor' ? 'text-sky-800' : 'text-rose-800'}`}>
+            {role === 'doctor' ? 'Clinical Decision Support Suite' : 'Heart Patient Visual Health Guide'}
           </span>
         </div>
 
@@ -83,8 +88,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">1. Check 3 Main Heart Arteries</h3>
-                  <span className="font-mono text-[10px] text-sky-700 bg-sky-50 px-2 py-0.5 rounded border border-sky-100 font-semibold">
-                    LAD • LCX • RCA
+                  <span className="text-[11px] text-sky-700 bg-sky-50 px-2.5 py-0.5 rounded-full border border-sky-100 font-semibold tracking-tight">
+                    LAD &bull; LCX &bull; RCA
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -101,8 +106,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">2. Clear Explanations, Zero Guesswork</h3>
-                  <span className="font-mono text-[10px] text-indigo-700 bg-indigo-50 px-2 py-0.5 rounded border border-indigo-100 font-semibold">
-                    91.2% ACCURACY
+                  <span className="text-[11px] text-indigo-700 bg-indigo-50 px-2.5 py-0.5 rounded-full border border-indigo-100 font-semibold tracking-tight">
+                    91.2% Accuracy
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -119,8 +124,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">3. Ready Clinical Notes in One Click</h3>
-                  <span className="font-mono text-[10px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded border border-slate-200 font-semibold">
-                    ONE-CLICK EXPORT
+                  <span className="text-[11px] text-slate-700 bg-slate-100 px-2.5 py-0.5 rounded-full border border-slate-200 font-semibold tracking-tight">
+                    One-Click Export
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -140,8 +145,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">1. See Your Heart in Clear 3D</h3>
-                  <span className="font-mono text-[10px] text-rose-700 bg-rose-50 px-2 py-0.5 rounded border border-rose-200 font-semibold">
-                    EASY TO SEE
+                  <span className="text-[11px] text-rose-700 bg-rose-50 px-2.5 py-0.5 rounded-full border border-rose-200 font-semibold tracking-tight">
+                    Easy to See
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -158,8 +163,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">2. Simple Words, No Medical Jargon</h3>
-                  <span className="font-mono text-[10px] text-amber-700 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 font-semibold">
-                    ZERO CONFUSION
+                  <span className="text-[11px] text-amber-800 bg-amber-50 px-2.5 py-0.5 rounded-full border border-amber-200 font-semibold tracking-tight">
+                    Zero Confusion
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
@@ -176,8 +181,8 @@ export default function AuthContentStage({ role }) {
               <div className="space-y-1">
                 <div className="flex items-center justify-between">
                   <h3 className="text-sm font-bold text-slate-900">3. Actionable Steps for You &amp; Family</h3>
-                  <span className="font-mono text-[10px] text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 font-semibold">
-                    FAMILY CARE
+                  <span className="text-[11px] text-emerald-800 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200 font-semibold tracking-tight">
+                    Family Care
                   </span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">

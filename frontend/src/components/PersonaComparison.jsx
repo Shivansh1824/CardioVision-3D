@@ -78,7 +78,6 @@ export default function PersonaComparison({ onOpenSignIn }) {
             <div className="doctor-header max-w-3xl mb-12">
               {/* Style 1: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-sky-600"></span>
                 <span className="font-mono text-xs font-bold tracking-widest text-sky-700 uppercase">
                   Clinical Practice — Multi-Vessel Triage
                 </span>
@@ -159,7 +158,6 @@ export default function PersonaComparison({ onOpenSignIn }) {
             <div className="patient-header max-w-3xl mb-12">
               {/* Style A: Editorial Monospace Overline */}
               <div className="flex items-center gap-2 mb-3">
-                <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
                 <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
                   Patient Empowerment — Health Literacy
                 </span>

@@ -154,9 +154,13 @@ export default function App() {
     if (currentView === 'auth' || currentView === 'dashboard') return;
 
     const lenis = new Lenis({
-      duration: 1.0,
+      duration: 1.2,
       easing: (t) => Math.min(1, 1.001 - Math.pow(2, -10 * t)),
+      orientation: 'vertical',
+      gestureOrientation: 'vertical',
       smoothWheel: true,
+      wheelMultiplier: 1.0,
+      touchMultiplier: 1.5,
     });
 
     // Notify ScrollTrigger on every Lenis scroll
@@ -166,8 +170,8 @@ export default function App() {
       lenis.raf(time * 1000);
     };
     gsap.ticker.add(tickerCallback);
-    // Smooth frame pacing (prevent lag spikes from dropped frames)
-    gsap.ticker.lagSmoothing(500, 33);
+    // Disable lagSmoothing so GSAP and Lenis RAF tick in perfect 1:1 hardware frame sync
+    gsap.ticker.lagSmoothing(0);
 
     // Refresh ScrollTrigger positions after fonts and 3D canvases settle
     const refreshST = () => {

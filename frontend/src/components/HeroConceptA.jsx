@@ -89,7 +89,6 @@ export default function HeroConceptA({
           {/* ─── LEFT: Editorial copy & Proof Metric Cards ─────────────────── */}
           <div className="lg:col-span-5 space-y-6">
             <div className="hero-anim-item ca-overline inline-flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
               <span className="font-mono text-xs font-bold text-rose-600 uppercase tracking-widest">
                 Interactive Heart &amp; Artery Health Guide
               </span>

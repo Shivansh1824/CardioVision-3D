@@ -38,7 +38,7 @@ export const ANATOMICAL_PINS = [
     shortName: 'Front Artery (LAD)',
     tag: 'Coronary Artery',
     vesselKey: 'LAD',
-    position: [0.03, 0.46, 0.28],
+    position: [0.06, 0.40, 0.32],
     color: '#f43f5e', // Rose
     patientExpl: 'Runs directly down the front groove of your heart. It delivers oxygen-rich blood to the entire front muscle wall and the main pumping tip (apex). A healthy LAD is essential for your heart’s pumping strength.',
     pathology: 'Known clinically as the "Widow Maker". Stenosis restricts anterior blood flow, posing immediate risk of extensive anterior STEMI, apical aneurysm, and acute cardiogenic shock.',

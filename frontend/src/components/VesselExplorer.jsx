@@ -153,7 +153,6 @@ export default function VesselExplorer({
         <div className="vessel-header max-w-3xl mb-10 space-y-3">
           {/* Style A: Editorial Monospace Overline */}
           <div className="flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600"></span>
             <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
               Interactive Coronary Anatomy
             </span>

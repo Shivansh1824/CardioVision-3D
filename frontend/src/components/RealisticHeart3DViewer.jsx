@@ -21,13 +21,14 @@ import gsap from 'gsap';
 import { Layers, Activity } from 'lucide-react';
 import { HEART_MODELS, ANATOMICAL_PINS, CARDIAC_CYCLE_PHASES } from '../services/heartModelService';
 import HeartCalloutCard from './HeartCalloutCard';
+import HeartStreamingFallback from './HeartStreamingFallback';
 
 /**
  * 3D Camera Orbit Presets for each anatomical landmark & cardiac cycle phase
  */
 const CAMERA_PRESETS = {
   overview: { pos: [2.85, 0, 0.03], target: [0, 0, 0] },
-  lad: { pos: [2.65, 0.12, 0.70], target: [0.03, 0.10, 0.10] },
+  lad: { pos: [1.45, 0.28, 2.25], target: [0.06, 0.22, 0.16] },
   lcx: { pos: [1.85, 0.28, 2.10], target: [0.15, 0.15, 0.05] },
   rca: { pos: [2.20, 0.20, -1.80], target: [-0.15, 0.15, 0.05] },
   lv: { pos: [2.45, -0.45, 0.55], target: [0.05, -0.12, 0.10] },
@@ -239,25 +240,35 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
                   aria-label={`Inspect ${pin.patientName}`}
                 >
                   {isSelected && (
-                    <span
-                      className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-50"
-                      style={{ background: dotColor }}
-                    />
+                    <>
+                      {/* Volumetric Radial Aura Pulse */}
+                      <span
+                        className="absolute -inset-3.5 rounded-full pointer-events-none animate-pulse"
+                        style={{
+                          background: `radial-gradient(circle, ${dotColor}90 0%, ${dotColor}35 50%, transparent 75%)`,
+                          boxShadow: `0 0 24px 8px ${dotColor}80`,
+                        }}
+                      />
+                      <span
+                        className="absolute inset-0 rounded-full animate-ping pointer-events-none opacity-60"
+                        style={{ background: dotColor }}
+                      />
+                    </>
                   )}
 
                   <span
                     className="rounded-full transition-all duration-200 relative z-10 flex items-center justify-center"
                     style={{
-                      width: isSelected ? 16 : 12,
-                      height: isSelected ? 16 : 12,
+                      width: isSelected ? 18 : 12,
+                      height: isSelected ? 18 : 12,
                       background: dotColor,
-                      border: '2px solid #ffffff',
+                      border: '2.5px solid #ffffff',
                       boxShadow: isSelected
-                        ? `0 0 0 4px ${dotColor}45, 0 0 14px ${dotColor}`
+                        ? `0 0 0 5px ${dotColor}60, 0 0 22px 5px ${dotColor}, 0 0 35px ${dotColor}90`
                         : '0 2px 8px rgba(0,0,0,0.4)',
                     }}
                   >
-                    <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                    <span className="w-1.5 h-1.5 rounded-full bg-white shadow-xs" />
                   </span>
 
                   {!isSelected && (
@@ -358,7 +369,7 @@ export default function RealisticHeart3DViewer() {
   const currentModelConfig = HEART_MODELS[selectedModel];
 
   // Smooth cinematic camera orbit with GSAP
-  const animateCameraTo = (presetKey, duration = 0.85) => {
+  const animateCameraTo = (presetKey, duration = 0.95) => {
     if (!controlsRef.current) return;
     const preset = CAMERA_PRESETS[presetKey] || CAMERA_PRESETS.overview;
     const cam = controlsRef.current.object;
@@ -372,7 +383,7 @@ export default function RealisticHeart3DViewer() {
       y: preset.pos[1],
       z: preset.pos[2],
       duration,
-      ease: 'power2.out',
+      ease: 'power3.out',
       onUpdate: () => controlsRef.current?.update(),
     });
 
@@ -381,7 +392,7 @@ export default function RealisticHeart3DViewer() {
       y: preset.target[1],
       z: preset.target[2],
       duration,
-      ease: 'power2.out',
+      ease: 'power3.out',
       onUpdate: () => controlsRef.current?.update(),
     });
   };
@@ -478,7 +489,8 @@ export default function RealisticHeart3DViewer() {
         >
           <Canvas
             camera={{ position: [2.85, 0, 0.03], fov: 40 }}
-            dpr={[1, 1.75]}
+            dpr={[1, 1.5]}
+            performance={{ min: 0.5 }}
             gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
             style={{ overflow: 'visible' }}
             className="w-full h-full overflow-visible cursor-grab active:cursor-grabbing"
@@ -501,12 +513,12 @@ export default function RealisticHeart3DViewer() {
               ref={controlsRef}
               enableZoom={false}
               enableDamping={true}
-              dampingFactor={0.06}
+              dampingFactor={0.05}
               maxPolarAngle={Math.PI - 0.1}
               minPolarAngle={0.1}
             />
 
-            <Suspense fallback={null}>
+            <Suspense fallback={<HeartStreamingFallback />}>
               <HeartMesh
                 modelConfig={currentModelConfig}
                 activePin={activePin}

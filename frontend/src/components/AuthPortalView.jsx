@@ -59,12 +59,27 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
   useGSAP(() => {
     const tl = gsap.timeline({ defaults: { ease: 'power3.out' } });
 
-    // Ambient glow expands softly behind card
+    // Ambient glow expands softly behind card with subtle resting cardiac rhythm
     if (cardGlowRef.current) {
       tl.fromTo(
         cardGlowRef.current,
-        { scale: 0.9, autoAlpha: 0 },
-        { scale: 1, autoAlpha: 0.8, duration: 0.95, ease: 'power2.out' },
+        { scale: 0.92, autoAlpha: 0 },
+        { 
+          scale: 1, 
+          autoAlpha: 0.75, 
+          duration: 0.95, 
+          ease: 'power2.out',
+          onComplete: () => {
+            gsap.to(cardGlowRef.current, {
+              scale: 1.04,
+              autoAlpha: 0.9,
+              duration: 2.4,
+              repeat: -1,
+              yoyo: true,
+              ease: 'sine.inOut'
+            });
+          }
+        },
         0
       );
     }

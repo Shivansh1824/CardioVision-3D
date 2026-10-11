@@ -35,8 +35,16 @@
 }
 
 html {
-  scroll-behavior: smooth;
   color-scheme: light;
+}
+
+html.lenis,
+html.lenis-smooth {
+  scroll-behavior: auto !important;
+}
+
+html.lenis {
+  height: auto;
 }
 
 body {

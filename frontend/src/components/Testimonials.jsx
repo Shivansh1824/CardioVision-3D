@@ -86,7 +86,6 @@ export default function Testimonials() {
         {/* Section Header */}
         <div className="testimonials-header text-center max-w-3xl mx-auto mb-14 space-y-3">
           <div className="flex items-center justify-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
             <span className="font-mono text-xs font-bold tracking-widest text-rose-600 uppercase">
               Clinical Evidence — Provider Reviews
             </span>
