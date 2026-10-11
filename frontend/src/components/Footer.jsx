@@ -22,7 +22,7 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
           scrollTrigger: {
             trigger: footerRef.current,
             start: 'top 95%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );

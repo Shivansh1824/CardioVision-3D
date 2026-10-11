@@ -25,6 +25,7 @@ export default function HeartCalloutCard({
         className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[280px] sm:w-[310px]"
         style={{
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.06)',
+          willChange: 'transform, opacity',
         }}
       >
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">
@@ -99,6 +100,7 @@ export default function HeartCalloutCard({
         className="absolute right-1 sm:right-4 top-1/2 -translate-y-1/2 z-40 bg-white/95 backdrop-blur-xl rounded-2xl p-4 shadow-2xl border border-slate-200/90 text-left w-[280px] sm:w-[310px]"
         style={{
           boxShadow: '0 20px 40px -10px rgba(0,0,0,0.22), 0 4px 16px rgba(0,0,0,0.06)',
+          willChange: 'transform, opacity',
         }}
       >
         <div className="flex items-center justify-between pb-2 mb-2 border-b border-slate-100">

@@ -53,7 +53,7 @@ export default function ClinicalWorkflow() {
           autoAlpha: 1,
           duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', once: true },
         }
       );
       gsap.fromTo(
@@ -65,7 +65,7 @@ export default function ClinicalWorkflow() {
           duration: 0.65,
           stagger: 0.12,
           ease: 'power3.out',
-          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: sectionRef.current, start: 'top 85%', once: true },
         }
       );
     },

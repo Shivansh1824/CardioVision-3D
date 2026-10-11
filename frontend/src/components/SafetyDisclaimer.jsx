@@ -22,7 +22,7 @@ export default function SafetyDisclaimer() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 90%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );

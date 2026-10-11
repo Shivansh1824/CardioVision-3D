@@ -97,7 +97,7 @@ export default function VesselExplorer({
           scrollTrigger: {
             trigger: containerRef.current,
             start: 'top 85%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );
@@ -112,7 +112,7 @@ export default function VesselExplorer({
           scrollTrigger: {
             trigger: '.vessel-module',
             start: 'top 88%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );

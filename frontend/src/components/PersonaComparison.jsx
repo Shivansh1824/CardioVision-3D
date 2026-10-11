@@ -20,7 +20,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           autoAlpha: 1,
           duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: '.doctor-block', start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: '.doctor-block', start: 'top 85%', once: true },
         }
       );
       gsap.fromTo(
@@ -32,7 +32,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           duration: 0.65,
           stagger: 0.1,
           ease: 'power3.out',
-          scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%', once: true },
         }
       );
 
@@ -45,7 +45,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           autoAlpha: 1,
           duration: 0.75,
           ease: 'power3.out',
-          scrollTrigger: { trigger: '.patient-block', start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: '.patient-block', start: 'top 85%', once: true },
         }
       );
       gsap.fromTo(
@@ -57,7 +57,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
           duration: 0.65,
           stagger: 0.1,
           ease: 'power3.out',
-          scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%', toggleActions: 'play none none reverse' },
+          scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%', once: true },
         }
       );
     },
@@ -70,7 +70,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
       {/* ============================================================
           SECTION 1: FOR CARDIOLOGISTS & CLINICIANS (Dedicated)
           ============================================================ */}
-      <section id="doctor-section" className="py-20 bg-slate-50/80 border-t border-slate-200">
+      <section id="doctor-section" className="py-20 bg-slate-50/70 border-t border-slate-200">
         <div className="container-custom">
           
           <div className="doctor-block">
@@ -150,7 +150,7 @@ export default function PersonaComparison({ onOpenSignIn }) {
       {/* ============================================================
           SECTION 2: FOR HEART PATIENTS & FAMILIES (Dedicated)
           ============================================================ */}
-      <section id="patient-section" className="py-20 bg-white border-t border-slate-200">
+      <section id="patient-section" className="py-20 bg-slate-50/70 border-t border-slate-200">
         <div className="container-custom">
           
           <div className="patient-block">

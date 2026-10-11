@@ -55,7 +55,7 @@ export default function Testimonials() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 85%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );
@@ -71,7 +71,7 @@ export default function Testimonials() {
           scrollTrigger: {
             trigger: sectionRef.current,
             start: 'top 85%',
-            toggleActions: 'play none none reverse',
+            once: true,
           },
         }
       );
@@ -80,7 +80,7 @@ export default function Testimonials() {
   );
 
   return (
-    <section id="testimonials" ref={sectionRef} className="py-20 bg-white border-t border-slate-200 relative">
+    <section id="testimonials" ref={sectionRef} className="py-20 bg-slate-50/70 border-t border-slate-200 relative">
       <div className="container-custom">
         
         {/* Section Header */}
