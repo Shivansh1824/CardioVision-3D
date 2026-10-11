@@ -10,9 +10,8 @@ import { Activity, Heart } from 'lucide-react';
  * - Real-time telemetry indicators (72 BPM rhythm, 60fps WebGL)
  * - Hardware-accelerated GPU animations for zero frame drops
  */
-export default function HeartStreamingFallback() {
-  return (
-    <Html center zIndexRange={[100, 50]}>
+export default function HeartStreamingFallback({ isCanvas = false }) {
+  const content = (
       <div className="relative flex flex-col items-center justify-center p-6 sm:p-7 rounded-2xl bg-white/90 backdrop-blur-xl border border-rose-100/90 shadow-[0_20px_50px_rgba(225,29,72,0.12)] max-w-[300px] sm:max-w-[340px] text-center select-none pointer-events-none">
         {/* Soft radial backdrop aura */}
         <div
@@ -99,7 +98,13 @@ export default function HeartStreamingFallback() {
             animation: ecgSweep 1.6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
           }
         `}</style>
-      </div>
-    </Html>
+    </div>
   );
+
+  if (isCanvas) {
+    return <Html center zIndexRange={[100, 50]}>{content}</Html>;
+  }
+
+  return content;
 }
+

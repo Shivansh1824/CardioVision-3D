@@ -5,7 +5,9 @@
  * Positions are defined in local scene space to lock 100% to the 3D heart mesh surface.
  */
 
-// Supabase Storage Public URLs
+import { useGLTF } from '@react-three/drei';
+
+// Supabase Storage Public URLs (Remote cloud backup)
 const SUPABASE_STORAGE_URL = 'https://ykoewvodqxcccakaewya.supabase.co/storage/v1/object/public/models';
 
 export const HEART_MODELS = {
@@ -13,16 +15,16 @@ export const HEART_MODELS = {
     id: 'realistic',
     name: 'Human Heart',
     label: 'Human Heart',
-    url: `${SUPABASE_STORAGE_URL}/human_heart.glb`,
-    fallbackUrl: '/models/human_heart.glb',
+    url: '/models/human_heart.glb',
+    fallbackUrl: `${SUPABASE_STORAGE_URL}/human_heart.glb`,
     hasAnimation: false,
   },
   beating: {
     id: 'beating',
     name: 'Dissected Heart',
     label: 'Dissected Heart (Internal Chambers)',
-    url: `${SUPABASE_STORAGE_URL}/beating_heart.glb`,
-    fallbackUrl: '/models/beating_heart.glb',
+    url: '/models/beating_heart.glb',
+    fallbackUrl: `${SUPABASE_STORAGE_URL}/beating_heart.glb`,
     hasAnimation: true,
   },
 };
@@ -178,18 +180,23 @@ export function preloadHeartModels() {
   if (preloaded || typeof window === 'undefined') return;
   preloaded = true;
 
+  try {
+    // 1. Direct Three.js & Draco memory preloading via Drei
+    useGLTF.preload(HEART_MODELS.realistic.url, '/draco/');
+    useGLTF.preload(HEART_MODELS.beating.url, '/draco/');
+  } catch (err) {
+    // ignore preload errors
+  }
+
+  // 2. Warm browser HTTP cache in parallel
   const urls = [
     HEART_MODELS.realistic.url,
     HEART_MODELS.beating.url,
   ];
 
   urls.forEach((url) => {
-    fetch(url, { mode: 'cors', cache: 'force-cache' })
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.blob();
-      })
-      .then(() => {})
+    fetch(url, { cache: 'force-cache' })
       .catch(() => {});
   });
 }
+

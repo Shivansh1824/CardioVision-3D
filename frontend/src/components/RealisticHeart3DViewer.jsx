@@ -43,7 +43,7 @@ const CAMERA_PRESETS = {
 /**
  * 3D Heart Mesh Geometry with auto-centering, dynamic vertex colors & surface-locked dots
  */
-function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase }) {
+function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectPhase, onLoaded }) {
   const groupRef = useRef();
   const beatRef = useRef();
   const [pinsVisible, setPinsVisible] = useState(false);
@@ -137,6 +137,7 @@ function HeartMesh({ modelConfig, activePin, onSelectPin, activePhase, onSelectP
 
     // 5. Illuminate landmark surface pins gently after model arrives
     setPinsVisible(false);
+    onLoaded?.();
     const pinTimer = setTimeout(() => {
       setPinsVisible(true);
     }, 550);
@@ -362,6 +363,7 @@ export default function RealisticHeart3DViewer() {
   const [selectedModel, setSelectedModel] = useState('realistic');
   const [activePin, setActivePin] = useState(null);
   const [activePhase, setActivePhase] = useState(null);
+  const [isModelLoading, setIsModelLoading] = useState(true);
 
   const controlsRef = useRef();
   const stageRef = useRef(null);
@@ -421,6 +423,7 @@ export default function RealisticHeart3DViewer() {
 
   // Reset camera view and state with smooth transition when switching models
   useEffect(() => {
+    setIsModelLoading(true);
     setActivePin(null);
     setActivePhase(null);
     if (selectedModel === 'realistic') {
@@ -481,6 +484,22 @@ export default function RealisticHeart3DViewer() {
           }}
         />
 
+        {/* Instant HTML Loading Animation Overlay for zero-delay presentation on first load & tab switch */}
+        <AnimatePresence>
+          {isModelLoading && (
+            <motion.div
+              key="heart-stage-loader"
+              initial={{ opacity: 0, scale: 0.96 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.96 }}
+              transition={{ duration: 0.35, ease: 'easeOut' }}
+              className="absolute inset-0 flex items-center justify-center z-20 pointer-events-none"
+            >
+              <HeartStreamingFallback isCanvas={false} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* 3D WebGL Canvas with smooth shift on modal open */}
         <motion.div
           animate={{ x: isModalActive ? -95 : 0 }}
@@ -518,13 +537,14 @@ export default function RealisticHeart3DViewer() {
               minPolarAngle={0.1}
             />
 
-            <Suspense fallback={<HeartStreamingFallback />}>
+            <Suspense fallback={<HeartStreamingFallback isCanvas={true} />}>
               <HeartMesh
                 modelConfig={currentModelConfig}
                 activePin={activePin}
                 onSelectPin={handleTogglePin}
                 activePhase={activePhase}
                 onSelectPhase={handleTogglePhase}
+                onLoaded={() => setIsModelLoading(false)}
               />
             </Suspense>
           </Canvas>

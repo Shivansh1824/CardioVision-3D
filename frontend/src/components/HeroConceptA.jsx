@@ -46,13 +46,12 @@ export default function HeroConceptA({
       );
       gsap.fromTo(
         '.ca-heart-stage',
-        { scale: 0.94, autoAlpha: 0 },
+        { scale: 0.98, opacity: 1 },
         {
           scale: 1,
-          autoAlpha: 1,
-          duration: 0.9,
-          ease: 'power3.out',
-          delay: 0.15,
+          opacity: 1,
+          duration: 0.5,
+          ease: 'power2.out',
         }
       );
     },
