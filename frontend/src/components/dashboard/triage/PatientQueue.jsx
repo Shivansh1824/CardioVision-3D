@@ -4,6 +4,7 @@ import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { supabase } from '../../../services/supabaseClient';
 import PatientQueueItem from './PatientQueueItem';
+import patientNames from '../../../data/patientNames.json';
 
 /** Derive triage level from clinical biomarkers in the patients table */
 function getTriageLevel(p) {
@@ -60,12 +61,24 @@ export default function PatientQueue({ selectedId, onSelectPatient, onAddPatient
       setLoading(true);
       setError(null);
       try {
-        const { data, error: fetchErr } = await supabase
+        let { data, error: fetchErr } = await supabase
           .from('patients')
           .select(
-            'id, patient_code, age, sex, bp, ldl, ef_tte, st_elevation, typical_chest_pain, fbs, htn, dm, current_smoker'
+            'id, patient_code, name, age, sex, bp, ldl, ef_tte, st_elevation, typical_chest_pain, fbs, htn, dm, current_smoker'
           )
           .order('patient_code', { ascending: true });
+
+        // If the 'name' column is not yet migrated on remote Supabase, fallback gracefully
+        if (fetchErr && fetchErr.message && fetchErr.message.includes('name')) {
+          const fallbackRes = await supabase
+            .from('patients')
+            .select(
+              'id, patient_code, age, sex, bp, ldl, ef_tte, st_elevation, typical_chest_pain, fbs, htn, dm, current_smoker'
+            )
+            .order('patient_code', { ascending: true });
+          data = fallbackRes.data;
+          fetchErr = fallbackRes.error;
+        }
 
         if (fetchErr) throw fetchErr;
         setPatients(data ?? []);
@@ -93,14 +106,25 @@ export default function PatientQueue({ selectedId, onSelectPatient, onAddPatient
     }
   }, [loading]);
 
-  // Derived list: apply search + filter
+  // Derived list: apply resolved name, normalized sex, and search + filter
   const displayed = patients
-    .map((p) => ({ ...p, _triage: getTriageLevel(p) }))
+    .map((p) => {
+      const resolvedName = p.name || patientNames[p.patient_code] || patientNames[String(p.id)] || `Patient ${p.patient_code || p.id}`;
+      const rawSex = String(p.sex || '').trim().toLowerCase();
+      const normalizedSex = (rawSex === 'fmale' || rawSex === 'female' || rawSex === 'f') ? 'Female' : 'Male';
+      return {
+        ...p,
+        name: resolvedName,
+        sex: normalizedSex,
+        _triage: getTriageLevel(p),
+      };
+    })
     .filter((p) => {
       if (filter !== 'all' && p._triage !== filter) return false;
       if (search.trim()) {
         const q = search.trim().toLowerCase();
         return (
+          p.name?.toLowerCase().includes(q) ||
           p.patient_code?.toLowerCase().includes(q) ||
           String(p.age).includes(q) ||
           p.sex?.toLowerCase().includes(q)

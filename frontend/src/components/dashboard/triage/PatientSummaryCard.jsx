@@ -1,5 +1,6 @@
 import { Activity, ArrowRight, Heart } from 'lucide-react';
 import RiskBadge from '../shared/RiskBadge';
+import patientNames from '../../../data/patientNames.json';
 
 /**
  * PatientSummaryCard — right-panel quick summary shown after selecting a patient
@@ -57,9 +58,20 @@ export default function PatientSummaryCard({ patient, triageLevel, onOpenClinica
     );
   }
 
+  const displayName = patient.name || (patient.patient_code ? patientNames[patient.patient_code] : null) || patient.patient_code || 'Selected Patient';
+  const rawSex = String(patient.sex || '').trim().toLowerCase();
+  const normalizedSex = (rawSex === 'fmale' || rawSex === 'female' || rawSex === 'f') ? 'Female' : (rawSex ? 'Male' : '—');
+  const initials = displayName
+    .split(' ')
+    .filter(Boolean)
+    .map((n) => n[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase() || 'PT';
+
   const vitals = [
     { label: 'Age', value: patient.age ? `${patient.age} yrs` : '—' },
-    { label: 'Sex', value: patient.sex ?? '—' },
+    { label: 'Sex', value: normalizedSex },
     { label: 'BP', value: patient.bp ? `${patient.bp} mmHg` : '—' },
     { label: 'LDL', value: patient.ldl ? `${patient.ldl} mg/dL` : '—' },
     { label: 'EF', value: patient.ef_tte ? `${patient.ef_tte}%` : '—' },
@@ -98,39 +110,60 @@ export default function PatientSummaryCard({ patient, triageLevel, onOpenClinica
         <div
           style={{
             display: 'flex',
-            alignItems: 'flex-start',
+            alignItems: 'center',
             justifyContent: 'space-between',
             gap: 12,
             marginBottom: 6,
           }}
         >
-          <div>
-            <span
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+            <div
               style={{
-                fontFamily: 'JetBrains Mono, monospace',
-                fontSize: '0.65rem',
-                fontWeight: 600,
-                color: 'var(--text-muted)',
-                letterSpacing: '0.06em',
-                textTransform: 'uppercase',
-                display: 'block',
-                marginBottom: 2,
+                width: 44,
+                height: 44,
+                borderRadius: '50%',
+                background: '#0284c7',
+                color: '#ffffff',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '0.92rem',
+                fontWeight: 700,
+                letterSpacing: '0.02em',
+                flexShrink: 0,
+                boxShadow: '0 2px 8px rgba(2,132,199,0.25)',
               }}
             >
-              Patient Record
-            </span>
-            <h3
-              style={{
-                fontFamily: 'var(--font-display)',
-                fontWeight: 800,
-                fontSize: '1.25rem',
-                color: 'var(--text-primary)',
-                letterSpacing: '-0.03em',
-                margin: 0,
-              }}
-            >
-              {patient.patient_code}
-            </h3>
+              {initials}
+            </div>
+            <div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 2 }}>
+                <span
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '0.65rem',
+                    fontWeight: 600,
+                    color: 'var(--text-muted)',
+                    letterSpacing: '0.06em',
+                    textTransform: 'uppercase',
+                  }}
+                >
+                  Case {patient.patient_code || 'PT-001'}
+                </span>
+              </div>
+              <h3
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: '1.18rem',
+                  color: 'var(--text-primary)',
+                  letterSpacing: '-0.02em',
+                  margin: 0,
+                }}
+              >
+                {displayName}
+              </h3>
+            </div>
           </div>
           <RiskBadge level={triageLevel} size="lg" />
         </div>

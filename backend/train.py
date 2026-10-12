@@ -49,8 +49,8 @@ if df is None or len(df) == 0:
 # Normalize column names to lowercase stripped strings
 df.columns = [c.strip().lower() for c in df.columns]
 
-# Drop Supabase metadata columns if present
-meta_cols_to_drop = [c for c in ['id', 'patient_code', 'created_at'] if c in df.columns]
+# Drop Supabase metadata and non-clinical identifier columns if present
+meta_cols_to_drop = [c for c in ['id', 'patient_code', 'created_at', 'name'] if c in df.columns]
 if meta_cols_to_drop:
     df = df.drop(columns=meta_cols_to_drop)
 

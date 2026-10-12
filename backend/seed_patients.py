@@ -24,6 +24,7 @@ records = []
 for idx, row in df.iterrows():
     record = {
         "patient_code": f"PT-{idx+1:03d}",
+        "name": str(row["Name"]) if "Name" in df.columns and pd.notnull(row["Name"]) else f"Patient {idx+1}",
         "age": int(row["Age"]),
         "sex": str(row["Sex"]),
         "weight": int(row["Weight"]) if pd.notnull(row["Weight"]) else None,

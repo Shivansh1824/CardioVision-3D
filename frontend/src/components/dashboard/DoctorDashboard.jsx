@@ -32,6 +32,7 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
   const defaultDemoPatient = {
     id: 1,
     patient_code: 'PT-001',
+    name: 'James Smith',
     age: 62,
     sex: 'Male',
     bp: 155,

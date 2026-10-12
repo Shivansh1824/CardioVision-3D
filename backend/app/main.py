@@ -64,6 +64,7 @@ binary_map = {
 # Input Schema for Patient Biomarkers
 class PatientVitalsInput(BaseModel):
     patient_id: Optional[str] = "Anonymous"
+    name: Optional[str] = None
     age: Optional[float] = None
     sex: Optional[str] = None
     bp: Optional[float] = Field(None, description="Blood Pressure (Systolic, mmHg)")
@@ -314,6 +315,8 @@ def predict_cardiac_risk(patient: PatientVitalsInput):
         
     return {
         "status": "success",
+        "patient_id": patient.patient_id,
+        "name": patient.name,
         "execution_time_ms": elapsed_ms,
         "data_completeness": {
             "confidence_score": completeness_pct,

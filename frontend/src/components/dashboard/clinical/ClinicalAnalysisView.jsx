@@ -17,6 +17,7 @@ import ShapExplainerCard from './ShapExplainerCard';
 import WhatIfSimulator from './WhatIfSimulator';
 import RiskBadge from '../shared/RiskBadge';
 import VesselStatusBar from '../shared/VesselStatusBar';
+import patientNames from '../../../data/patientNames.json';
 
 /**
  * Derives initial baseline vessel risks from patient clinical fields
@@ -57,6 +58,10 @@ export default function ClinicalAnalysisView({
   patient,
   onBackToQueue,
 }) {
+  const displayName = patient?.name || (patient?.patient_code ? patientNames[patient.patient_code] : null) || patient?.patient_code || 'James Smith';
+  const rawSex = String(patient?.sex || '').trim().toLowerCase();
+  const normalizedSex = (rawSex === 'fmale' || rawSex === 'female' || rawSex === 'f') ? 'Female' : (rawSex ? 'Male' : 'Male');
+
   const [activeTab, setActiveTab] = useState('what-if'); // 'what-if' | 'shap'
   const [simulationState, setSimulationState] = useState(null);
 
@@ -130,21 +135,38 @@ export default function ClinicalAnalysisView({
           </button>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
               <h2
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: '1.15rem',
+                  fontSize: '1.25rem',
                   fontWeight: 800,
                   color: 'var(--text-primary)',
+                  letterSpacing: '-0.02em',
                   margin: 0,
                 }}
               >
-                {patient?.patient_code || 'Patient #001'}
+                {displayName}
               </h2>
+              {patient?.patient_code && (
+                <span
+                  style={{
+                    fontFamily: 'JetBrains Mono, monospace',
+                    fontSize: '0.72rem',
+                    fontWeight: 700,
+                    color: 'var(--text-secondary)',
+                    background: 'var(--dash-surface-2)',
+                    padding: '2px 7px',
+                    borderRadius: 5,
+                    border: '1px solid var(--dash-border)',
+                  }}
+                >
+                  {patient.patient_code}
+                </span>
+              )}
               <span style={{ fontSize: '0.8rem', color: 'var(--text-muted)' }}>•</span>
               <span style={{ fontSize: '0.85rem', fontWeight: 600, color: 'var(--text-secondary)' }}>
-                {patient?.age ? `${patient.age}y` : '62y'} {patient?.sex || 'Male'}
+                {patient?.age ? `${patient.age}y` : '62y'} {normalizedSex}
               </span>
               <RiskBadge level={triageCategory} size="md" />
             </div>
@@ -353,6 +375,7 @@ export default function ClinicalAnalysisView({
             </div>
             <div style={{ textAlign: 'right', fontSize: 12 }}>
               <div><strong>Date:</strong> {new Date().toLocaleDateString()}</div>
+              <div><strong>Patient:</strong> {displayName}</div>
               <div><strong>Case ID:</strong> {patient?.patient_code || 'PT-001'}</div>
             </div>
           </div>
@@ -360,7 +383,7 @@ export default function ClinicalAnalysisView({
           <div style={{ marginTop: 24, display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 20 }}>
             <div style={{ border: '1px solid #cbd5e1', padding: 16, borderRadius: 8 }}>
               <h3 style={{ margin: '0 0 8px', fontSize: 14 }}>Patient Biomarkers</h3>
-              <p style={{ margin: '4px 0', fontSize: 12 }}>Age / Sex: {patient?.age}y / {patient?.sex}</p>
+              <p style={{ margin: '4px 0', fontSize: 12 }}>Age / Sex: {patient?.age}y / {normalizedSex}</p>
               <p style={{ margin: '4px 0', fontSize: 12 }}>Blood Pressure: {patient?.bp} mmHg</p>
               <p style={{ margin: '4px 0', fontSize: 12 }}>LDL Cholesterol: {patient?.ldl} mg/dL</p>
               <p style={{ margin: '4px 0', fontSize: 12 }}>Echocardiogram EF: {patient?.ef_tte}%</p>

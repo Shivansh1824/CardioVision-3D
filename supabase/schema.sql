@@ -7,6 +7,7 @@
 CREATE TABLE IF NOT EXISTS public.patients (
     id SERIAL PRIMARY KEY,
     patient_code VARCHAR(50) UNIQUE NOT NULL,
+    name VARCHAR(100),
     age INT NOT NULL,
     sex VARCHAR(10) NOT NULL,
     weight INT,
