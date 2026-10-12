@@ -114,6 +114,14 @@ export default function App() {
     };
   }, []);
 
+  // Optimistic Backend Pre-Warming: Silently wakes up Render in the background
+  useEffect(() => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://cardiovision-3d.onrender.com';
+    try {
+      fetch(`${apiUrl}/`, { method: 'GET', mode: 'cors' }).catch(() => {});
+    } catch {}
+  }, []);
+
   // Supabase Auth State Listener for Google OAuth and Email Session persistence
   useEffect(() => {
     if (!supabase) return;
@@ -197,6 +205,8 @@ export default function App() {
   }, [currentView]);
 
   const handleOpenSignIn = (role = 'doctor') => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'https://cardiovision-3d.onrender.com';
+    try { fetch(`${apiUrl}/`, { method: 'GET', mode: 'cors' }).catch(() => {}); } catch {}
     setAuthRole(role);
     setSignInRole(role);
     setCurrentView('auth');
