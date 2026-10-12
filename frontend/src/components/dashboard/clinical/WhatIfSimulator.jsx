@@ -44,34 +44,50 @@ function calculateLocalSimulation(patient, targetBp, targetLdl, stopSmoking) {
 
   const baseCad = Math.min(0.96, Math.max(0.15, Math.max(baseLad, baseLcx, baseRca) * 1.05));
 
-  // Compute therapeutic improvement factors
-  const bpDelta = Math.max(0, origBp - targetBp);
-  const bpFactor = Math.min(0.28, (bpDelta / origBp) * 1.1);
-
-  const ldlDelta = Math.max(0, origLdl - targetLdl);
-  const ldlFactor = Math.min(0.35, (ldlDelta / origLdl) * 1.25);
-
+  // Compute bidirectional changes (positive delta = lower risk, negative delta = higher risk)
+  const bpDeltaRatio = (origBp - targetBp) / origBp;
+  const ldlDeltaRatio = (origLdl - targetLdl) / origLdl;
   const smokeFactor = (isSmoker && stopSmoking) ? 0.22 : 0;
 
-  // Composite reduction factor
-  const totalReductionRatio = Math.min(0.68, (bpFactor * 0.4) + (ldlFactor * 0.45) + (smokeFactor * 0.35));
+  // Composite net clinical change score (-1.0 to +1.0)
+  const netScore = (bpDeltaRatio * 0.45) + (ldlDeltaRatio * 0.50) + (smokeFactor * 0.30);
 
-  const simCad = Math.max(0.08, baseCad * (1 - totalReductionRatio));
-  const simLad = Math.max(0.05, baseLad * (1 - totalReductionRatio * 1.1));
-  const simLcx = Math.max(0.05, baseLcx * (1 - totalReductionRatio * 0.95));
-  const simRca = Math.max(0.04, baseRca * (1 - totalReductionRatio * 0.85));
+  let simCad, simLad, simLcx, simRca;
+  let isEscalation = false;
+  let escalationPct = 0;
+  let relativeRiskReduction = 0;
 
-  const relativeRiskReduction = Math.round(((baseCad - simCad) / baseCad) * 100);
+  if (netScore >= 0) {
+    // Risk Reduction (Therapeutic Cooling)
+    const reductionRatio = Math.min(0.70, netScore);
+    simCad = Math.max(0.08, baseCad * (1 - reductionRatio * 0.95));
+    simLad = Math.max(0.05, baseLad * (1 - reductionRatio * 1.05));
+    simLcx = Math.max(0.05, baseLcx * (1 - reductionRatio * 0.95));
+    simRca = Math.max(0.04, baseRca * (1 - reductionRatio * 0.90));
+    relativeRiskReduction = Math.round(((baseCad - simCad) / baseCad) * 100);
+  } else {
+    // Risk Escalation (Worsening Disease Burden when BP/LDL are high)
+    isEscalation = true;
+    const escalationRatio = Math.min(1.25, Math.abs(netScore) * 1.35);
+    simCad = Math.min(0.98, baseCad + (1 - baseCad) * escalationRatio * 0.75);
+    simLad = Math.min(0.98, baseLad + (1 - baseLad) * escalationRatio * 0.85);
+    simLcx = Math.min(0.96, baseLcx + (1 - baseLcx) * escalationRatio * 0.90);
+    // RCA strongly escalates when BP/LDL enter severe hypertension & hyperlipidemia range
+    simRca = Math.min(0.92, baseRca + (1 - baseRca) * escalationRatio * 1.30);
+    escalationPct = Math.round(((simCad - baseCad) / baseCad) * 100);
+  }
 
   return {
     baseCad: Math.round(baseCad * 100),
     simCad: Math.round(simCad * 100),
+    isEscalation,
+    escalationPct,
+    relativeRiskReduction,
     vessels: {
-      lad: { probability: simLad, is_blocked: simLad >= 0.50, status: simLad >= 0.50 ? 'Stenotic (>= 50%)' : 'Restored / Controlled' },
-      lcx: { probability: simLcx, is_blocked: simLcx >= 0.50, status: simLcx >= 0.50 ? 'Stenotic (>= 50%)' : 'Patent' },
-      rca: { probability: simRca, is_blocked: simRca >= 0.50, status: simRca >= 0.50 ? 'Stenotic (>= 50%)' : 'Patent' },
+      lad: { probability: simLad, is_blocked: simLad >= 0.50, status: simLad >= 0.50 ? 'Stenotic (>= 50%)' : (simLad >= 0.35 ? 'Moderate Plaque' : 'Patent / Controlled') },
+      lcx: { probability: simLcx, is_blocked: simLcx >= 0.50, status: simLcx >= 0.50 ? 'Stenotic (>= 50%)' : (simLcx >= 0.35 ? 'Moderate Plaque' : 'Patent') },
+      rca: { probability: simRca, is_blocked: simRca >= 0.50, status: simRca >= 0.50 ? 'Stenotic (>= 50%)' : (simRca >= 0.35 ? 'Moderate Plaque' : 'Patent') },
     },
-    relativeRiskReduction: Math.max(0, relativeRiskReduction),
   };
 }
 
@@ -112,13 +128,18 @@ export default function WhatIfSimulator({
         vessels: simulationResult.vessels,
         simulatedCad: simulationResult.simCad,
         relativeReduction: simulationResult.relativeRiskReduction,
+        isEscalation: simulationResult.isEscalation,
+        escalationPct: simulationResult.escalationPct,
+        simulatedBp: targetBp,
+        simulatedLdl: targetLdl,
+        simulatedSmoker: stopSmoking ? 0 : isSmoker,
       });
     } else {
       onSimulationChange?.({
         isSimulated: false,
       });
     }
-  }, [isSimulated, simulationResult, onSimulationChange]);
+  }, [isSimulated, simulationResult, targetBp, targetLdl, stopSmoking, isSmoker, onSimulationChange]);
 
   const handleReset = () => {
     setTargetBp(origBp);
@@ -272,9 +293,11 @@ export default function WhatIfSimulator({
       <div
         style={{
           padding: '16px 20px',
-          background: isSimulated
-            ? 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)'
-            : 'var(--dash-surface-2)',
+          background: !isSimulated
+            ? 'var(--dash-surface-2)'
+            : simulationResult.isEscalation
+            ? 'linear-gradient(135deg, #fef2f2 0%, #fff1f2 100%)'
+            : 'linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%)',
           borderBottom: '1px solid var(--dash-border)',
           display: 'flex',
           alignItems: 'center',
@@ -290,37 +313,51 @@ export default function WhatIfSimulator({
                 fontFamily: 'JetBrains Mono, monospace',
                 fontSize: '1.45rem',
                 fontWeight: 900,
-                color: isSimulated ? '#059669' : '#0f172a',
+                color: !isSimulated
+                  ? '#0f172a'
+                  : simulationResult.isEscalation
+                  ? '#dc2626'
+                  : '#059669',
               }}
             >
-              {isSimulated ? `-${simulationResult.relativeRiskReduction}%` : 'Baseline'}
+              {!isSimulated
+                ? 'Baseline'
+                : simulationResult.isEscalation
+                ? `+${simulationResult.escalationPct}%`
+                : `-${simulationResult.relativeRiskReduction}%`}
             </span>
             {isSimulated && (
               <span
                 style={{
                   fontSize: '0.72rem',
                   fontWeight: 700,
-                  color: '#047857',
-                  background: '#a7f3d0',
+                  color: simulationResult.isEscalation ? '#b91c1c' : '#047857',
+                  background: simulationResult.isEscalation ? '#fecaca' : '#a7f3d0',
                   padding: '2px 8px',
                   borderRadius: 6,
                 }}
               >
-                Relative Risk Drop
+                {simulationResult.isEscalation ? 'Risk Escalation' : 'Relative Risk Drop'}
               </span>
             )}
           </div>
           <p
             style={{
               fontSize: '0.74rem',
-              color: isSimulated ? '#065f46' : 'var(--text-muted)',
+              color: !isSimulated
+                ? 'var(--text-muted)'
+                : simulationResult.isEscalation
+                ? '#991b1b'
+                : '#065f46',
               margin: '2px 0 0',
               fontWeight: isSimulated ? 600 : 400,
             }}
           >
-            {isSimulated
-              ? 'Vascular risk successfully cooled. 3D Heart illuminated with restorative colors.'
-              : 'Adjust clinical target sliders below to model therapeutic outcomes.'}
+            {!isSimulated
+              ? 'Adjust clinical target sliders below to model therapeutic outcomes.'
+              : simulationResult.isEscalation
+              ? 'Severe hypertension & hyperlipidemia escalate stenosis. Coronary vessels heated into danger range.'
+              : 'Vascular risk successfully cooled. 3D Heart illuminated with restorative colors.'}
           </p>
         </div>
 
@@ -330,7 +367,12 @@ export default function WhatIfSimulator({
             padding: '8px 14px',
             borderRadius: 12,
             background: '#ffffff',
-            border: '1px solid var(--dash-border)',
+            border: '1.5px solid',
+            borderColor: !isSimulated
+              ? 'var(--dash-border)'
+              : simulationResult.isEscalation
+              ? '#fca5a5'
+              : '#a7f3d0',
             boxShadow: 'var(--dash-shadow-xs)',
             textAlign: 'right',
           }}
@@ -356,7 +398,11 @@ export default function WhatIfSimulator({
                 fontSize: '1.1rem',
                 fontWeight: 800,
                 fontFamily: 'JetBrains Mono, monospace',
-                color: isSimulated ? '#059669' : '#ef4444',
+                color: !isSimulated
+                  ? '#0f172a'
+                  : simulationResult.isEscalation
+                  ? '#dc2626'
+                  : '#059669',
               }}
             >
               {simulationResult.simCad}%

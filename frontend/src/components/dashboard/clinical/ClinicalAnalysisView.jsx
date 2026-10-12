@@ -230,14 +230,23 @@ export default function ClinicalAnalysisView({
                   gap: 4,
                   fontSize: '0.68rem',
                   fontWeight: 800,
-                  color: '#059669',
-                  background: '#d1fae5',
+                  color: simulationState.isEscalation ? '#b91c1c' : '#059669',
+                  background: simulationState.isEscalation ? '#fee2e2' : '#d1fae5',
                   padding: '3px 8px',
                   borderRadius: 6,
                 }}
               >
-                <Zap style={{ width: 11, height: 11 }} />
-                -{simulationState.relativeReduction}%
+                {simulationState.isEscalation ? (
+                  <>
+                    <AlertTriangle style={{ width: 11, height: 11 }} />
+                    +{simulationState.escalationPct}%
+                  </>
+                ) : (
+                  <>
+                    <Zap style={{ width: 11, height: 11 }} />
+                    -{simulationState.relativeReduction}%
+                  </>
+                )}
               </span>
             )}
           </div>
@@ -358,6 +367,7 @@ export default function ClinicalAnalysisView({
           ) : (
             <ShapExplainerCard
               patient={patient}
+              simulationState={simulationState}
             />
           )}
         </div>
