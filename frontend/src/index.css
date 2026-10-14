@@ -33,31 +33,47 @@
   --font-body: 'Inter', system-ui, -apple-system, sans-serif;
   --ease-expo: cubic-bezier(0.16, 1, 0.3, 1);
 
-  /* Dashboard — Light Clinical Surface System */
-  --dash-bg: #f0f4f8;
-  --dash-surface: #ffffff;
-  --dash-surface-2: #f8fafc;
-  --dash-border: rgba(203, 213, 225, 0.7);
-  --dash-border-strong: rgba(148, 163, 184, 0.6);
-  --dash-shadow-sm: 0 1px 3px rgba(15,23,42,0.04), 0 4px 12px rgba(15,23,42,0.04);
-  --dash-shadow-md: 0 4px 6px rgba(15,23,42,0.05), 0 12px 24px rgba(15,23,42,0.06);
-  --dash-shadow-lg: 0 8px 16px rgba(15,23,42,0.06), 0 24px 48px rgba(15,23,42,0.08);
+  /* Dashboard — Premium Light Clinical Surface System */
+  --dash-bg:           hsl(215, 28%, 96%);
+  --dash-surface:      #ffffff;
+  --dash-surface-2:    hsl(215, 22%, 98%);
+  --dash-surface-3:    hsl(215, 18%, 94%);
+  --dash-border:       hsl(215, 20%, 88%);
+  --dash-border-strong: hsl(215, 18%, 78%);
 
-  /* Vessel Risk Colors */
-  --vessel-critical: #e11d48;
-  --vessel-critical-bg: #fff1f2;
-  --vessel-critical-border: rgba(225,29,72,0.18);
-  --vessel-moderate: #d97706;
-  --vessel-moderate-bg: #fffbeb;
-  --vessel-moderate-border: rgba(217,119,6,0.18);
-  --vessel-safe: #059669;
-  --vessel-safe-bg: #ecfdf5;
-  --vessel-safe-border: rgba(5,150,105,0.18);
+  /* 3-layer shadow system — mimics real light diffusion */
+  --dash-shadow-sm:
+    0 1px 2px rgba(15,23,42,0.04),
+    0 3px 8px  rgba(15,23,42,0.04),
+    0 8px 16px rgba(15,23,42,0.03);
+  --dash-shadow-md:
+    0 2px 4px  rgba(15,23,42,0.05),
+    0 8px 20px rgba(15,23,42,0.06),
+    0 20px 40px rgba(15,23,42,0.05);
+  --dash-shadow-lg:
+    0 4px 8px  rgba(15,23,42,0.06),
+    0 16px 32px rgba(15,23,42,0.08),
+    0 32px 64px rgba(15,23,42,0.07);
+  --dash-shadow-hover:
+    0 4px 12px rgba(15,23,42,0.08),
+    0 20px 40px rgba(15,23,42,0.10),
+    0 40px 80px rgba(15,23,42,0.08);
+
+  /* Vessel Risk Colors — richer on light surface */
+  --vessel-critical:        #dc2626;
+  --vessel-critical-bg:     #fef2f2;
+  --vessel-critical-border: rgba(220,38,38,0.20);
+  --vessel-moderate:        #d97706;
+  --vessel-moderate-bg:     #fffbeb;
+  --vessel-moderate-border: rgba(217,119,6,0.20);
+  --vessel-safe:            #059669;
+  --vessel-safe-bg:         #ecfdf5;
+  --vessel-safe-border:     rgba(5,150,105,0.20);
 
   /* AI / SHAP accent */
-  --ai-accent: #0284c7;
-  --ai-accent-bg: #f0f9ff;
-  --ai-accent-border: rgba(2,132,199,0.18);
+  --ai-accent:        #0284c7;
+  --ai-accent-bg:     #f0f9ff;
+  --ai-accent-border: rgba(2,132,199,0.20);
 }
 
 html {
@@ -292,19 +308,70 @@ input[type="range"].custom-slider::-webkit-slider-thumb {
   border: 2px solid #ffffff;
 }
 
-/* Scrollbar */
-::-webkit-scrollbar {
-  width: 8px;
-}
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
-}
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
+/* Global Scrollbar */
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+/* Dashboard Queue Scrollbar — refined */
+.queue-scroll::-webkit-scrollbar { width: 4px; }
+.queue-scroll::-webkit-scrollbar-track { background: transparent; }
+.queue-scroll::-webkit-scrollbar-thumb {
+  background: hsl(215, 20%, 82%);
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
+.queue-scroll::-webkit-scrollbar-thumb:hover { background: hsl(215, 18%, 70%); }
+
+/* ─── Dashboard Utility Classes ─────────────────────────────────────────── */
+
+/* Atmospheric background — barely-visible cool-blue vignette from top */
+.dash-bg-atmospheric {
+  background:
+    radial-gradient(ellipse 100% 55% at 50% 0%, rgba(2,132,199,0.045) 0%, transparent 65%),
+    var(--dash-bg);
+}
+
+/* Premium card surface */
+.card-premium {
+  background: var(--dash-surface);
+  border-radius: 18px;
+  border: 1px solid var(--dash-border);
+  box-shadow: var(--dash-shadow-md);
+  transition: box-shadow 0.25s cubic-bezier(0.16,1,0.3,1), transform 0.25s cubic-bezier(0.16,1,0.3,1);
+}
+.card-premium:hover {
+  box-shadow: var(--dash-shadow-hover);
+  transform: translateY(-2px);
+}
+
+/* KPI left-accent strips */
+.kpi-accent-blue   { border-left: 3.5px solid var(--ai-accent); }
+.kpi-accent-green  { border-left: 3.5px solid var(--vessel-safe); }
+.kpi-accent-amber  { border-left: 3.5px solid var(--vessel-moderate); }
+.kpi-accent-red    { border-left: 3.5px solid var(--vessel-critical); }
+
+/* Profile flyout — CSS-native enter animation */
+.profile-flyout {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 100;
+  min-width: 220px;
+  background: var(--dash-surface);
+  border: 1px solid var(--dash-border);
+  border-radius: 14px;
+  box-shadow: var(--dash-shadow-lg);
+  overflow: hidden;
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  transition: opacity 0.18s ease, transform 0.22s cubic-bezier(0.16,1,0.3,1);
+  transform-origin: top right;
+}
+.profile-flyout[data-hidden="true"] {
+  opacity: 0;
+  transform: translateY(-6px) scale(0.97);
+  pointer-events: none;
 }
 
 /* Print Styles for Official Cardiology Summary PDF Export */

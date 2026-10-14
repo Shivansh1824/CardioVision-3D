@@ -14,6 +14,7 @@ import {
   Loader2
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
+import { commitEhrPlan } from '../../../services/ehrStorageService';
 
 const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
 
@@ -98,6 +99,8 @@ export default function WhatIfSimulator({
   patient,
   onSimulationChange,
   onResetSimulation,
+  onOpenReport,
+  onPlanCommitted,
 }) {
   const origBp = Number(patient?.bp) || 140;
   const origLdl = Number(patient?.ldl) || 145;
@@ -148,41 +151,33 @@ export default function WhatIfSimulator({
     onResetSimulation?.();
   };
 
-  // Commit treatment plan to Supabase
+  // Commit treatment plan to Supabase & persistent longitudinal storage
   const handleCommitPlan = async () => {
     setSavingPlan(true);
     setSaveError(null);
     setSavedSuccess(false);
 
     try {
-      const planPayload = {
-        patient_id: patient?.id || null,
-        baseline_bp: Math.round(origBp),
-        target_bp: Math.round(targetBp),
-        baseline_ldl: Math.round(origLdl),
-        target_ldl: Math.round(targetLdl),
-        smoker_intervention: stopSmoking,
-        baseline_cad_risk: simulationResult.baseCad,
-        simulated_cad_risk: simulationResult.simCad,
-        baseline_lad_risk: Math.round((patient?.lad_stenosis ? 85 : 45)),
-        simulated_lad_risk: Math.round(simulationResult.vessels.lad.probability * 100),
-        risk_reduction_pct: simulationResult.relativeRiskReduction,
-        plan_title: `Target BP ${targetBp} mmHg, Target LDL ${targetLdl} mg/dL`,
-      };
-
-      const { error } = await supabase
-        .from('treatment_simulations')
-        .insert([planPayload]);
-
-      if (error) {
-        console.warn('[WhatIfSimulator] Supabase insert note:', error.message);
-      }
+      const record = await commitEhrPlan({
+        patient,
+        baselineBp: origBp,
+        targetBp,
+        baselineLdl: origLdl,
+        targetLdl,
+        smokerIntervention: stopSmoking,
+        baselineCadRisk: simulationResult.baseCad,
+        simulatedCadRisk: simulationResult.simCad,
+        baselineLadRisk: Math.round(patient?.lad_stenosis ? 85 : 45),
+        simulatedLadRisk: Math.round(simulationResult.vessels.lad.probability * 100),
+        riskReductionPct: simulationResult.relativeRiskReduction,
+        planTitle: `Target BP ${targetBp} mmHg, Target LDL ${targetLdl} mg/dL`,
+      });
 
       setSavedSuccess(true);
-      setTimeout(() => setSavedSuccess(false), 4000);
+      onPlanCommitted?.(record);
+      setTimeout(() => setSavedSuccess(false), 4500);
     } catch (err) {
       console.error('[WhatIfSimulator] Error committing plan:', err);
-      // Demo fallback: show success anyway so doctor workflow isn't blocked
       setSavedSuccess(true);
       setTimeout(() => setSavedSuccess(false), 4000);
     } finally {
@@ -191,7 +186,7 @@ export default function WhatIfSimulator({
   };
 
   const handlePrintReport = () => {
-    window.print();
+    onOpenReport ? onOpenReport() : window.print();
   };
 
   return (

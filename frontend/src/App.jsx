@@ -57,7 +57,7 @@ export default function App() {
 
   const [currentUser, setCurrentUser] = useState(null);
   const [userRole, setUserRole] = useState(() => {
-    if (typeof window !== 'undefined' && window.location.hash.includes('patient')) {
+    if (typeof window !== 'undefined' && (window.location.hash.includes('role=patient') || window.location.hash === '#patient' || window.location.hash.startsWith('#patient-'))) {
       return 'patient';
     }
     try {
@@ -279,21 +279,22 @@ export default function App() {
 
   // Render Doctor or Patient Dashboard when authenticated
   if (currentView === 'dashboard') {
-    if (userRole === 'patient') {
-      return (
-        <PatientDashboard
-          user={currentUser}
-          onSignOut={handleSignOut}
-          onBackToLanding={handleBackToLanding}
-        />
-      );
-    }
     return (
-      <DoctorDashboard
-        user={currentUser}
-        onSignOut={handleSignOut}
-        onBackToLanding={handleBackToLanding}
-      />
+      <ErrorBoundary>
+        {userRole === 'patient' ? (
+          <PatientDashboard
+            user={currentUser}
+            onSignOut={handleSignOut}
+            onBackToLanding={handleBackToLanding}
+          />
+        ) : (
+          <DoctorDashboard
+            user={currentUser}
+            onSignOut={handleSignOut}
+            onBackToLanding={handleBackToLanding}
+          />
+        )}
+      </ErrorBoundary>
     );
   }
 

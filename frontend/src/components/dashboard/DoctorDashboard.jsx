@@ -1,71 +1,86 @@
-import { useState, useEffect } from 'react';
-import { 
-  Activity, 
-  Heart, 
-  Cpu, 
-  ShieldCheck, 
-  Plus, 
-  Search, 
-  Sliders, 
-  Layers,
-  ArrowRight,
-  Sparkles
-} from 'lucide-react';
-import DashboardHeader from './shared/DashboardHeader';
+import { useState, useEffect, useRef } from 'react';
+import { useGSAP } from '@gsap/react';
+import gsap from 'gsap';
+import DashboardSidebar from './shared/DashboardSidebar';
+import DashboardTopBar from './shared/DashboardTopBar';
 import PatientQueue from './triage/PatientQueue';
 import PatientSummaryCard from './triage/PatientSummaryCard';
+import EhrRegistryView from './triage/EhrRegistryView';
+import CohortAnalyticsView from './triage/CohortAnalyticsView';
 import AddPatientSheet from './triage/AddPatientSheet';
 import ClinicalAnalysisView from './clinical/ClinicalAnalysisView';
+import DoctorHomeView from './home/DoctorHomeView';
 
 /**
- * DoctorDashboard — Master clinical decision support portal for cardiologists.
- * Connects View A (Patient Triage Hub) and View B (3D Anatomical Analysis & What-If Simulator).
+ * DoctorDashboard — Modern clinical decision support portal with Left Sidebar Navigation.
+ * Incorporates simplified, human-centered terminology:
+ * - Home (Daily clinical briefing & 3D heart hero card)
+ * - Patients (Active queue & triage)
+ * - 3D Heart Studio (Interactive vascular & simulation)
+ * - Medical Records (Visit history & EHR registry)
+ * - Analytics (AI model accuracy & cohort distribution)
  */
+const DEFAULT_DEMO_PATIENT = {
+  id: 1,
+  patient_code: 'PT-001',
+  name: 'James Smith',
+  age: 62,
+  sex: 'Male',
+  bp: 155,
+  ldl: 165,
+  ef_tte: 42,
+  st_elevation: 1,
+  typical_chest_pain: 1,
+  fbs: 110,
+  htn: 1,
+  dm: 0,
+  current_smoker: 1,
+};
+
 export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
-  const [activeView, setActiveView] = useState('triage'); // 'triage' | 'clinical'
-  const [selectedPatient, setSelectedPatient] = useState(null);
+  // Navigation: 'home' | 'patients' | '3d-studio' | 'records' | 'analytics'
+  const [activeNav, setActiveNav] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const hash = window.location.hash;
+      const match = hash.match(/tab=([a-z0-9-]+)/);
+      if (match && ['home', 'patients', '3d-studio', 'records', 'analytics'].includes(match[1])) {
+        return match[1];
+      }
+    }
+    return 'home';
+  });
+  const [selectedPatient, setSelectedPatient] = useState(DEFAULT_DEMO_PATIENT);
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
-  const doctorName = user?.user_metadata?.full_name || 'Dr. Sarah Jenkins, MD';
+  const viewContainerRef = useRef(null);
 
-  // Fallback demo patient for instant preview if queue hasn't been clicked yet
-  const defaultDemoPatient = {
-    id: 1,
-    patient_code: 'PT-001',
-    name: 'James Smith',
-    age: 62,
-    sex: 'Male',
-    bp: 155,
-    ldl: 165,
-    ef_tte: 42,
-    st_elevation: 1,
-    typical_chest_pain: 1,
-    fbs: 110,
-    htn: 1,
-    dm: 0,
-    current_smoker: 1,
+  const handleNavChange = (nav) => {
+    setActiveNav(nav);
+    if (typeof window !== 'undefined') {
+      window.location.hash = `#dashboard?tab=${nav}`;
+    }
   };
 
-  // Ensure an active patient is selected on initial mount
   useEffect(() => {
-    if (!selectedPatient) {
-      setSelectedPatient(defaultDemoPatient);
-    }
+    if (!selectedPatient) setSelectedPatient(DEFAULT_DEMO_PATIENT);
   }, []);
 
-  const handleSelectPatient = (patient) => {
-    setSelectedPatient(patient);
-  };
+  // GSAP entrance and screen transition animation on nav change: smooth zero-bounce fade
+  useGSAP(() => {
+    if (viewContainerRef.current) {
+      gsap.fromTo(
+        viewContainerRef.current,
+        { opacity: 0 },
+        { opacity: 1, duration: 0.24, ease: 'power1.out', clearProps: 'opacity' }
+      );
+    }
+  }, { dependencies: [activeNav] });
+
+  const handleSelectPatient = (patient) => setSelectedPatient(patient);
 
   const handleOpenClinical = (patient) => {
     if (patient) setSelectedPatient(patient);
-    setActiveView('clinical');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const handleBackToQueue = () => {
-    setActiveView('triage');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    handleNavChange('3d-studio');
   };
 
   const handlePatientAdded = (newPatient) => {
@@ -73,278 +88,219 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
     setIsAddSheetOpen(false);
   };
 
+  // Section header meta for TopBar breadcrumb
+  const sectionMeta = {
+    home: {
+      title: 'Home',
+      subtitle: 'Daily Clinical Overview & Triage Briefing',
+    },
+    patients: {
+      title: 'Patients',
+      subtitle: 'Active clinical triage & telemetry queue · 303 cases',
+    },
+    '3d-studio': {
+      title: '3D Heart Studio',
+      subtitle: selectedPatient
+        ? `Coronary vascular anatomy & hemodynamics · ${selectedPatient.name} (${selectedPatient.patient_code})`
+        : 'Interactive 3D vascular reconstruction & stent simulator',
+    },
+    records: {
+      title: 'Medical Records',
+      subtitle: 'Longitudinal EHR visit history & committed intervention protocols',
+    },
+    analytics: {
+      title: 'Analytics',
+      subtitle: 'Zero-leakage multi-modal AI model governance & ROC-AUC benchmarks',
+    },
+  }[activeNav] || { title: 'Home', subtitle: 'Clinical workstation' };
+
   return (
     <div
+      className="bg-luminous-mesh text-slate-900"
       style={{
-        minHeight: '100vh',
-        background: 'var(--dash-bg)',
+        height: '100vh',
+        width: '100vw',
+        overflow: 'hidden',
         display: 'flex',
-        flexDirection: 'column',
         fontFamily: 'var(--font-body)',
+        WebkitFontSmoothing: 'antialiased',
       }}
     >
-      {/* ─── Sticky Clinical Navigation Bar ────────────────────────────── */}
-      <DashboardHeader
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 5px;
+          height: 5px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: rgba(148, 163, 184, 0.4);
+          border-radius: 999px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: rgba(100, 116, 139, 0.65);
+        }
+        @keyframes pulse-live-dot {
+          0%, 100% { box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25); }
+          50% { box-shadow: 0 0 0 4px rgba(5, 150, 105, 0.1); }
+        }
+      `}</style>
+
+      {/* ── Left Sidebar Navigation (Moodify / Epic standard) ── */}
+      <DashboardSidebar
+        activeNav={activeNav}
+        onSelectNav={handleNavChange}
         user={user}
         onSignOut={onSignOut}
         onBackToLanding={onBackToLanding}
+        patientCount={303}
       />
 
-      {/* ─── Main Clinical Suite Workspace ─────────────────────────────── */}
-      <main
+      {/* ── Main Canvas (TopBar + Dynamic Workstation) ── */}
+      <div
         style={{
           flex: 1,
-          maxWidth: 1512,
-          width: '100%',
-          margin: '0 auto',
-          padding: '24px 20px 48px',
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          gap: 24,
+          minWidth: 0,
+          overflow: 'hidden',
         }}
       >
-        {/* Welcome & KPI Banner (Visible in Triage View) */}
-        {activeView === 'triage' && (
-          <div
-            style={{
-              background: 'var(--dash-surface)',
-              borderRadius: 24,
-              border: '1.5px solid var(--dash-border)',
-              padding: '24px 28px',
-              boxShadow: 'var(--dash-shadow-sm)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 20,
-            }}
-          >
+        {/* Workspace Top Bar */}
+        <DashboardTopBar
+          user={user}
+          onSignOut={onSignOut}
+          sectionTitle={sectionMeta.title}
+          sectionSubtitle={sectionMeta.subtitle}
+        />
+
+        {/* Dynamic Section Content */}
+        <main
+          ref={viewContainerRef}
+          style={{
+            flex: 1,
+            minHeight: 0,
+            padding: activeNav === '3d-studio' ? '12px 20px 16px' : (activeNav === 'home' ? '0' : '14px 24px 16px'),
+            overflow: activeNav === '3d-studio' ? 'auto' : (activeNav === 'home' ? 'hidden' : 'hidden'),
+            boxSizing: 'border-box',
+            display: 'flex',
+            flexDirection: 'column',
+          }}
+        >
+          {activeNav === 'home' && (
             <div
+              key="view-home"
               style={{
-                display: 'flex',
-                flexWrap: 'wrap',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 16,
+                flex: 1,
+                minHeight: 0,
+                height: '100%',
+                overflow: 'hidden',
+                padding: '14px 24px 16px',
+                boxSizing: 'border-box',
               }}
             >
-              <div>
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                    textTransform: 'uppercase',
-                    color: '#0284c7',
-                    letterSpacing: '0.05em',
-                    marginBottom: 4,
-                  }}
-                >
-                  <Cpu style={{ width: 14, height: 14 }} />
-                  <span>CardioVision 3D • Clinical Intelligence Suite</span>
-                </div>
-                <h1
-                  style={{
-                    fontFamily: 'var(--font-display)',
-                    fontSize: '1.65rem',
-                    fontWeight: 800,
-                    color: 'var(--text-primary)',
-                    margin: 0,
-                    letterSpacing: '-0.02em',
-                  }}
-                >
-                  Welcome back, {doctorName}
-                </h1>
-                <p
-                  style={{
-                    fontSize: '0.82rem',
-                    color: 'var(--text-muted)',
-                    margin: '4px 0 0',
-                    maxWidth: 680,
-                  }}
-                >
-                  Zero-leakage multi-artery coronary stenosis evaluation, 3D WebGL spatial heart inspection, 
-                  and real-time What-If treatment simulation.
-                </p>
-              </div>
-
-              {/* Action Buttons */}
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <button
-                  type="button"
-                  onClick={() => setIsAddSheetOpen(true)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '10px 18px',
-                    borderRadius: 12,
-                    background: '#0f172a',
-                    color: '#ffffff',
-                    fontSize: '0.8rem',
-                    fontWeight: 700,
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: 'var(--dash-shadow-sm)',
-                    transition: 'all 0.15s ease',
-                  }}
-                >
-                  <Plus style={{ width: 15, height: 15 }} />
-                  <span>Add Patient</span>
-                </button>
-
-                <div
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 6,
-                    padding: '8px 14px',
-                    borderRadius: 12,
-                    background: '#ecfdf5',
-                    border: '1.5px solid #a7f3d0',
-                    color: '#065f46',
-                    fontSize: '0.74rem',
-                    fontWeight: 700,
-                  }}
-                >
-                  <ShieldCheck style={{ width: 15, height: 15, color: '#10b981' }} />
-                  <span>HIPAA Secure Session</span>
-                </div>
-              </div>
+              <DoctorHomeView
+                user={user}
+                onOpenPatient={(p) => {
+                  if (p) setSelectedPatient(p);
+                  handleNavChange('3d-studio');
+                }}
+                onGoToStudio={() => handleNavChange('3d-studio')}
+                onGoToPatients={() => handleNavChange('patients')}
+                onGoToRecords={() => handleNavChange('records')}
+              />
             </div>
+          )}
 
-            {/* Quick Metrics Bar */}
+          {activeNav === 'patients' && (
             <div
+              key="view-patients"
               style={{
                 display: 'grid',
-                gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-                gap: 12,
-                paddingTop: 16,
-                borderTop: '1px solid var(--dash-border)',
+                gridTemplateColumns: 'repeat(12, 1fr)',
+                gap: 14,
+                flex: 1,
+                minHeight: 0,
+                height: '100%',
               }}
             >
               <div
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: 'var(--dash-surface-2)',
-                  border: '1px solid var(--dash-border)',
+                  gridColumn: 'span 12',
+                  height: '100%',
+                  minHeight: 0,
+                  overflow: 'hidden',
                 }}
+                className="lg:!col-span-7"
               >
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Active Patient Cohort
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2 }}>
-                  303 Clinical Records
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#0284c7', marginTop: 2 }}>
-                  Z-Alizadeh Sani validated dataset
-                </div>
+                <PatientQueue
+                  selectedId={selectedPatient?.id}
+                  onSelectPatient={handleSelectPatient}
+                  onAddPatient={() => setIsAddSheetOpen(true)}
+                />
               </div>
-
               <div
                 style={{
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: 'var(--dash-surface-2)',
-                  border: '1px solid var(--dash-border)',
+                  gridColumn: 'span 12',
+                  height: '100%',
+                  minHeight: 0,
+                  overflow: 'hidden',
                 }}
+                className="lg:!col-span-5"
               >
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Model Accuracy (ROC-AUC)
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669', marginTop: 2 }}>
-                  0.914 Multi-Vessel
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#059669', marginTop: 2 }}>
-                  5-Fold cross-validated ensembles
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: 'var(--dash-surface-2)',
-                  border: '1px solid var(--dash-border)',
-                }}
-              >
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  Vessel Bifurcation Shaders
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)', marginTop: 2 }}>
-                  LAD • LCX • RCA
-                </div>
-                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                  Spatial WebGL vascular telemetry
-                </div>
-              </div>
-
-              <div
-                style={{
-                  padding: '12px 16px',
-                  borderRadius: 14,
-                  background: 'var(--dash-surface-2)',
-                  border: '1px solid var(--dash-border)',
-                }}
-              >
-                <div style={{ fontSize: '0.7rem', fontWeight: 600, color: 'var(--text-muted)' }}>
-                  FastAPI ML Engine Status
-                </div>
-                <div style={{ fontSize: '1.25rem', fontWeight: 800, color: '#059669', marginTop: 2 }}>
-                  Operational
-                </div>
-                <div style={{ fontSize: '0.68rem', color: '#059669', marginTop: 2 }}>
-                  &lt;30ms real-time inference latency
-                </div>
+                <PatientSummaryCard
+                  patient={selectedPatient}
+                  triageLevel={
+                    selectedPatient?.st_elevation > 0 || selectedPatient?.typical_chest_pain > 0
+                      ? 'critical'
+                      : selectedPatient?.bp > 140 || selectedPatient?.ldl > 160
+                      ? 'moderate'
+                      : 'stable'
+                  }
+                  onOpenClinical={handleOpenClinical}
+                />
               </div>
             </div>
-          </div>
-        )}
+          )}
 
-        {/* ─── View A: Patient Triage Hub ────────────────────────────────── */}
-        {activeView === 'triage' ? (
-          <div
-            style={{
-              display: 'grid',
-              gridTemplateColumns: 'repeat(12, 1fr)',
-              gap: 24,
-            }}
-          >
-            {/* Left 7 Columns: Patient Queue from Supabase */}
-            <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-7">
-              <PatientQueue
-                selectedId={selectedPatient?.id}
-                onSelectPatient={handleSelectPatient}
-                onAddPatient={() => setIsAddSheetOpen(true)}
-              />
-            </div>
-
-            {/* Right 5 Columns: Patient Quick Summary & 3D Launcher */}
-            <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-5">
-              <PatientSummaryCard
+          {activeNav === '3d-studio' && (
+            <div key="view-studio" style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+              <ClinicalAnalysisView
                 patient={selectedPatient}
-                triageLevel={
-                  selectedPatient?.st_elevation > 0 || selectedPatient?.typical_chest_pain > 0
-                    ? 'critical'
-                    : selectedPatient?.bp > 140 || selectedPatient?.ldl > 160
-                    ? 'moderate'
-                    : 'stable'
-                }
-                onOpenClinical={handleOpenClinical}
+                onBackToQueue={() => handleNavChange('patients')}
+                onSelectPatient={handleSelectPatient}
               />
             </div>
-          </div>
-        ) : (
-          /* ─── View B: Clinical Analysis View (3D Heart, SHAP, What-If) ─── */
-          <ClinicalAnalysisView
-            patient={selectedPatient}
-            onBackToQueue={handleBackToQueue}
-          />
-        )}
-      </main>
+          )}
 
-      {/* ─── Slide-Over: Add Patient & Intake Sheet ──────────────────────── */}
+          {activeNav === 'records' && (
+            <div key="view-records" style={{ flex: 1, minHeight: 0, height: '100%', overflow: 'hidden' }}>
+              <EhrRegistryView
+                onSelectPatientForAnalysis={(rec) => {
+                  setSelectedPatient({
+                    id: rec.patient_id,
+                    patient_code: rec.patient_code,
+                    name: rec.patient_name,
+                    bp: rec.baseline_bp,
+                    ldl: rec.baseline_ldl,
+                  });
+                  handleNavChange('3d-studio');
+                }}
+              />
+            </div>
+          )}
+
+          {activeNav === 'analytics' && (
+            <div key="view-analytics" style={{ flex: 1, minHeight: 0, height: '100%', overflow: 'hidden' }}>
+              <CohortAnalyticsView onGoToPatients={() => handleNavChange('patients')} />
+            </div>
+          )}
+        </main>
+      </div>
+
+      {/* Add Patient Sheet Modal */}
       <AddPatientSheet
         isOpen={isAddSheetOpen}
         onClose={() => setIsAddSheetOpen(false)}
