@@ -52,11 +52,11 @@ function SimpleHeartMesh() {
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
     
-    // Heroic fit scale: zoomed in prominently while preserving safe headroom
-    const fitScale = 1.38 / (maxDim || 1);
+    // Heroic fit scale: prominent in card while preserving safe top & bottom margins
+    const fitScale = 1.18 / (maxDim || 1);
     return {
-      // Symmetrically frame the heart between header and launch button
-      centerOffset: [-center.x, -center.y - 0.07, -center.z],
+      // Positioned slightly above center so apex has generous clearance above the bottom launch button
+      centerOffset: [-center.x, -center.y + 0.04, -center.z],
       scaleFactor: fitScale,
     };
   }, [scene]);
@@ -155,7 +155,7 @@ export default function HomeHeartCanvas() {
     <div style={{ width: '100%', height: '100%', position: 'relative' }}>
       <CanvasSafeWrapper fallback={<FallbackCardioPulse />}>
         <Canvas
-          camera={{ position: [0, -0.02, 2.3], fov: 38 }}
+          camera={{ position: [0, 0, 2.38], fov: 38 }}
           gl={{ alpha: true, antialias: true, failIfMajorPerformanceCaveat: false }}
           style={{ background: 'transparent' }}
         >

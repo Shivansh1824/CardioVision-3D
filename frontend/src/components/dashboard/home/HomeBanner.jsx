@@ -28,12 +28,12 @@ export default function HomeBanner({
   return (
     <div
       style={{
-        background: 'rgba(255, 255, 255, 0.78)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.65) 0%, rgba(248, 250, 252, 0.45) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 16,
-        border: '1px solid rgba(226, 232, 240, 0.85)',
-        boxShadow: '0 2px 12px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+        boxShadow: '0 4px 16px -2px rgba(15, 23, 42, 0.03), 0 1px 0 1px rgba(255, 255, 255, 0.95) inset',
         padding: '13px 22px',
         display: 'flex',
         alignItems: 'center',

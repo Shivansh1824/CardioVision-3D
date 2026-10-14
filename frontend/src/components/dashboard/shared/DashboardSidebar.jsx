@@ -107,9 +107,12 @@ export default function DashboardSidebar({
   const doctorEmail = user?.email || 's.rana@cardiovision.ai';
 
   const [flyoutOpen, setFlyoutOpen] = useState(false);
+  const [isHovered, setIsHovered] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editNameInput, setEditNameInput] = useState(doctorName);
   const [saveFeedback, setSaveFeedback] = useState(false);
+
+  const isExpanded = isHovered || flyoutOpen;
 
   const flyoutRef = useRef(null);
   const chipRef = useRef(null);
@@ -191,303 +194,358 @@ export default function DashboardSidebar({
   };
 
   return (
-    <aside
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
       style={{
-        width: 256,
+        width: 72,
         height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        background: 'rgba(255, 255, 255, 0.62)',
-        backdropFilter: 'blur(24px)',
-        WebkitBackdropFilter: 'blur(24px)',
-        borderRight: '1px solid rgba(226, 232, 240, 0.75)',
-        flexShrink: 0,
-        boxSizing: 'border-box',
         position: 'relative',
+        flexShrink: 0,
         zIndex: 50,
       }}
     >
-      {/* ── Top Brand Lockup (Matches Landing Page) ── */}
-      <div
-        style={{
-          height: 64,
-          padding: '0 20px',
-          display: 'flex',
-          alignItems: 'center',
-          borderBottom: '1px solid rgba(226, 232, 240, 0.55)',
-          flexShrink: 0,
-        }}
-      >
-        <button
-          onClick={onBackToLanding}
-          title="Back to Landing Page"
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 10,
-            background: 'none',
-            border: 'none',
-            padding: 0,
-            cursor: 'pointer',
-            textAlign: 'left',
-          }}
-        >
-          <BrandLogo size={30} />
-          <span
-            style={{
-              fontFamily: 'var(--font-display)',
-              fontWeight: 800,
-              fontSize: '1.12rem',
-              letterSpacing: '-0.025em',
-              color: '#0f172a',
-              lineHeight: 1,
-            }}
-          >
-            CardioVision <span style={{ color: '#e11d48' }}>AI</span>
-          </span>
-        </button>
-      </div>
+      <style>{`
+        @keyframes sidebarTextIn {
+          from { opacity: 0; transform: translateX(-6px); }
+          to   { opacity: 1; transform: translateX(0); }
+        }
+      `}</style>
 
-      {/* ── Navigation Links (Smooth hover & active transitions) ── */}
-      <div
+      <aside
         style={{
-          flex: 1,
-          padding: '16px 12px',
+          position: 'absolute',
+          left: 0,
+          top: 0,
+          bottom: 0,
+          width: isExpanded ? 256 : 72,
+          height: '100%',
           display: 'flex',
           flexDirection: 'column',
-          gap: 6,
-          overflowY: 'auto',
+          background: isExpanded ? 'rgba(255, 255, 255, 0.92)' : 'rgba(255, 255, 255, 0.65)',
+          backdropFilter: 'blur(24px)',
+          WebkitBackdropFilter: 'blur(24px)',
+          borderRight: '1px solid rgba(226, 232, 240, 0.8)',
+          boxShadow: isExpanded
+            ? '8px 0 32px -4px rgba(15, 23, 42, 0.12), 0 0 0 1px rgba(226, 232, 240, 0.85)'
+            : 'none',
+          transition: 'width 0.28s cubic-bezier(0.16, 1, 0.3, 1), background 0.24s ease, box-shadow 0.28s ease',
+          boxSizing: 'border-box',
+          overflow: isExpanded ? 'visible' : 'hidden',
+          zIndex: 50,
         }}
       >
+        {/* ── Top Brand Lockup (Matches Landing Page) ── */}
         <div
           style={{
-            fontSize: '0.62rem',
-            fontWeight: 700,
-            color: '#94a3b8',
-            letterSpacing: '0.08em',
-            textTransform: 'uppercase',
-            padding: '4px 10px 8px',
+            height: 64,
+            padding: isExpanded ? '0 20px' : '0',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: isExpanded ? 'flex-start' : 'center',
+            borderBottom: '1px solid rgba(226, 232, 240, 0.55)',
+            flexShrink: 0,
+            transition: 'padding 0.24s ease',
           }}
         >
-          Clinical Modules
+          <button
+            onClick={onBackToLanding}
+            title={!isExpanded ? 'CardioVision AI · Back to Landing Page' : undefined}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 10,
+              background: 'none',
+              border: 'none',
+              padding: 0,
+              cursor: 'pointer',
+              textAlign: 'left',
+              minWidth: 0,
+              width: '100%',
+              justifyContent: isExpanded ? 'flex-start' : 'center',
+            }}
+          >
+            <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', width: isExpanded ? 'auto' : 72 }}>
+              <BrandLogo size={30} />
+            </div>
+            {isExpanded && (
+              <span
+                style={{
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 800,
+                  fontSize: '1.12rem',
+                  letterSpacing: '-0.025em',
+                  color: '#0f172a',
+                  lineHeight: 1,
+                  whiteSpace: 'nowrap',
+                  animation: 'sidebarTextIn 0.22s ease',
+                }}
+              >
+                CardioVision <span style={{ color: '#e11d48' }}>AI</span>
+              </span>
+            )}
+          </button>
         </div>
 
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeNav === item.id;
-          return (
-            <button
-              key={item.id}
-              onClick={() => onSelectNav(item.id)}
-              style={{
-                width: '100%',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 10,
-                padding: '9px 12px',
-                borderRadius: 12,
-                border: 'none',
-                background: isActive ? '#0f172a' : 'transparent',
-                color: isActive ? '#ffffff' : '#475569',
-                cursor: 'pointer',
-                textAlign: 'left',
-                transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-                boxShadow: isActive ? '0 4px 14px rgba(15, 23, 42, 0.14)' : 'none',
-                position: 'relative',
-              }}
-              onMouseOver={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'rgba(255, 255, 255, 0.85)';
-                  e.currentTarget.style.color = '#0f172a';
-                }
-              }}
-              onMouseOut={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = 'transparent';
-                  e.currentTarget.style.color = '#475569';
-                }
-              }}
-            >
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-                <Icon
-                  style={{
-                    width: 17,
-                    height: 17,
-                    color: isActive ? '#38bdf8' : '#64748b',
-                    flexShrink: 0,
-                    transition: 'transform 0.2s ease',
-                  }}
-                />
-                <div style={{ lineHeight: 1.2, minWidth: 0 }}>
+        {/* ── Navigation Links (Smooth hover & active transitions) ── */}
+        <div
+          style={{
+            flex: 1,
+            padding: isExpanded ? '16px 12px' : '16px 8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 6,
+            overflowY: 'auto',
+            transition: 'padding 0.24s ease',
+          }}
+        >
+          <div
+            style={{
+              fontSize: '0.62rem',
+              fontWeight: 700,
+              color: '#94a3b8',
+              letterSpacing: '0.08em',
+              textTransform: 'uppercase',
+              padding: isExpanded ? '4px 10px 8px' : '0',
+              height: isExpanded ? 'auto' : 0,
+              opacity: isExpanded ? 1 : 0,
+              overflow: 'hidden',
+              whiteSpace: 'nowrap',
+              transition: 'all 0.2s ease',
+            }}
+          >
+            Clinical Modules
+          </div>
+
+          {navItems.map((item) => {
+            const Icon = item.icon;
+            const isActive = activeNav === item.id;
+            return (
+              <button
+                key={item.id}
+                onClick={() => onSelectNav(item.id)}
+                title={!isExpanded ? `${item.label} · ${item.sub}` : undefined}
+                style={{
+                  width: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: isExpanded ? 'space-between' : 'center',
+                  gap: 10,
+                  padding: isExpanded ? '9px 12px' : '10px 0',
+                  borderRadius: 12,
+                  border: 'none',
+                  background: isActive ? '#0f172a' : 'transparent',
+                  color: isActive ? '#ffffff' : '#475569',
+                  cursor: 'pointer',
+                  textAlign: 'left',
+                  transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+                  boxShadow: isActive ? '0 4px 14px rgba(15, 23, 42, 0.14)' : 'none',
+                  position: 'relative',
+                }}
+                onMouseOver={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'rgba(255, 255, 255, 0.85)';
+                    e.currentTarget.style.color = '#0f172a';
+                  }
+                }}
+                onMouseOut={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = 'transparent';
+                    e.currentTarget.style.color = '#475569';
+                  }
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0, justifyContent: isExpanded ? 'flex-start' : 'center', width: isExpanded ? 'auto' : '100%' }}>
+                  <Icon
+                    style={{
+                      width: 18,
+                      height: 18,
+                      color: isActive ? '#38bdf8' : '#64748b',
+                      flexShrink: 0,
+                      transition: 'transform 0.2s ease',
+                    }}
+                  />
+                  {isExpanded && (
+                    <div style={{ lineHeight: 1.2, minWidth: 0, animation: 'sidebarTextIn 0.22s ease' }}>
+                      <div
+                        style={{
+                          fontSize: '0.82rem',
+                          fontWeight: isActive ? 700 : 600,
+                          letterSpacing: '-0.01em',
+                          whiteSpace: 'nowrap',
+                          overflow: 'hidden',
+                          textOverflow: 'ellipsis',
+                        }}
+                      >
+                        {item.label}
+                      </div>
+                      <div
+                        style={{
+                          fontSize: '0.64rem',
+                          color: isActive ? 'rgba(255,255,255,0.65)' : '#94a3b8',
+                          fontWeight: 500,
+                          marginTop: 1,
+                          whiteSpace: 'nowrap',
+                        }}
+                      >
+                        {item.sub}
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {isExpanded && item.badge && (
+                  <span
+                    style={{
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '0.62rem',
+                      fontWeight: 700,
+                      padding: '1px 6px',
+                      borderRadius: 5,
+                      background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(15,23,42,0.06)',
+                      color: isActive ? '#ffffff' : item.badgeColor,
+                      flexShrink: 0,
+                      animation: 'sidebarTextIn 0.22s ease',
+                    }}
+                  >
+                    {item.badge}
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        {/* ── Bottom Section: Integrated Doctor Profile Chip with Upward Flyout ── */}
+        <div
+          style={{
+            padding: isExpanded ? '12px' : '12px 8px',
+            borderTop: '1px solid rgba(226, 232, 240, 0.65)',
+            position: 'relative',
+            flexShrink: 0,
+            display: 'flex',
+            justifyContent: 'center',
+            transition: 'padding 0.24s ease',
+          }}
+        >
+          <button
+            ref={chipRef}
+            onClick={() => {
+              setFlyoutOpen(!flyoutOpen);
+              if (!flyoutOpen) {
+                setEditNameInput(doctorName);
+                setIsEditing(false);
+              }
+            }}
+            title={!isExpanded ? `${doctorName} · Attending Cardiologist` : undefined}
+            aria-expanded={flyoutOpen}
+            style={{
+              width: '100%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: isExpanded ? 'space-between' : 'center',
+              gap: 10,
+              background: flyoutOpen ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
+              border: flyoutOpen ? '1px solid #cbd5e1' : '1px solid rgba(226, 232, 240, 0.9)',
+              borderRadius: 12,
+              padding: isExpanded ? '6px 10px 6px 8px' : '6px',
+              cursor: 'pointer',
+              transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
+              boxShadow: flyoutOpen
+                ? '0 0 0 3px rgba(225, 29, 72, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06)'
+                : '0 1px 3px rgba(15, 23, 42, 0.04)',
+              boxSizing: 'border-box',
+            }}
+            onMouseOver={(e) => {
+              if (!flyoutOpen) {
+                e.currentTarget.style.background = '#ffffff';
+                e.currentTarget.style.borderColor = '#cbd5e1';
+              }
+            }}
+            onMouseOut={(e) => {
+              if (!flyoutOpen) {
+                e.currentTarget.style.background = 'rgba(255, 255, 255, 0.75)';
+                e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.9)';
+              }
+            }}
+          >
+            <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, justifyContent: isExpanded ? 'flex-start' : 'center', width: isExpanded ? 'auto' : '100%' }}>
+              {/* Avatar Circle */}
+              <div
+                style={{
+                  width: 34,
+                  height: 34,
+                  borderRadius: '50%',
+                  background: doctorAvatar
+                    ? 'none'
+                    : 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  fontSize: '0.74rem',
+                  fontWeight: 700,
+                  overflow: 'hidden',
+                  flexShrink: 0,
+                  boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(15,23,42,0.1)',
+                }}
+              >
+                {doctorAvatar ? (
+                  <img
+                    src={doctorAvatar}
+                    alt={doctorName}
+                    style={{ width: '100%', height: '100%', objectFit: 'cover' }}
+                  />
+                ) : (
+                  initials
+                )}
+              </div>
+
+              {/* Doctor Info Text */}
+              {isExpanded && (
+                <div style={{ textAlign: 'left', lineHeight: 1.25, minWidth: 0, animation: 'sidebarTextIn 0.22s ease' }}>
                   <div
                     style={{
-                      fontSize: '0.82rem',
-                      fontWeight: isActive ? 700 : 600,
+                      fontSize: '0.8rem',
+                      fontWeight: 700,
+                      color: '#0f172a',
+                      whiteSpace: 'nowrap',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
                       letterSpacing: '-0.01em',
+                    }}
+                  >
+                    {doctorName}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: '0.64rem',
+                      color: '#64748b',
+                      fontWeight: 500,
                       whiteSpace: 'nowrap',
                       overflow: 'hidden',
                       textOverflow: 'ellipsis',
                     }}
                   >
-                    {item.label}
-                  </div>
-                  <div
-                    style={{
-                      fontSize: '0.64rem',
-                      color: isActive ? 'rgba(255,255,255,0.65)' : '#94a3b8',
-                      fontWeight: 500,
-                      marginTop: 1,
-                    }}
-                  >
-                    {item.sub}
+                    Attending Cardiologist
                   </div>
                 </div>
-              </div>
-
-              {item.badge && (
-                <span
-                  style={{
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '0.62rem',
-                    fontWeight: 700,
-                    padding: '1px 6px',
-                    borderRadius: 5,
-                    background: isActive ? 'rgba(255,255,255,0.2)' : 'rgba(15,23,42,0.06)',
-                    color: isActive ? '#ffffff' : item.badgeColor,
-                    flexShrink: 0,
-                  }}
-                >
-                  {item.badge}
-                </span>
-              )}
-            </button>
-          );
-        })}
-      </div>
-
-      {/* ── Bottom Section: Integrated Doctor Profile Chip with Upward Flyout ── */}
-      <div
-        style={{
-          padding: '12px',
-          borderTop: '1px solid rgba(226, 232, 240, 0.65)',
-          position: 'relative',
-          flexShrink: 0,
-        }}
-      >
-        <button
-          ref={chipRef}
-          onClick={() => {
-            setFlyoutOpen(!flyoutOpen);
-            if (!flyoutOpen) {
-              setEditNameInput(doctorName);
-              setIsEditing(false);
-            }
-          }}
-          aria-expanded={flyoutOpen}
-          style={{
-            width: '100%',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between',
-            gap: 10,
-            background: flyoutOpen ? '#ffffff' : 'rgba(255, 255, 255, 0.75)',
-            border: flyoutOpen ? '1px solid #cbd5e1' : '1px solid rgba(226, 232, 240, 0.9)',
-            borderRadius: 12,
-            padding: '6px 10px 6px 8px',
-            cursor: 'pointer',
-            transition: 'all 0.18s cubic-bezier(0.16, 1, 0.3, 1)',
-            boxShadow: flyoutOpen
-              ? '0 0 0 3px rgba(225, 29, 72, 0.08), 0 4px 12px rgba(15, 23, 42, 0.06)'
-              : '0 1px 3px rgba(15, 23, 42, 0.04)',
-            boxSizing: 'border-box',
-          }}
-          onMouseOver={(e) => {
-            if (!flyoutOpen) {
-              e.currentTarget.style.background = '#ffffff';
-              e.currentTarget.style.borderColor = '#cbd5e1';
-            }
-          }}
-          onMouseOut={(e) => {
-            if (!flyoutOpen) {
-              e.currentTarget.style.background = 'rgba(255, 255, 255, 0.75)';
-              e.currentTarget.style.borderColor = 'rgba(226, 232, 240, 0.9)';
-            }
-          }}
-        >
-          <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0 }}>
-            {/* Avatar Circle */}
-            <div
-              style={{
-                width: 34,
-                height: 34,
-                borderRadius: '50%',
-                background: doctorAvatar
-                  ? 'none'
-                  : 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
-                color: '#ffffff',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '0.74rem',
-                fontWeight: 700,
-                overflow: 'hidden',
-                flexShrink: 0,
-                boxShadow: 'inset 0 0 0 1px rgba(255, 255, 255, 0.2), 0 1px 2px rgba(15,23,42,0.1)',
-              }}
-            >
-              {doctorAvatar ? (
-                <img
-                  src={doctorAvatar}
-                  alt={doctorName}
-                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
-                />
-              ) : (
-                initials
               )}
             </div>
 
-            {/* Doctor Info Text */}
-            <div style={{ textAlign: 'left', lineHeight: 1.25, minWidth: 0 }}>
-              <div
+            {isExpanded && (
+              <ChevronDown
                 style={{
-                  fontSize: '0.8rem',
-                  fontWeight: 700,
-                  color: '#0f172a',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                  letterSpacing: '-0.01em',
+                  width: 14,
+                  height: 14,
+                  color: '#94a3b8',
+                  transform: flyoutOpen ? 'rotate(180deg)' : 'none',
+                  transition: 'transform 0.18s ease',
+                  flexShrink: 0,
                 }}
-              >
-                {doctorName}
-              </div>
-              <div
-                style={{
-                  fontSize: '0.64rem',
-                  color: '#64748b',
-                  fontWeight: 500,
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis',
-                }}
-              >
-                Attending Cardiologist
-              </div>
-            </div>
-          </div>
-
-          <ChevronDown
-            style={{
-              width: 14,
-              height: 14,
-              color: '#94a3b8',
-              transform: flyoutOpen ? 'rotate(180deg)' : 'none',
-              transition: 'transform 0.18s ease',
-              flexShrink: 0,
-            }}
-          />
-        </button>
+              />
+            )}
+          </button>
 
         {/* ── Upward Flyout Modal ── */}
         {flyoutOpen && (
@@ -889,5 +947,6 @@ export default function DashboardSidebar({
         )}
       </div>
     </aside>
-  );
+  </div>
+);
 }

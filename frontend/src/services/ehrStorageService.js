@@ -156,6 +156,9 @@ export async function commitEhrPlan({
   const allLocal = getLocalRecords();
   allLocal.unshift(record);
   saveLocalRecords(allLocal);
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new Event('cv_activity_updated'));
+  }
 
   // 2. Persist to Supabase treatment_simulations table
   try {

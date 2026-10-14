@@ -5,6 +5,7 @@ import DashboardSidebar from './shared/DashboardSidebar';
 import DashboardTopBar from './shared/DashboardTopBar';
 import PatientQueue from './triage/PatientQueue';
 import PatientSummaryCard from './triage/PatientSummaryCard';
+import PatientCardsGridView from './triage/PatientCardsGridView';
 import EhrRegistryView from './triage/EhrRegistryView';
 import CohortAnalyticsView from './triage/CohortAnalyticsView';
 import AddPatientSheet from './triage/AddPatientSheet';
@@ -128,18 +129,19 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
     >
       <style>{`
         .custom-scrollbar::-webkit-scrollbar {
-          width: 5px;
-          height: 5px;
+          width: 6px;
+          height: 6px;
         }
         .custom-scrollbar::-webkit-scrollbar-track {
-          background: transparent;
+          background: rgba(226, 232, 240, 0.45);
+          border-radius: 999px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb {
-          background: rgba(148, 163, 184, 0.4);
+          background: rgba(148, 163, 184, 0.7);
           border-radius: 999px;
         }
         .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-          background: rgba(100, 116, 139, 0.65);
+          background: rgba(100, 116, 139, 0.9);
         }
         @keyframes pulse-live-dot {
           0%, 100% { box-shadow: 0 0 0 2px rgba(5, 150, 105, 0.25); }
@@ -218,50 +220,23 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
             <div
               key="view-patients"
               style={{
-                display: 'grid',
-                gridTemplateColumns: 'repeat(12, 1fr)',
-                gap: 14,
                 flex: 1,
                 minHeight: 0,
                 height: '100%',
+                display: 'flex',
+                flexDirection: 'column',
+                overflow: 'hidden',
               }}
             >
-              <div
-                style={{
-                  gridColumn: 'span 12',
-                  height: '100%',
-                  minHeight: 0,
-                  overflow: 'hidden',
+              <PatientCardsGridView
+                selectedId={selectedPatient?.id}
+                onSelectPatient={handleSelectPatient}
+                onOpenStudio={(patient) => {
+                  if (patient) setSelectedPatient(patient);
+                  handleNavChange('3d-studio');
                 }}
-                className="lg:!col-span-7"
-              >
-                <PatientQueue
-                  selectedId={selectedPatient?.id}
-                  onSelectPatient={handleSelectPatient}
-                  onAddPatient={() => setIsAddSheetOpen(true)}
-                />
-              </div>
-              <div
-                style={{
-                  gridColumn: 'span 12',
-                  height: '100%',
-                  minHeight: 0,
-                  overflow: 'hidden',
-                }}
-                className="lg:!col-span-5"
-              >
-                <PatientSummaryCard
-                  patient={selectedPatient}
-                  triageLevel={
-                    selectedPatient?.st_elevation > 0 || selectedPatient?.typical_chest_pain > 0
-                      ? 'critical'
-                      : selectedPatient?.bp > 140 || selectedPatient?.ldl > 160
-                      ? 'moderate'
-                      : 'stable'
-                  }
-                  onOpenClinical={handleOpenClinical}
-                />
-              </div>
+                onAddPatient={() => setIsAddSheetOpen(true)}
+              />
             </div>
           )}
 

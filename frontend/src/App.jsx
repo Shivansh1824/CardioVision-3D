@@ -92,7 +92,11 @@ export default function App() {
         hash.includes('access_token') || 
         hash.includes('refresh_token')
       ) {
-        if (hash.includes('patient') || localStorage.getItem('cardiovision_role') === 'patient') {
+        if (hash.startsWith('#dashboard-patient')) {
+          setUserRole('patient');
+        } else if (hash.startsWith('#dashboard')) {
+          setUserRole('doctor');
+        } else if (localStorage.getItem('cardiovision_role') === 'patient') {
           setUserRole('patient');
         } else {
           setUserRole('doctor');

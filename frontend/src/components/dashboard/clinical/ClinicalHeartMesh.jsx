@@ -37,13 +37,15 @@ export default function ClinicalHeartMesh({
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    const targetScale = 1.55 / (maxDim || 1);
+    // Adjusted scale 1.22 provides perfect headroom so aorta and apex never clip
+    const targetScale = 1.22 / (maxDim || 1);
 
     if (groupRef.current) {
       groupRef.current.scale.set(targetScale * 0.75, targetScale * 0.75, targetScale * 0.75);
+      // Clean geometric centering on all 3 axes
       groupRef.current.position.set(
         -center.x * targetScale,
-        -center.y * targetScale - 0.14,
+        -center.y * targetScale,
         -center.z * targetScale
       );
       groupRef.current.rotation.y = -0.45;
@@ -212,30 +214,35 @@ export default function ClinicalHeartMesh({
                     <span style={{ width: 4, height: 4, borderRadius: '50%', background: '#fff' }} />
                   </span>
 
-                  {/* Tooltip Pill */}
+                  {/* Persistent Tooltip Pill for Artery Identification */}
                   <div
                     style={{
                       position: 'absolute',
                       left: '100%',
                       marginLeft: 8,
-                      padding: '4px 8px',
+                      padding: isSelected ? '4px 10px' : '3px 8px',
                       borderRadius: 8,
-                      background: 'rgba(15, 23, 42, 0.92)',
+                      background: isSelected ? 'rgba(15, 23, 42, 0.95)' : 'rgba(15, 23, 42, 0.85)',
                       backdropFilter: 'blur(8px)',
                       color: '#ffffff',
-                      fontSize: '11px',
-                      fontWeight: 600,
+                      fontSize: isSelected ? '11px' : '10px',
+                      fontWeight: 700,
                       whiteSpace: 'nowrap',
-                      border: '1px solid rgba(255, 255, 255, 0.15)',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.2)',
+                      border: isSelected ? '1.5px solid #38bdf8' : '1px solid rgba(255, 255, 255, 0.2)',
+                      boxShadow: isSelected ? '0 4px 16px rgba(56, 189, 248, 0.35)' : '0 2px 8px rgba(0,0,0,0.25)',
                       pointerEvents: 'none',
-                      display: isSelected ? 'flex' : 'none',
+                      display: 'flex',
                       alignItems: 'center',
-                      gap: 6,
+                      gap: 5,
+                      transform: isSelected ? 'scale(1.05)' : 'scale(1)',
+                      transition: 'all 0.2s ease',
                     }}
                   >
-                    <span style={{ color: pinColor }}>●</span>
-                    <span>{marker.code}: {Math.round(prob * 100)}%</span>
+                    <span style={{ color: pinColor, fontSize: '9px' }}>●</span>
+                    <span style={{ letterSpacing: '0.02em' }}>{marker.code}:</span>
+                    <span style={{ color: pinColor, fontFamily: 'monospace', fontWeight: 800 }}>
+                      {Math.round(prob * 100)}%
+                    </span>
                   </div>
                 </button>
               </Html>

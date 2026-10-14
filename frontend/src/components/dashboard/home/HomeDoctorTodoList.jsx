@@ -55,16 +55,27 @@ export default function HomeDoctorTodoList({ onOpenPatient }) {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Persist todos to localStorage
+  // Persist todos to localStorage and notify listeners (e.g. Clinical Calendar)
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      window.dispatchEvent(new Event('cv_activity_updated'));
     } catch (_) {}
   }, [todos]);
 
   const handleToggle = (id) => {
     setTodos((prev) =>
-      prev.map((t) => (t.id === id ? { ...t, done: !t.done } : t))
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextDone = !t.done;
+          return {
+            ...t,
+            done: nextDone,
+            completedAt: nextDone ? new Date().toISOString() : null,
+          };
+        }
+        return t;
+      })
     );
   };
 
@@ -82,12 +93,12 @@ export default function HomeDoctorTodoList({ onOpenPatient }) {
   return (
     <div
       style={{
-        background: 'rgba(255, 255, 255, 0.75)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(240, 253, 250, 0.38) 50%, rgba(255, 255, 255, 0.60) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 16,
-        border: '1px solid rgba(226, 232, 240, 0.85)',
-        boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+        boxShadow: '0 4px 20px -2px rgba(13, 148, 136, 0.04), 0 1px 0 1px rgba(255, 255, 255, 0.95) inset',
         padding: '16px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -207,8 +218,11 @@ export default function HomeDoctorTodoList({ onOpenPatient }) {
               style={{
                 padding: '9px 12px',
                 borderRadius: 9,
-                background: todo.done ? 'rgba(248, 250, 252, 0.7)' : 'rgba(255, 255, 255, 0.95)',
-                border: todo.done ? '1px solid #e2e8f0' : '1px solid rgba(226, 232, 240, 0.9)',
+                background: todo.done ? 'rgba(241, 245, 249, 0.55)' : 'rgba(255, 255, 255, 0.78)',
+                backdropFilter: 'blur(10px)',
+                WebkitBackdropFilter: 'blur(10px)',
+                border: todo.done ? '1px solid rgba(226, 232, 240, 0.6)' : '1px solid rgba(255, 255, 255, 0.85)',
+                boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'space-between',

@@ -1,48 +1,139 @@
-import { useState } from 'react';
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Clock, User, Activity } from 'lucide-react';
+import { useState, useEffect, useMemo } from 'react';
+import { Calendar as CalendarIcon, CheckCircle2, FileText, Clock, User, ExternalLink } from 'lucide-react';
+import { getLocalRecords } from '../../../services/ehrStorageService';
+import ClinicalReportModal from '../clinical/ClinicalReportModal';
+
+const TODOS_STORAGE_KEY = 'cv_doctor_clinical_todos_v2';
+
+function formatActivityTime(isoString) {
+  if (!isoString) return 'Today';
+  try {
+    const d = new Date(isoString);
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return 'Logged';
+  }
+}
 
 /**
- * HomeClinicalCalendar — Modern interactive clinical calendar widget.
- * Allows physician to track patient adjudication days, cath lab cases, and follow-ups.
+ * HomeClinicalCalendar — Dynamic Clinical Tracking Calendar.
+ * Strictly reflects verified physician actions:
+ * 1. Tasks completed from Doctor's Clinical Action Plan
+ * 2. Real committed/saved EHR treatment plans
+ * Zero hardcoded or pre-defined fake events.
  */
 export default function HomeClinicalCalendar({ onOpenPatient }) {
-  const [selectedDay, setSelectedDay] = useState(14); // Today: Oct 14, 2026
+  const [selectedDay, setSelectedDay] = useState(14); // Current date: Oct 14, 2026
+  const [todos, setTodos] = useState([]);
+  const [records, setRecords] = useState([]);
+  const [activeReportModal, setActiveReportModal] = useState(null);
 
-  // Sample scheduled clinical tracking events mapped by day
-  const clinicalEvents = {
-    12: [
-      { id: 'ev-1', time: '10:00 AM', title: 'PT-004 Echocardiogram Review', type: 'echo', doctor: 'Dr. Shivansh' },
-      { id: 'ev-2', time: '02:30 PM', title: 'PT-167 Lipid Follow-up', type: 'consult', doctor: 'Dr. Shivansh' },
-    ],
-    14: [
-      { id: 'ev-3', time: '09:00 AM', title: 'PT-001 Severe LAD Stent Staging', type: 'cath', doctor: 'Dr. Shivansh', urgent: true },
-      { id: 'ev-4', time: '11:15 AM', title: 'PT-002 Bifurcation Angiography', type: 'cath', doctor: 'Dr. Shivansh', urgent: true },
-      { id: 'ev-5', time: '03:45 PM', title: 'Cath Lab Station 4 Handover', type: 'admin', doctor: 'Dr. Shivansh' },
-    ],
-    15: [
-      { id: 'ev-6', time: '10:30 AM', title: 'PT-003 RCA Ischemia Mapping', type: 'eval', doctor: 'Dr. Shivansh' },
-      { id: 'ev-7', time: '01:00 PM', title: 'Station 4 Weekly Mortality Review', type: 'meeting', doctor: 'Cardiology Dept' },
-    ],
-    18: [
-      { id: 'ev-8', time: '11:00 AM', title: 'PT-215 Normal Perfusion Discharge', type: 'discharge', doctor: 'Dr. Shivansh' },
-    ],
+  // Load and sync real activity from localStorage and events
+  const loadActivities = () => {
+    // 1. Read to-do items
+    try {
+      const rawTodos = localStorage.getItem(TODOS_STORAGE_KEY);
+      if (rawTodos) {
+        const parsed = JSON.parse(rawTodos);
+        if (Array.isArray(parsed)) {
+          setTodos(parsed);
+        }
+      }
+    } catch (_) {}
+
+    // 2. Read genuine committed EHR records
+    try {
+      const committed = getLocalRecords();
+      setRecords(committed || []);
+    } catch (_) {}
   };
+
+  useEffect(() => {
+    loadActivities();
+
+    const handleUpdate = () => {
+      loadActivities();
+    };
+
+    window.addEventListener('cv_activity_updated', handleUpdate);
+    window.addEventListener('storage', handleUpdate);
+    return () => {
+      window.removeEventListener('cv_activity_updated', handleUpdate);
+      window.removeEventListener('storage', handleUpdate);
+    };
+  }, []);
+
+  // Map real activity by day of the month
+  const activitiesByDay = useMemo(() => {
+    const map = {};
+
+    // 1. Completed tasks from to-do list
+    todos
+      .filter((t) => t.done)
+      .forEach((t) => {
+        const dateStr = t.completedAt || t.createdAt || new Date().toISOString();
+        const d = new Date(dateStr);
+        // Default to current calendar day if date parsing defaults to today
+        const day = d.getDate() || 14;
+
+        if (!map[day]) map[day] = [];
+        map[day].push({
+          id: `task-${t.id}`,
+          type: 'task',
+          title: t.task,
+          patientCode: t.patientCode,
+          patientName: t.patientName,
+          patientId: t.patientId || (t.patientCode ? Number(t.patientCode.replace(/\D/g, '')) : null),
+          time: formatActivityTime(dateStr),
+          rawTime: new Date(dateStr).getTime() || 0,
+        });
+      });
+
+    // 2. Committed EHR simulation reports
+    records.forEach((r) => {
+      const dateStr = r.created_at || new Date().toISOString();
+      const d = new Date(dateStr);
+      const day = d.getDate() || 14;
+
+      if (!map[day]) map[day] = [];
+      map[day].push({
+        id: `ehr-${r.id}`,
+        type: 'ehr',
+        title: r.plan_title || `EHR Simulation Plan (${r.patient_code})`,
+        patientCode: r.patient_code,
+        patientName: r.patient_name,
+        patientId: r.patient_id,
+        visitNumber: r.visit_number,
+        riskReduction: r.risk_reduction_pct,
+        time: formatActivityTime(dateStr),
+        rawTime: new Date(dateStr).getTime() || 0,
+        recordData: r,
+      });
+    });
+
+    // Sort items latest first for each day
+    Object.keys(map).forEach((k) => {
+      map[k].sort((a, b) => b.rawTime - a.rawTime);
+    });
+
+    return map;
+  }, [todos, records]);
 
   const daysInMonth = 31;
   const startDayOffset = 4; // Thursday (Oct 1, 2026) -> offset 4 for Sun-first
   const weekDays = ['Su', 'Mo', 'Tu', 'We', 'Th', 'Fr', 'Sa'];
 
-  const selectedEvents = clinicalEvents[selectedDay] || [];
+  const selectedActivities = activitiesByDay[selectedDay] || [];
 
   return (
     <div
       style={{
-        background: 'rgba(255, 255, 255, 0.75)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(245, 243, 255, 0.40) 50%, rgba(255, 255, 255, 0.60) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 16,
-        border: '1px solid rgba(226, 232, 240, 0.85)',
-        boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+        boxShadow: '0 4px 20px -2px rgba(124, 58, 237, 0.05), 0 1px 0 1px rgba(255, 255, 255, 0.95) inset',
         padding: '16px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -90,7 +181,7 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
               Clinical Tracking Calendar
             </h3>
             <div style={{ fontSize: '0.68rem', color: '#64748b' }}>
-              October 2026 · Cath Lab Schedule
+              October 2026 · Doctor Activity & EHR Audit
             </div>
           </div>
         </div>
@@ -101,12 +192,13 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
             style={{
               padding: '3px 8px',
               borderRadius: 5,
-              background: '#f1f5f9',
-              border: '1px solid #e2e8f0',
+              background: selectedDay === 14 ? '#0f172a' : '#f1f5f9',
+              border: selectedDay === 14 ? '1px solid #0f172a' : '1px solid #e2e8f0',
               fontSize: '0.68rem',
               fontWeight: 700,
-              color: '#334155',
+              color: selectedDay === 14 ? '#ffffff' : '#334155',
               cursor: 'pointer',
+              transition: 'all 0.12s ease',
             }}
           >
             Today (14th)
@@ -159,7 +251,9 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
             const dayNum = i + 1;
             const isToday = dayNum === 14;
             const isSelected = selectedDay === dayNum;
-            const hasEvent = Boolean(clinicalEvents[dayNum]);
+            const dayActs = activitiesByDay[dayNum] || [];
+            const hasActivity = dayActs.length > 0;
+            const hasCommittedReport = dayActs.some((a) => a.type === 'ehr');
 
             return (
               <button
@@ -176,9 +270,9 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
                   background: isSelected
                     ? '#0f172a'
                     : isToday
-                    ? 'rgba(225, 29, 72, 0.1)'
-                    : hasEvent
-                    ? 'rgba(124, 58, 237, 0.08)'
+                    ? 'rgba(225, 29, 72, 0.08)'
+                    : hasActivity
+                    ? 'rgba(16, 185, 129, 0.09)'
                     : 'transparent',
                   color: isSelected
                     ? '#ffffff'
@@ -186,7 +280,7 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
                     ? '#e11d48'
                     : '#334155',
                   fontSize: '0.68rem',
-                  fontWeight: isSelected || isToday ? 800 : hasEvent ? 700 : 500,
+                  fontWeight: isSelected || isToday ? 800 : hasActivity ? 700 : 500,
                   cursor: 'pointer',
                   display: 'flex',
                   alignItems: 'center',
@@ -197,15 +291,15 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
                 }}
               >
                 <span>{dayNum}</span>
-                {hasEvent && !isSelected && (
+                {hasActivity && !isSelected && (
                   <span
                     style={{
                       position: 'absolute',
                       bottom: 2,
-                      width: 3,
-                      height: 3,
+                      width: 3.5,
+                      height: 3.5,
                       borderRadius: '50%',
-                      background: isToday ? '#e11d48' : '#7c3aed',
+                      background: hasCommittedReport ? '#0284c7' : '#059669',
                     }}
                   />
                 )}
@@ -215,7 +309,7 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
         </div>
       </div>
 
-      {/* ── Selected Day Schedule Drawer ── */}
+      {/* ── Selected Day Activity Drawer ── */}
       <div
         style={{
           borderTop: '1px solid rgba(226, 232, 240, 0.8)',
@@ -228,8 +322,8 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', fontSize: '0.7rem', color: '#64748b', fontWeight: 700 }}>
-          <span>Schedule for Oct {selectedDay}, 2026:</span>
-          <span>{selectedEvents.length} Clinical Case{selectedEvents.length === 1 ? '' : 's'}</span>
+          <span>Logged for Oct {selectedDay}, 2026:</span>
+          <span>{selectedActivities.length} Activity Record{selectedActivities.length === 1 ? '' : 's'}</span>
         </div>
 
         <div
@@ -244,74 +338,160 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
             paddingRight: 3,
           }}
         >
-          {selectedEvents.length === 0 ? (
+          {selectedActivities.length === 0 ? (
             <div
               style={{
-                padding: '12px 10px',
+                padding: '16px 12px',
                 textAlign: 'center',
-                color: '#94a3b8',
+                color: '#64748b',
                 fontSize: '0.72rem',
-                background: 'rgba(248, 250, 252, 0.5)',
-                borderRadius: 6,
+                background: 'rgba(248, 250, 252, 0.55)',
+                borderRadius: 8,
                 border: '1px dashed #cbd5e1',
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 5,
+                margin: 'auto 0',
               }}
             >
-              No scheduled procedures on Oct {selectedDay}.
+              <div style={{ fontWeight: 700, color: '#334155' }}>
+                No recorded actions on Oct {selectedDay}
+              </div>
+              <div style={{ fontSize: '0.67rem', color: '#94a3b8', maxWidth: 260, lineHeight: 1.35 }}>
+                Check off items in your Clinical Action Plan or commit 3D simulation reports to log verified activity for this day.
+              </div>
             </div>
           ) : (
-            selectedEvents.map((ev) => (
-              <div
-                key={ev.id}
-                style={{
-                  padding: '7px 10px',
-                  borderRadius: 7,
-                  background: ev.urgent ? 'rgba(254, 242, 242, 0.85)' : 'rgba(255, 255, 255, 0.95)',
-                  border: ev.urgent ? '1px solid rgba(244, 63, 94, 0.3)' : '1px solid #e2e8f0',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'space-between',
-                  gap: 8,
-                }}
-              >
-                <div style={{ minWidth: 0 }}>
-                  <div
-                    style={{
-                      fontSize: '0.74rem',
-                      fontWeight: 700,
-                      color: ev.urgent ? '#be123c' : '#0f172a',
-                      whiteSpace: 'nowrap',
-                      overflow: 'hidden',
-                      textOverflow: 'ellipsis',
-                    }}
-                  >
-                    {ev.title}
+            selectedActivities.map((act) => {
+              const isTask = act.type === 'task';
+
+              return (
+                <div
+                  key={act.id}
+                  style={{
+                    padding: '8px 10px',
+                    borderRadius: 7,
+                    background: isTask ? 'rgba(240, 253, 244, 0.75)' : 'rgba(240, 249, 255, 0.75)',
+                    backdropFilter: 'blur(10px)',
+                    WebkitBackdropFilter: 'blur(10px)',
+                    border: isTask ? '1px solid rgba(74, 222, 128, 0.4)' : '1px solid rgba(56, 189, 248, 0.4)',
+                    boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
+                    display: 'flex',
+                    alignItems: 'flex-start',
+                    justifyContent: 'space-between',
+                    gap: 8,
+                  }}
+                >
+                  <div style={{ minWidth: 0, flex: 1 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 5, marginBottom: 2 }}>
+                      <span
+                        style={{
+                          fontSize: '0.58rem',
+                          fontWeight: 800,
+                          padding: '1.5px 5px',
+                          borderRadius: 4,
+                          background: isTask ? '#059669' : '#0284c7',
+                          color: '#ffffff',
+                          display: 'inline-flex',
+                          alignItems: 'center',
+                          gap: 3,
+                        }}
+                      >
+                        {isTask ? <CheckCircle2 size={9} /> : <FileText size={9} />}
+                        <span>{isTask ? 'ACTION COMPLETED' : 'EHR COMMITTED'}</span>
+                      </span>
+                      <span style={{ fontSize: '0.64rem', color: '#64748b', display: 'inline-flex', alignItems: 'center', gap: 3 }}>
+                        <Clock size={9} />
+                        <span>{act.time}</span>
+                      </span>
+                    </div>
+
+                    <div
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        color: '#0f172a',
+                        lineHeight: 1.3,
+                        marginTop: 2,
+                      }}
+                    >
+                      {act.title}
+                    </div>
+
+                    <div style={{ fontSize: '0.66rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 }}>
+                      {act.patientName && (
+                        <span style={{ fontWeight: 600, color: '#334155' }}>
+                          {act.patientName} {act.patientCode && `(${act.patientCode})`}
+                        </span>
+                      )}
+                      {act.visitNumber && (
+                        <span>· Visit #{act.visitNumber}</span>
+                      )}
+                    </div>
                   </div>
-                  <div style={{ fontSize: '0.64rem', color: '#64748b', display: 'flex', alignItems: 'center', gap: 4, marginTop: 1 }}>
-                    <Clock size={10} />
-                    <span>{ev.time} · {ev.doctor}</span>
+
+                  {/* Contextual Action Button */}
+                  <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    {!isTask && act.recordData && (
+                      <button
+                        onClick={() => setActiveReportModal(act.recordData)}
+                        style={{
+                          padding: '3px 7px',
+                          borderRadius: 5,
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          color: '#0284c7',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                        }}
+                      >
+                        <span>View Plan</span>
+                        <ExternalLink size={9} />
+                      </button>
+                    )}
+                    {act.patientId && onOpenPatient && (
+                      <button
+                        onClick={() => onOpenPatient(act.patientId)}
+                        style={{
+                          padding: '3px 7px',
+                          borderRadius: 5,
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          color: '#334155',
+                          fontSize: '0.65rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                        }}
+                      >
+                        <User size={9} />
+                        <span>Profile</span>
+                      </button>
+                    )}
                   </div>
                 </div>
-
-                {ev.urgent && (
-                  <span
-                    style={{
-                      fontSize: '0.6rem',
-                      fontWeight: 800,
-                      padding: '2px 5px',
-                      borderRadius: 4,
-                      background: '#e11d48',
-                      color: '#ffffff',
-                      flexShrink: 0,
-                    }}
-                  >
-                    CATH LAB
-                  </span>
-                )}
-              </div>
-            ))
+              );
+            })
           )}
         </div>
       </div>
+
+      {/* ── View Clinical Report Modal (if clicked) ── */}
+      {activeReportModal && (
+        <ClinicalReportModal
+          report={activeReportModal}
+          isOpen={Boolean(activeReportModal)}
+          onClose={() => setActiveReportModal(null)}
+        />
+      )}
     </div>
   );
 }

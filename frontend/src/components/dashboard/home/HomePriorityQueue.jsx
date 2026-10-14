@@ -212,12 +212,12 @@ export default function HomePriorityQueue({ onOpenPatient, onGoToPatients }) {
   return (
     <div
       style={{
-        background: 'rgba(255, 255, 255, 0.75)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.62) 0%, rgba(255, 241, 242, 0.35) 50%, rgba(255, 255, 255, 0.60) 100%)',
+        backdropFilter: 'blur(24px)',
+        WebkitBackdropFilter: 'blur(24px)',
         borderRadius: 16,
-        border: '1px solid rgba(226, 232, 240, 0.85)',
-        boxShadow: '0 4px 20px -2px rgba(15, 23, 42, 0.04), 0 0 0 1px rgba(255, 255, 255, 0.8) inset',
+        border: '1px solid rgba(255, 255, 255, 0.8)',
+        boxShadow: '0 4px 20px -2px rgba(225, 29, 72, 0.04), 0 1px 0 1px rgba(255, 255, 255, 0.95) inset',
         padding: '16px 20px',
         display: 'flex',
         flexDirection: 'column',
@@ -354,8 +354,11 @@ export default function HomePriorityQueue({ onOpenPatient, onGoToPatients }) {
             style={{
               padding: '9px 12px',
               borderRadius: 10,
-              background: 'rgba(255, 255, 255, 0.9)',
-              border: '1px solid rgba(226, 232, 240, 0.9)',
+              background: 'rgba(255, 255, 255, 0.78)',
+              backdropFilter: 'blur(10px)',
+              WebkitBackdropFilter: 'blur(10px)',
+              border: '1px solid rgba(255, 255, 255, 0.85)',
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.02)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between',

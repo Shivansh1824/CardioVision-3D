@@ -49,28 +49,13 @@ export default function DashboardTopBar({
           >
             {sectionTitle}
           </h1>
-          <span
-            style={{
-              fontFamily: 'JetBrains Mono, monospace',
-              fontSize: '0.58rem',
-              fontWeight: 700,
-              color: '#059669',
-              background: 'rgba(5, 150, 105, 0.08)',
-              padding: '2px 7px',
-              borderRadius: 4,
-              border: '1px solid rgba(5, 150, 105, 0.2)',
-              letterSpacing: '0.04em',
-            }}
-          >
-            CATH LAB LIVE
-          </span>
         </div>
         <p style={{ fontSize: '0.7rem', color: '#64748b', margin: '2px 0 0', fontWeight: 500 }}>
           {sectionSubtitle}
         </p>
       </div>
 
-      {/* ── Right: Real-Time Telemetry & Date Lockup (Dribbble style) ── */}
+      {/* ── Right: Date Lockup ── */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
         {/* Date Pill */}
         <div
@@ -90,35 +75,6 @@ export default function DashboardTopBar({
         >
           <Calendar style={{ width: 13, height: 13, color: '#64748b' }} />
           <span>{currentDate}</span>
-        </div>
-
-        {/* Cath Lab Station Pill */}
-        <div
-          style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 6,
-            padding: '6px 12px',
-            background: 'rgba(5, 150, 105, 0.06)',
-            border: '1px solid rgba(5, 150, 105, 0.22)',
-            borderRadius: 10,
-            fontSize: '0.72rem',
-            fontWeight: 700,
-            color: '#047857',
-            letterSpacing: '0.01em',
-          }}
-        >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: '#059669',
-              boxShadow: '0 0 0 2px rgba(5, 150, 105, 0.25)',
-              animation: 'pulse-live-dot 2s infinite ease-in-out',
-            }}
-          />
-          <span>Station 4 · Active</span>
         </div>
       </div>
     </header>

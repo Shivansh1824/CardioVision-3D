@@ -2,7 +2,16 @@ import { useState, useRef, Suspense } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, Html } from '@react-three/drei';
 import gsap from 'gsap';
-import { RotateCcw, Activity, Zap } from 'lucide-react';
+import { 
+  RotateCcw, 
+  Activity, 
+  Zap, 
+  Plus, 
+  Minus, 
+  Play, 
+  Pause,
+  Compass
+} from 'lucide-react';
 import { HEART_MODELS } from '../../../services/heartModelService';
 import ClinicalHeartMesh from './ClinicalHeartMesh';
 
@@ -10,7 +19,7 @@ import ClinicalHeartMesh from './ClinicalHeartMesh';
  * 3D Camera Orbit Presets for each clinical focus point
  */
 const CAMERA_PRESETS = {
-  overview: { pos: [2.85, 0, 0.03], target: [0, 0, 0] },
+  overview: { pos: [2.85, 0.05, 0.10], target: [0, 0, 0] },
   lad: { pos: [1.45, 0.28, 2.25], target: [0.06, 0.22, 0.16] },
   lcx: { pos: [1.85, 0.28, 2.10], target: [0.15, 0.15, 0.05] },
   rca: { pos: [2.20, 0.20, -1.80], target: [-0.15, 0.15, 0.05] },
@@ -71,6 +80,7 @@ export default function HeartViewerPanel({
   const [modelType, setModelType] = useState('realistic'); // 'realistic' | 'beating'
   const [activeVessel, setActiveVessel] = useState('lad');
   const [isLoading, setIsLoading] = useState(true);
+  const [isAutoRotating, setIsAutoRotating] = useState(true);
   const controlsRef = useRef();
 
   const currentModel = HEART_MODELS[modelType];
@@ -112,6 +122,32 @@ export default function HeartViewerPanel({
   const handleResetCamera = () => {
     setActiveVessel(null);
     glideCameraTo(modelType === 'realistic' ? 'overview' : 'beating_overview');
+  };
+
+  const handleZoomIn = () => {
+    if (!controlsRef.current) return;
+    const cam = controlsRef.current.object;
+    gsap.to(cam.position, {
+      x: cam.position.x * 0.82,
+      y: cam.position.y * 0.82,
+      z: cam.position.z * 0.82,
+      duration: 0.35,
+      ease: 'power2.out',
+      onUpdate: () => controlsRef.current?.update(),
+    });
+  };
+
+  const handleZoomOut = () => {
+    if (!controlsRef.current) return;
+    const cam = controlsRef.current.object;
+    gsap.to(cam.position, {
+      x: cam.position.x * 1.2,
+      y: cam.position.y * 1.2,
+      z: cam.position.z * 1.2,
+      duration: 0.35,
+      ease: 'power2.out',
+      onUpdate: () => controlsRef.current?.update(),
+    });
   };
 
   return (
@@ -269,10 +305,161 @@ export default function HeartViewerPanel({
         </div>
       </div>
 
+      {/* Floating Vertical Tool Bar (Dribbble Healthlog Style: +, -, Rotate, Reset) */}
+      <div
+        style={{
+          position: 'absolute',
+          top: 72,
+          left: 16,
+          zIndex: 20,
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 6,
+          padding: 5,
+          borderRadius: 14,
+          background: 'rgba(255, 255, 255, 0.92)',
+          backdropFilter: 'blur(12px)',
+          border: '1px solid rgba(226, 232, 240, 0.85)',
+          boxShadow: '0 6px 20px rgba(0, 0, 0, 0.06)',
+        }}
+      >
+        <button
+          type="button"
+          onClick={handleZoomIn}
+          title="Zoom In (+)"
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            border: 'none',
+            background: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#334155',
+            cursor: 'pointer',
+            transition: 'background 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <Plus style={{ width: 15, height: 15 }} />
+        </button>
+
+        <button
+          type="button"
+          onClick={handleZoomOut}
+          title="Zoom Out (-)"
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            border: 'none',
+            background: 'transparent',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: '#334155',
+            cursor: 'pointer',
+            transition: 'background 0.15s ease',
+          }}
+          onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
+          onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+        >
+          <Minus style={{ width: 15, height: 15 }} />
+        </button>
+
+        <div style={{ height: 1, background: '#e2e8f0', margin: '2px 4px' }} />
+
+        <button
+          type="button"
+          onClick={() => setIsAutoRotating(!isAutoRotating)}
+          title={isAutoRotating ? 'Pause 360° Auto-Rotation' : 'Resume 360° Auto-Rotation'}
+          style={{
+            width: 30,
+            height: 30,
+            borderRadius: 8,
+            border: 'none',
+            background: isAutoRotating ? '#eff6ff' : 'transparent',
+            color: isAutoRotating ? '#0284c7' : '#64748b',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            cursor: 'pointer',
+            transition: 'all 0.15s ease',
+          }}
+          onMouseEnter={(e) => {
+            if (!isAutoRotating) e.currentTarget.style.background = '#f1f5f9';
+          }}
+          onMouseLeave={(e) => {
+            if (!isAutoRotating) e.currentTarget.style.background = 'transparent';
+          }}
+        >
+          {isAutoRotating ? (
+            <Pause style={{ width: 13, height: 13 }} />
+          ) : (
+            <Play style={{ width: 13, height: 13, marginLeft: 1 }} />
+          )}
+        </button>
+      </div>
+
+      {/* Radial 360° Calibration Dial Ring beneath the 3D Heart (Dribbble Healthlog style) */}
+      <div
+        style={{
+          position: 'absolute',
+          bottom: '16%',
+          left: '50%',
+          transform: 'translateX(-50%) perspective(600px) rotateX(70deg)',
+          width: 330,
+          height: 330,
+          borderRadius: '50%',
+          border: '1.5px dashed rgba(56, 189, 248, 0.4)',
+          boxShadow: '0 0 35px rgba(56, 189, 248, 0.12), inset 0 0 25px rgba(56, 189, 248, 0.08)',
+          pointerEvents: 'none',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+        }}
+      >
+        <div
+          style={{
+            width: 250,
+            height: 250,
+            borderRadius: '50%',
+            border: '1px solid rgba(148, 163, 184, 0.28)',
+          }}
+        />
+        <div
+          style={{
+            position: 'absolute',
+            width: '100%',
+            height: '100%',
+            borderRadius: '50%',
+            animation: isAutoRotating ? 'spin 35s linear infinite' : 'none',
+          }}
+        >
+          {[0, 45, 90, 135, 180, 225, 270, 315].map((deg) => (
+            <span
+              key={deg}
+              style={{
+                position: 'absolute',
+                top: '50%',
+                left: '50%',
+                width: 9,
+                height: 1.5,
+                background: 'rgba(56, 189, 248, 0.65)',
+                transformOrigin: '0 0',
+                transform: `rotate(${deg}deg) translate(155px, -50%)`,
+              }}
+            />
+          ))}
+        </div>
+      </div>
+
       {/* 3D WebGL Canvas Centerpiece */}
       <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
         <Canvas
-          camera={{ position: [2.85, 0, 0.03], fov: 42, near: 0.1, far: 100 }}
+          camera={{ position: [2.85, 0.05, 0.10], fov: 38, near: 0.1, far: 100 }}
           style={{ width: '100%', height: '100%', cursor: 'grab' }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         >
@@ -295,10 +482,12 @@ export default function HeartViewerPanel({
             ref={controlsRef}
             enablePan={false}
             enableZoom={true}
-            minDistance={1.6}
-            maxDistance={5.2}
+            minDistance={1.4}
+            maxDistance={4.8}
             rotateSpeed={0.8}
             dampingFactor={0.08}
+            autoRotate={isAutoRotating}
+            autoRotateSpeed={0.85}
             makeDefault
           />
         </Canvas>
