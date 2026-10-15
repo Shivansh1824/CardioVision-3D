@@ -155,13 +155,15 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
           overflow: 'hidden',
         }}
       >
-        {/* Workspace Top Bar */}
-        <DashboardTopBar
-          user={user}
-          onSignOut={onSignOut}
-          sectionTitle={sectionMeta.title}
-          sectionSubtitle={sectionMeta.subtitle}
-        />
+        {/* Workspace Top Bar (Hidden on 3d-studio to achieve true single-screen clinical layout without scroll) */}
+        {activeNav !== '3d-studio' && (
+          <DashboardTopBar
+            user={user}
+            onSignOut={onSignOut}
+            sectionTitle={sectionMeta.title}
+            sectionSubtitle={sectionMeta.subtitle}
+          />
+        )}
 
         {/* Dynamic Section Content */}
         <main

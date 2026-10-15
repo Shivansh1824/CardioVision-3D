@@ -8,198 +8,27 @@ import {
   ChevronDown, 
   ChevronUp,
   Cpu,
-  Info
+  Info,
+  X,
+  CheckCircle2
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-/**
- * Derives clinically accurate SHAP attributions from patient biomarkers.
- * Dynamically reacts to simulated BP, LDL, and smoking interventions in real time,
- * using clear, intuitive plain-English medical rationales.
- */
-function derivePatientShapDrivers(patient, vessel = 'cad', simulationState = null) {
-  if (!patient) return [];
+import { derivePatientShapDrivers } from '../../../services/shapExplainerService';
 
-  const rawDrivers = [];
-
-  // Active or simulated values
-  const bp = (simulationState?.isSimulated && simulationState.simulatedBp != null)
-    ? Number(simulationState.simulatedBp)
-    : (Number(patient.bp) || 140);
-
-  const ldl = (simulationState?.isSimulated && simulationState.simulatedLdl != null)
-    ? Number(simulationState.simulatedLdl)
-    : (Number(patient.ldl) || 145);
-
-  const isSmoker = (simulationState?.isSimulated && simulationState.simulatedSmoker != null)
-    ? Number(simulationState.simulatedSmoker) > 0
-    : (Number(patient.current_smoker) > 0);
-
-  // 1. Systolic Blood Pressure (Hemodynamics)
-  if (bp >= 160) {
-    rawDrivers.push({
-      feature: `Severe High BP (${bp} mmHg)`,
-      category: 'Blood Pressure',
-      impact: vessel === 'rca' ? 29.5 : (vessel === 'lad' ? 26.0 : 27.5),
-      type: 'elevator',
-      clinicalRationale: 'Dangerous high pressure strains and damages artery walls, heavily increasing RCA and LAD stenosis risk.',
-    });
-  } else if (bp >= 140) {
-    rawDrivers.push({
-      feature: `Elevated BP (${bp} mmHg)`,
-      category: 'Blood Pressure',
-      impact: vessel === 'rca' ? 18.2 : 16.5,
-      type: 'elevator',
-      clinicalRationale: 'High pressure forces the heart muscle to pump against higher resistance, promoting arterial plaque.',
-    });
-  } else if (bp <= 120) {
-    rawDrivers.push({
-      feature: `Controlled Target BP (${bp} mmHg)`,
-      category: 'Blood Pressure',
-      impact: -9.5,
-      type: 'protective',
-      clinicalRationale: 'Healthy blood pressure prevents vascular shear stress and protects coronary vessels.',
-    });
-  }
-
-  // 2. LDL Cholesterol (Lipid Profile)
-  if (ldl >= 160) {
-    rawDrivers.push({
-      feature: `Severe High LDL (${ldl} mg/dL)`,
-      category: 'Cholesterol',
-      impact: vessel === 'rca' ? 26.5 : (vessel === 'lad' ? 30.2 : 27.0),
-      type: 'elevator',
-      clinicalRationale: 'High bad cholesterol rapidly forms fatty plaque buildups that narrow coronary vessels.',
-    });
-  } else if (ldl >= 130) {
-    rawDrivers.push({
-      feature: `Elevated LDL (${ldl} mg/dL)`,
-      category: 'Cholesterol',
-      impact: 17.5,
-      type: 'elevator',
-      clinicalRationale: 'Borderline elevated cholesterol increases long-term plaque formation inside heart arteries.',
-    });
-  } else if (ldl < 100) {
-    rawDrivers.push({
-      feature: `Optimal LDL (${ldl} mg/dL)`,
-      category: 'Cholesterol',
-      impact: -11.0,
-      type: 'protective',
-      clinicalRationale: 'Optimal low LDL stabilizes artery walls and stops new blockages from developing.',
-    });
-  }
-
-  // 3. ST-Elevation on ECG (Acute Ischemia Signal)
-  if (patient.st_elevation > 0) {
-    rawDrivers.push({
-      feature: 'ECG ST-Elevation (Leads V1-V4)',
-      category: 'ECG Signal',
-      impact: vessel === 'lad' ? 34.2 : 25.5,
-      type: 'elevator',
-      clinicalRationale: 'Clear electrical sign on ECG indicating significant oxygen starvation in the heart wall.',
-    });
-  }
-
-  // 4. Ejection Fraction (Echo Heart Pumping Efficiency)
-  const ef = Number(patient.ef_tte) || 50;
-  if (ef < 45) {
-    rawDrivers.push({
-      feature: `Weak Heart Pump (EF ${ef}%)`,
-      category: 'Echo Pumping',
-      impact: 19.4,
-      type: 'elevator',
-      clinicalRationale: 'The heart is pumping out less blood than normal, strongly correlating with blocked arteries.',
-    });
-  } else if (ef >= 55) {
-    rawDrivers.push({
-      feature: `Strong Heart Pump (EF ${ef}%)`,
-      category: 'Echo Pumping',
-      impact: -12.5,
-      type: 'protective',
-      clinicalRationale: 'Strong pumping power indicates healthy heart muscle with adequate blood supply.',
-    });
-  }
-
-  // 5. Typical Exertional Chest Pain
-  if (patient.typical_chest_pain > 0) {
-    rawDrivers.push({
-      feature: 'Exercise Chest Pain (Angina)',
-      category: 'Symptoms',
-      impact: 16.8,
-      type: 'elevator',
-      clinicalRationale: 'Chest tightness during physical effort occurs when narrow arteries cannot deliver enough oxygen.',
-    });
-  }
-
-  // 6. Tobacco Smoking Status
-  if (isSmoker) {
-    rawDrivers.push({
-      feature: 'Active Tobacco Smoker',
-      category: 'Lifestyle',
-      impact: 15.2,
-      type: 'elevator',
-      clinicalRationale: 'Cigarette toxins injure blood vessel linings and make blood cells stick together into clots.',
-    });
-  } else if (patient.current_smoker > 0 && !isSmoker) {
-    rawDrivers.push({
-      feature: 'Smoking Cessation Achieved',
-      category: 'Lifestyle',
-      impact: -8.0,
-      type: 'protective',
-      clinicalRationale: 'Stopping smoking halts active toxin injury to the coronary vessel endothelial lining.',
-    });
-  }
-
-  // 7. Blood Sugar / Diabetes
-  const fbs = Number(patient.fbs) || 100;
-  if (patient.dm > 0 || fbs >= 126) {
-    rawDrivers.push({
-      feature: `High Fasting Sugar (${fbs} mg/dL)`,
-      category: 'Blood Sugar',
-      impact: 12.5,
-      type: 'elevator',
-      clinicalRationale: 'Elevated blood sugar stiffens blood vessels and accelerates coronary atherosclerosis.',
-    });
-  } else if (fbs < 100) {
-    rawDrivers.push({
-      feature: `Healthy Blood Sugar (${fbs} mg/dL)`,
-      category: 'Blood Sugar',
-      impact: -7.2,
-      type: 'protective',
-      clinicalRationale: 'Normal blood sugar prevents diabetic vascular injury.',
-    });
-  }
-
-  // 8. Age
-  const age = Number(patient.age) || 55;
-  if (age >= 60) {
-    rawDrivers.push({
-      feature: `Patient Age (${age} yrs)`,
-      category: 'Demographics',
-      impact: vessel === 'rca' ? 14.2 : 9.8,
-      type: 'elevator',
-      clinicalRationale: 'Natural arterial stiffening and plaque accumulation increase steadily over decades of life.',
-    });
-  } else if (age < 45) {
-    rawDrivers.push({
-      feature: `Young Age (<45 yrs)`,
-      category: 'Demographics',
-      impact: -6.5,
-      type: 'protective',
-      clinicalRationale: 'Fewer years of cumulative cholesterol exposure protects arterial elasticity.',
-    });
-  }
-
-  return rawDrivers.sort((a, b) => Math.abs(b.impact) - Math.abs(a.impact));
-}
 
 /**
  * ShapExplainerCard — Explainable AI (XAI) transparent attribution breakdown.
  */
-export default function ShapExplainerCard({ patient, simulationState = null, backendShap = null }) {
+export default function ShapExplainerCard({
+  patient,
+  simulationState = null,
+  backendShap = null,
+  style,
+}) {
   const [selectedVessel, setSelectedVessel] = useState('cad'); // 'cad' | 'lad' | 'lcx' | 'rca'
   const [expanded, setExpanded] = useState(false);
-  const [showTooltip, setShowTooltip] = useState(false);
+  const [showInfoModal, setShowInfoModal] = useState(false);
 
   // Get drivers either from backend response or derived clinical baseline (with live simulator reactivity)
   const drivers = useMemo(() => {
@@ -218,24 +47,26 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
   const elevators = drivers.filter((d) => d.type === 'elevator');
   const protective = drivers.filter((d) => d.type === 'protective');
 
-  const visibleDrivers = expanded ? drivers : drivers.slice(0, 5);
-
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        background: 'var(--dash-surface)',
-        borderRadius: 20,
-        border: '1.5px solid var(--dash-border)',
-        boxShadow: 'var(--dash-shadow-sm)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(245, 243, 255, 0.38) 50%, rgba(255, 255, 255, 0.82) 100%)',
+        backdropFilter: 'blur(16px)',
+        borderRadius: 18,
+        border: '1.5px solid rgba(255, 255, 255, 0.90)',
+        boxShadow: '0 8px 30px rgba(15, 23, 42, 0.04)',
         overflow: 'hidden',
+        height: '100%',
+        minHeight: 0,
+        ...style,
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '16px 20px',
+          padding: '12px 16px',
           borderBottom: '1px solid var(--dash-border)',
           background: 'var(--dash-surface-2)',
           display: 'flex',
@@ -246,9 +77,9 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div
             style={{
-              width: 34,
-              height: 34,
-              borderRadius: 10,
+              width: 32,
+              height: 32,
+              borderRadius: 9,
               background: '#f0f9ff',
               border: '1px solid #bae6fd',
               display: 'flex',
@@ -256,13 +87,13 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
               justifyContent: 'center',
             }}
           >
-            <Cpu style={{ width: 17, height: 17, color: '#0284c7' }} />
+            <Cpu style={{ width: 16, height: 16, color: '#0284c7' }} />
           </div>
           <div>
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '0.92rem',
+                fontSize: '0.88rem',
                 fontWeight: 700,
                 color: 'var(--text-primary)',
                 margin: 0,
@@ -274,112 +105,257 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
               Explainable AI (SHAP)
               <span
                 style={{
-                  fontSize: '0.65rem',
+                  fontSize: '0.62rem',
                   fontWeight: 700,
                   color: '#0284c7',
                   background: '#e0f2fe',
                   padding: '1px 6px',
-                  borderRadius: 6,
+                  borderRadius: 5,
                 }}
               >
                 TreeExplainer
               </span>
             </h3>
-            <p style={{ fontSize: '0.72rem', color: 'var(--text-muted)', margin: 0 }}>
+            <p style={{ fontSize: '0.68rem', color: 'var(--text-muted)', margin: 0 }}>
               AI feature contribution (Red = Elevates Risk, Green = Protects)
             </p>
           </div>
         </div>
 
-        {/* Info Icon & Tooltip */}
-        <div style={{ position: 'relative' }}>
-          <button
-            type="button"
-            onClick={() => setShowTooltip(!showTooltip)}
-            style={{
-              background: 'transparent',
-              border: 'none',
-              cursor: 'pointer',
-              color: 'var(--text-muted)',
-              padding: 4,
-            }}
-            title="What is SHAP?"
-          >
-            <Info style={{ width: 16, height: 16 }} />
-          </button>
+        {/* Info Icon Button (Opens Educational Modal) */}
+        <button
+          type="button"
+          onClick={() => setShowInfoModal(true)}
+          style={{
+            background: '#f8fafc',
+            border: '1px solid var(--dash-border)',
+            borderRadius: 7,
+            cursor: 'pointer',
+            color: '#0284c7',
+            padding: '5px 7px',
+            display: 'flex',
+            alignItems: 'center',
+            gap: 4,
+            fontSize: '0.68rem',
+            fontWeight: 700,
+            transition: 'all 0.15s ease',
+          }}
+          title="Learn how SHAP explains predictions"
+        >
+          <Info style={{ width: 13, height: 13 }} />
+          <span>Guide</span>
+        </button>
+      </div>
 
-          {showTooltip && (
-            <div
+      {/* Educational Modal */}
+      <AnimatePresence>
+        {showInfoModal && (
+          <div
+            style={{
+              position: 'fixed',
+              inset: 0,
+              zIndex: 1000,
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              background: 'rgba(15, 23, 42, 0.65)',
+              backdropFilter: 'blur(6px)',
+              padding: 20,
+            }}
+            onClick={() => setShowInfoModal(false)}
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              transition={{ duration: 0.2 }}
+              onClick={(e) => e.stopPropagation()}
               style={{
-                position: 'absolute',
-                right: 0,
-                top: 28,
-                width: 260,
-                padding: 12,
-                borderRadius: 12,
-                background: '#0f172a',
-                color: '#f8fafc',
-                fontSize: '0.72rem',
-                lineHeight: 1.45,
-                zIndex: 30,
-                boxShadow: '0 8px 24px rgba(0,0,0,0.25)',
-                border: '1px solid #334155',
+                width: '100%',
+                maxWidth: 480,
+                background: '#ffffff',
+                borderRadius: 20,
+                border: '1.5px solid #e2e8f0',
+                boxShadow: '0 25px 50px -12px rgba(15, 23, 42, 0.25)',
+                overflow: 'hidden',
               }}
             >
-              <p style={{ margin: '0 0 6px', fontWeight: 700, color: '#38bdf8' }}>
-                SHapley Additive exPlanations
-              </p>
-              SHAP reveals exactly why the AI made this prediction. Each bar represents a biomarker's direct positive (Red) or protective (Green) impact on heart risk.
-            </div>
-          )}
-        </div>
-      </div>
+              {/* Modal Header */}
+              <div
+                style={{
+                  padding: '16px 20px',
+                  background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+                  color: '#ffffff',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                }}
+              >
+                <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                  <Cpu style={{ width: 20, height: 20, color: '#bae6fd' }} />
+                  <div>
+                    <h3 style={{ margin: 0, fontSize: '0.98rem', fontWeight: 800 }}>
+                      What is Explainable AI (SHAP)?
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '0.72rem', color: '#e0f2fe' }}>
+                      TreeExplainer Feature Attribution & Game Theory
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowInfoModal(false)}
+                  style={{
+                    background: 'rgba(255, 255, 255, 0.15)',
+                    border: 'none',
+                    borderRadius: 8,
+                    padding: 6,
+                    color: '#ffffff',
+                    cursor: 'pointer',
+                    display: 'flex',
+                  }}
+                >
+                  <X style={{ width: 16, height: 16 }} />
+                </button>
+              </div>
+
+              {/* Modal Body */}
+              <div style={{ padding: '20px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+                <p style={{ fontSize: '0.82rem', color: '#334155', lineHeight: 1.5, margin: 0 }}>
+                  <strong>SHAP (SHapley Additive exPlanations)</strong> breaks down complex machine-learning ensemble trees to show the exact mathematical contribution of each patient biomarker to their CAD and vessel stenosis risk.
+                </p>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: 10,
+                    padding: 12,
+                    borderRadius: 12,
+                    background: '#f8fafc',
+                    border: '1px solid #e2e8f0',
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        background: '#fef2f2',
+                        border: '1px solid #fecaca',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      <TrendingUp style={{ width: 14, height: 14, color: '#dc2626' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#991b1b' }}>
+                        Red Bars (Risk Elevators 🔺)
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4 }}>
+                        Biomarkers pushing CAD and arterial stenosis probability higher than population baseline (e.g., severe BP, elevated LDL, active smoking, ST elevation).
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
+                    <div
+                      style={{
+                        width: 24,
+                        height: 24,
+                        borderRadius: 6,
+                        background: '#f0fdf4',
+                        border: '1px solid #bbf7d0',
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        flexShrink: 0,
+                        marginTop: 2,
+                      }}
+                    >
+                      <TrendingDown style={{ width: 14, height: 14, color: '#16a34a' }} />
+                    </div>
+                    <div>
+                      <div style={{ fontSize: '0.78rem', fontWeight: 800, color: '#166534' }}>
+                        Green Bars (Protective Factors 🟢)
+                      </div>
+                      <div style={{ fontSize: '0.72rem', color: '#64748b', lineHeight: 1.4 }}>
+                        Biomarkers actively defending vascular health and pulling predicted risk downward (e.g., target BP, low LDL, high ejection fraction).
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 8,
+                    padding: '10px 12px',
+                    borderRadius: 10,
+                    background: '#f0f9ff',
+                    border: '1px solid #bae6fd',
+                    fontSize: '0.74rem',
+                    color: '#0369a1',
+                  }}
+                >
+                  <Sparkles style={{ width: 15, height: 15, flexShrink: 0 }} />
+                  <span>
+                    <strong>Live Simulator Sync:</strong> When you adjust levers in the What-If Simulator, SHAP attributions update in real time to reflect your simulated targets.
+                  </span>
+                </div>
+
+                <button
+                  type="button"
+                  onClick={() => setShowInfoModal(false)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 10,
+                    background: '#0f172a',
+                    color: '#ffffff',
+                    border: 'none',
+                    fontWeight: 700,
+                    fontSize: '0.78rem',
+                    cursor: 'pointer',
+                    alignSelf: 'flex-end',
+                  }}
+                >
+                  Understood
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Live Simulator Sync Indicator */}
       {simulationState?.isSimulated && (
         <div
           style={{
-            margin: '10px 16px 0',
-            padding: '7px 12px',
-            borderRadius: 10,
+            margin: '8px 16px 0',
+            padding: '6px 12px',
+            borderRadius: 8,
             background: simulationState.isEscalation ? '#fef2f2' : '#ecfdf5',
             border: '1px solid',
             borderColor: simulationState.isEscalation ? '#fecaca' : '#a7f3d0',
             display: 'flex',
             alignItems: 'center',
             gap: 8,
-            fontSize: '0.72rem',
+            fontSize: '0.70rem',
             color: simulationState.isEscalation ? '#991b1b' : '#065f46',
           }}
         >
           <Sparkles style={{ width: 13, height: 13, flexShrink: 0 }} />
           <span>
-            <strong>Live Simulator Synced:</strong> Explaining risk for Target BP <strong>{simulationState.simulatedBp} mmHg</strong> & LDL <strong>{simulationState.simulatedLdl} mg/dL</strong>.
+            <strong>Simulator Synced:</strong> Explaining risk for Target BP <strong>{simulationState.simulatedBp} mmHg</strong> & LDL <strong>{simulationState.simulatedLdl} mg/dL</strong>.
           </span>
         </div>
       )}
-
-      {/* Plain-English Explanation Banner */}
-      <div
-        style={{
-          margin: '10px 16px 4px',
-          padding: '8px 12px',
-          borderRadius: 10,
-          background: '#f0f9ff',
-          border: '1px solid #bae6fd',
-          display: 'flex',
-          alignItems: 'flex-start',
-          gap: 8,
-          fontSize: '0.71rem',
-          color: '#0369a1',
-          lineHeight: 1.4,
-        }}
-      >
-        <Info style={{ width: 14, height: 14, color: '#0284c7', flexShrink: 0, marginTop: 2 }} />
-        <span>
-          <strong>What is SHAP?</strong> Explains <em>why</em> the AI calculated this risk score. Factors in <strong>Red (🔺)</strong> increase heart disease risk, while factors in <strong>Green (🟢)</strong> protect the heart.
-        </span>
-      </div>
 
       {/* Target Artery Switcher */}
       <div
@@ -423,10 +399,10 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
       </div>
 
       {/* SHAP Waterfall Bars List with Internal Scrollbar */}
-      <div style={{ padding: '10px 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
+      <div style={{ padding: '8px 16px 10px', display: 'flex', flexDirection: 'column', gap: 6, flex: 1, minHeight: 0 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Biomarker Factor (Scroll for all {drivers.length} drivers)
+            Biomarker Factor ({drivers.length} drivers)
           </span>
           <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
             Attribution Impact
@@ -437,7 +413,8 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
         <div
           className="custom-scrollbar"
           style={{
-            maxHeight: 180,
+            flex: 1,
+            minHeight: 0,
             overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',

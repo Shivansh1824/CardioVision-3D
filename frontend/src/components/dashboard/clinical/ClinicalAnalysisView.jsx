@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect } from 'react';
 import { 
   ArrowLeft, 
   Heart, 
@@ -12,7 +12,8 @@ import {
   Users,
   Zap,
   CheckCircle2,
-  Stethoscope
+  Stethoscope,
+  Calendar
 } from 'lucide-react';
 import HeartViewerPanel from './HeartViewerPanel';
 import PatientBiomarkersPanel from './PatientBiomarkersPanel';
@@ -76,6 +77,8 @@ export default function ClinicalAnalysisView({
   const [isPatientModalOpen, setIsPatientModalOpen] = useState(false);
   const [refreshEhrTrigger, setRefreshEhrTrigger] = useState(0);
 
+
+
   const baselineVessels = useMemo(() => deriveBaselineVessels(activePatient), [activePatient]);
 
   // Current vessel risks: either simulated or baseline
@@ -118,11 +121,11 @@ export default function ClinicalAnalysisView({
       {/* ─── R1: Executive Clinical Patient Header (Translucent Glassmorphism) ─── */}
       <div
         style={{
-          background: 'rgba(255, 255, 255, 0.92)',
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 249, 255, 0.55) 100%)',
           backdropFilter: 'blur(20px)',
           borderRadius: 16,
-          border: '1.5px solid var(--dash-border)',
-          boxShadow: 'var(--dash-shadow-sm)',
+          border: '1.5px solid rgba(255, 255, 255, 0.90)',
+          boxShadow: '0 8px 30px rgba(15, 23, 42, 0.04)',
           padding: '12px 18px',
           display: 'flex',
           flexWrap: 'wrap',
@@ -236,6 +239,27 @@ export default function ClinicalAnalysisView({
 
         {/* Action Controls */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+          {/* Encounter Date Badge (Integrated from TopBar) */}
+          <div
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: 6,
+              padding: '6px 11px',
+              borderRadius: 8,
+              background: 'rgba(255, 255, 255, 0.92)',
+              border: '1.5px solid #e2e8f0',
+              color: '#334155',
+              fontSize: '0.72rem',
+              fontWeight: 700,
+              boxShadow: '0 1px 3px rgba(15, 23, 42, 0.04)',
+              whiteSpace: 'nowrap',
+            }}
+          >
+            <Calendar style={{ width: 13, height: 13, color: '#0284c7' }} />
+            <span>Thu, Oct 15, 2026</span>
+          </div>
+
           <button
             type="button"
             onClick={onBackToQueue}
@@ -295,38 +319,57 @@ export default function ClinicalAnalysisView({
         currentPatientId={activePatient?.id}
       />
 
-      {/* ─── Main Unified 3-Column Workstation (Left Vitals • Center 3D Heart • Right Treatment Suite) ─ */}
+      {/* ─── Main Unified Workstation (2-Row CSS Grid: Row 1 = Vitals + Heart/SHAP | Row 2 = Committed EHR + What-If Simulator) ─ */}
       <div
+        className="custom-scrollbar"
         style={{
           flex: 1,
           minHeight: 0,
+          overflowY: 'auto',
+          paddingRight: 4,
           display: 'grid',
           gridTemplateColumns: 'repeat(12, 1fr)',
           gap: 12,
-          overflow: 'hidden',
+          alignItems: 'stretch',
         }}
       >
-        {/* Left Column (3 cols): Compact Patient Biomarkers & Vitals + Committed EHR History */}
-        <div
-          className="lg:!col-span-3 custom-scrollbar"
-          style={{
-            gridColumn: 'span 12',
-            height: '100%',
-            minHeight: 0,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            paddingRight: 3,
-          }}
-        >
+        {/* Row 1 Left (4 cols): Patient Biomarkers & Vitals */}
+        <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-4">
           <PatientBiomarkersPanel
             patient={activePatient}
             activeCadRisk={activeCadRisk}
             vesselStage={vesselStage}
             blockedCount={blockedCount}
+            style={{ height: '100%', minHeight: 425 }}
+          />
+        </div>
+
+        {/* Row 1 Right (8 cols): 3D Heart & SHAP side-by-side */}
+        <div
+          style={{
+            gridColumn: 'span 12',
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))',
+            gap: 12,
+          }}
+          className="lg:!col-span-8"
+        >
+          <HeartViewerPanel
+            vessels={activeVessels}
+            isSimulated={simulationState?.isSimulated}
+            onResetSimulation={handleResetSimulation}
+            style={{ height: '100%', minHeight: 425 }}
           />
 
+          <ShapExplainerCard
+            patient={activePatient}
+            simulationState={simulationState}
+            style={{ height: '100%', minHeight: 425 }}
+          />
+        </div>
+
+        {/* Row 2 Left (4 cols): Committed EHR History & Records */}
+        <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-4">
           <CommittedEhrSection
             patient={activePatient}
             refreshTrigger={refreshEhrTrigger}
@@ -334,39 +377,12 @@ export default function ClinicalAnalysisView({
               setSelectedReportRecord(record);
               setIsReportOpen(true);
             }}
+            style={{ height: '100%' }}
           />
         </div>
 
-        {/* Center Column (5 cols): 3D Heart Studio with 360° Rotation & Radial Compass Dial */}
-        <div style={{ gridColumn: 'span 12', height: '100%', minHeight: 0, overflow: 'hidden' }} className="lg:!col-span-5">
-          <HeartViewerPanel
-            vessels={activeVessels}
-            isSimulated={simulationState?.isSimulated}
-            onResetSimulation={handleResetSimulation}
-          />
-        </div>
-
-        {/* Right Column (4 cols): Unified SHAP AI Explainability + What-If Simulator */}
-        <div
-          className="lg:!col-span-4 custom-scrollbar"
-          style={{
-            gridColumn: 'span 12',
-            height: '100%',
-            minHeight: 0,
-            overflowY: 'auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 10,
-            paddingRight: 3,
-          }}
-        >
-          {/* Card 1: SHAP AI Explainability & Risk Attribution */}
-          <ShapExplainerCard
-            patient={activePatient}
-            simulationState={simulationState}
-          />
-
-          {/* Card 2: "What-If" Therapeutic Simulator */}
+        {/* Row 2 Right (8 cols): Wide Horizontal "What-If" Treatment Simulator Cockpit */}
+        <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-8">
           <WhatIfSimulator
             patient={activePatient}
             onSimulationChange={setSimulationState}
@@ -378,6 +394,7 @@ export default function ClinicalAnalysisView({
             onPlanCommitted={() => {
               setRefreshEhrTrigger((prev) => prev + 1);
             }}
+            style={{ height: '100%' }}
           />
         </div>
       </div>

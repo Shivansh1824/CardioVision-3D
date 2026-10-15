@@ -23,6 +23,7 @@ export default function CommittedEhrSection({
   onOpenReportModal,
   onReplayRecord,
   refreshTrigger = 0,
+  style,
 }) {
   const [records, setRecords] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -49,26 +50,30 @@ export default function CommittedEhrSection({
       style={{
         display: 'flex',
         flexDirection: 'column',
-        background: 'rgba(255, 255, 255, 0.94)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(240, 253, 250, 0.40) 50%, rgba(255, 255, 255, 0.82) 100%)',
         backdropFilter: 'blur(16px)',
-        borderRadius: 20,
-        border: '1.5px solid var(--dash-border)',
-        boxShadow: 'var(--dash-shadow-sm)',
+        borderRadius: 18,
+        border: '1.5px solid rgba(255, 255, 255, 0.90)',
+        boxShadow: '0 8px 30px rgba(15, 23, 42, 0.04)',
         overflow: 'hidden',
+        height: '100%',
+        minHeight: 0,
+        ...style,
       }}
     >
       {/* Header */}
       <div
         style={{
-          padding: '14px 18px',
+          padding: '12px 16px',
           borderBottom: '1px solid #f1f5f9',
           background: 'linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          gap: 12,
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 9, minWidth: 0, flex: 1 }}>
           <div
             style={{
               width: 30,
@@ -79,11 +84,13 @@ export default function CommittedEhrSection({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              flexShrink: 0,
+              boxShadow: '0 2px 5px rgba(2, 132, 199, 0.08)',
             }}
           >
             <FileText style={{ width: 15, height: 15, color: '#0284c7' }} />
           </div>
-          <div>
+          <div style={{ minWidth: 0, flex: 1, paddingRight: 6 }}>
             <h4
               style={{
                 fontFamily: 'var(--font-display)',
@@ -91,42 +98,83 @@ export default function CommittedEhrSection({
                 fontWeight: 800,
                 color: '#0f172a',
                 margin: 0,
+                lineHeight: 1.2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
               }}
             >
               Committed EHR History & Records
             </h4>
-            <span style={{ fontSize: '0.66rem', color: '#64748b' }}>
-              Physician-committed treatment plans & verification audit trail
+            <span
+              style={{
+                fontSize: '0.64rem',
+                color: '#64748b',
+                display: 'block',
+                marginTop: 2,
+                whiteSpace: 'nowrap',
+                overflow: 'hidden',
+                textOverflow: 'ellipsis',
+              }}
+            >
+              Verified clinical audit trail
             </span>
           </div>
         </div>
 
+        {/* X Committed Badge (Strictly 1 Line, No Overlap) */}
         <span
           style={{
-            fontSize: '0.66rem',
+            fontSize: '0.64rem',
             fontWeight: 800,
-            padding: '2px 8px',
+            padding: '3px 9px',
             borderRadius: 6,
-            background: records.length > 0 ? '#ecfdf5' : '#f1f5f9',
-            color: records.length > 0 ? '#047857' : '#64748b',
+            background: records.length > 0 ? '#ecfdf5' : '#f8fafc',
+            color: records.length > 0 ? '#047857' : '#475569',
             border: `1px solid ${records.length > 0 ? '#a7f3d0' : '#e2e8f0'}`,
+            whiteSpace: 'nowrap',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: 5,
+            flexShrink: 0,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
           }}
         >
+          <span
+            style={{
+              width: 5,
+              height: 5,
+              borderRadius: '50%',
+              background: records.length > 0 ? '#10b981' : '#94a3b8',
+            }}
+          />
           {records.length > 0 ? `${records.length} Committed` : '0 Committed'}
         </span>
       </div>
 
       {/* Body Content */}
-      <div style={{ padding: '14px 18px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      <div
+        className="custom-scrollbar"
+        style={{
+          padding: '14px 16px',
+          display: 'flex',
+          flexDirection: 'column',
+          gap: 10,
+          flex: 1,
+          minHeight: 0,
+          overflowY: 'auto',
+          justifyContent: records.length === 0 ? 'center' : 'flex-start',
+        }}
+      >
         {loading ? (
           <div style={{ padding: '24px 0', textAlign: 'center', color: '#64748b', fontSize: '0.74rem' }}>
             Fetching patient audit trail...
           </div>
         ) : records.length === 0 ? (
-          /* Empty State Notice */
+          /* Empty State Notice with Generous Padding & Space */
           <div
             style={{
-              padding: '16px',
+              padding: '18px 20px',
               borderRadius: 14,
               background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
               border: '1.5px dashed #cbd5e1',
@@ -134,7 +182,7 @@ export default function CommittedEhrSection({
               flexDirection: 'column',
               alignItems: 'center',
               textAlign: 'center',
-              gap: 8,
+              gap: 9,
             }}
           >
             <div
@@ -148,30 +196,30 @@ export default function CommittedEhrSection({
                 alignItems: 'center',
                 justifyContent: 'center',
                 color: '#94a3b8',
-                boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
+                boxShadow: '0 2px 6px rgba(0,0,0,0.03)',
               }}
             >
-              <FileText style={{ width: 18, height: 18 }} />
+              <FileText style={{ width: 17, height: 17 }} />
             </div>
 
-            <div>
+            <div style={{ maxWidth: 440, width: '100%' }}>
               <p
                 style={{
-                  fontSize: '0.80rem',
+                  fontSize: '0.82rem',
                   fontWeight: 800,
                   color: '#334155',
-                  margin: '0 0 4px',
+                  margin: '0 0 6px',
+                  lineHeight: 1.35,
                 }}
               >
                 You have not committed any treatment plan or report for this patient yet.
               </p>
               <p
                 style={{
-                  fontSize: '0.70rem',
+                  fontSize: '0.72rem',
                   color: '#64748b',
                   margin: 0,
-                  maxWidth: 420,
-                  lineHeight: 1.45,
+                  lineHeight: 1.5,
                 }}
               >
                 Adjust physiological targets in the <strong>"What-If" Simulator</strong> above (Systolic BP, LDL Cholesterol, Smoking Cessation) and click <strong>"Commit to EHR"</strong> to create an immutable verified clinical record.
@@ -179,8 +227,18 @@ export default function CommittedEhrSection({
             </div>
           </div>
         ) : (
-          /* List of committed records */
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          /* List of committed records with Smooth Scroll Effect */
+          <div
+            className="custom-scrollbar"
+            style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 8,
+              maxHeight: 250,
+              overflowY: 'auto',
+              paddingRight: 3,
+            }}
+          >
             {records.map((record, index) => {
               const dateStr = record.created_at
                 ? new Date(record.created_at).toLocaleDateString('en-US', {

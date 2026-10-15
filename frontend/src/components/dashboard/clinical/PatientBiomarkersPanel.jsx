@@ -1,15 +1,5 @@
 import { useMemo } from 'react';
-import { 
-  Activity, 
-  Heart, 
-  Droplet, 
-  Flame, 
-  Wind, 
-  AlertCircle,
-  Zap,
-  ShieldCheck,
-  ShieldAlert
-} from 'lucide-react';
+import { Activity, Heart, Droplet, Flame, Wind, AlertCircle, Zap } from 'lucide-react';
 
 /**
  * PatientBiomarkersPanel — Clean, compact clinical vitals & risk factors panel.
@@ -21,6 +11,7 @@ export default function PatientBiomarkersPanel({
   activeCadRisk = 54,
   vesselStage = '0-VD',
   blockedCount = 0,
+  style,
 }) {
   const bp = Number(patient?.bp) || 155;
   const ldl = Number(patient?.ldl) || 165;
@@ -39,48 +30,30 @@ export default function PatientBiomarkersPanel({
 
   // BP clinical status
   const bpStatus = useMemo(() => {
-    if (bp >= 160) {
-      return { label: 'Very High', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '90 – 120 mmHg' };
-    }
-    if (bp >= 140) {
-      return { label: 'High (Stage 1)', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '90 – 120 mmHg' };
-    }
-    if (bp >= 120) {
-      return { label: 'Elevated', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '90 – 120 mmHg' };
-    }
+    if (bp >= 160) return { label: 'Very High', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '90 – 120 mmHg' };
+    if (bp >= 140) return { label: 'High (Stage 1)', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '90 – 120 mmHg' };
+    if (bp >= 120) return { label: 'Elevated', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '90 – 120 mmHg' };
     return { label: 'Healthy Normal', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', normal: '90 – 120 mmHg' };
   }, [bp]);
 
   // LDL Cholesterol status
   const ldlStatus = useMemo(() => {
-    if (ldl >= 160) {
-      return { label: 'Very High', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '< 100 mg/dL' };
-    }
-    if (ldl >= 130) {
-      return { label: 'Borderline High', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '< 100 mg/dL' };
-    }
+    if (ldl >= 160) return { label: 'Very High', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '< 100 mg/dL' };
+    if (ldl >= 130) return { label: 'Borderline High', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '< 100 mg/dL' };
     return { label: 'Healthy Normal', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', normal: '< 100 mg/dL' };
   }, [ldl]);
 
   // Heart Pumping Power (EF) status
   const efStatus = useMemo(() => {
-    if (ef < 40) {
-      return { label: 'Reduced Power', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '50% – 70%' };
-    }
-    if (ef < 50) {
-      return { label: 'Mildly Reduced', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '50% – 70%' };
-    }
+    if (ef < 40) return { label: 'Reduced Power', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '50% – 70%' };
+    if (ef < 50) return { label: 'Mildly Reduced', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '50% – 70%' };
     return { label: 'Healthy Normal', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', normal: '50% – 70%' };
   }, [ef]);
 
   // Fasting Blood Sugar (FBS) status
   const fbsStatus = useMemo(() => {
-    if (fbs >= 126) {
-      return { label: 'Diabetic Range', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '70 – 99 mg/dL' };
-    }
-    if (fbs >= 100) {
-      return { label: 'Pre-Diabetic', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '70 – 99 mg/dL' };
-    }
+    if (fbs >= 126) return { label: 'Diabetic Range', color: '#dc2626', bg: '#fef2f2', border: '#fecaca', normal: '70 – 99 mg/dL' };
+    if (fbs >= 100) return { label: 'Pre-Diabetic', color: '#d97706', bg: '#fffbeb', border: '#fde68a', normal: '70 – 99 mg/dL' };
     return { label: 'Healthy Normal', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0', normal: '70 – 99 mg/dL' };
   }, [fbs]);
 
@@ -104,79 +77,125 @@ export default function PatientBiomarkersPanel({
         display: 'flex',
         flexDirection: 'column',
         gap: 10,
-        background: 'rgba(255, 255, 255, 0.95)',
-        backdropFilter: 'blur(20px)',
+        background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.86) 0%, rgba(255, 241, 242, 0.35) 50%, rgba(255, 255, 255, 0.82) 100%)',
+        backdropFilter: 'blur(16px)',
         borderRadius: 18,
-        border: '1.5px solid var(--dash-border)',
-        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.05)',
+        border: '1.5px solid rgba(255, 255, 255, 0.90)',
+        boxShadow: '0 8px 30px rgba(15, 23, 42, 0.04)',
         padding: '13px 14px',
         minHeight: 0,
+        ...style,
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 7, borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
-              width: 30,
-              height: 30,
-              borderRadius: 9,
+              width: 28,
+              height: 28,
+              borderRadius: 8,
               background: '#f0f9ff',
               border: '1px solid #bae6fd',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.12)',
+              boxShadow: '0 2px 5px rgba(2, 132, 199, 0.1)',
+              flexShrink: 0,
             }}
           >
-            <Activity style={{ width: 15, height: 15, color: '#0284c7' }} />
+            <Activity style={{ width: 14, height: 14, color: '#0284c7' }} />
           </div>
           <div>
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '0.86rem',
+                fontSize: '0.85rem',
                 fontWeight: 800,
                 color: '#0f172a',
                 margin: 0,
                 letterSpacing: '-0.01em',
+                lineHeight: 1.2,
               }}
             >
               Patient Vitals & Biomarkers
             </h3>
-            <span style={{ fontSize: '0.62rem', color: '#64748b' }}>
-              Current Readings vs Healthy Target Ranges
+            <span style={{ fontSize: '0.62rem', color: '#64748b', whiteSpace: 'nowrap', display: 'block', marginTop: 1 }}>
+              Current Readings vs Healthy Targets
             </span>
           </div>
         </div>
 
-        {/* Live Sinus Dot with Dynamic Heart Rate */}
+        {/* Resting Heart Rate Mini-Vital (Headline on Top, Value Below) */}
         <div
           style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: 5,
-            padding: '3px 8px',
+            background: pulseStatus === 'Normal' ? '#f0fdf4' : '#fffbeb',
+            border: `1px solid ${pulseStatus === 'Normal' ? '#bbf7d0' : '#fde68a'}`,
             borderRadius: 8,
-            background: pulseStatus === 'Normal' ? '#ecfdf5' : '#fffbeb',
-            border: `1px solid ${pulseStatus === 'Normal' ? '#a7f3d0' : '#fde68a'}`,
-            fontSize: '0.66rem',
-            fontWeight: 700,
-            color: pulseStatus === 'Normal' ? '#047857' : '#b45309',
-            boxShadow: '0 1px 3px rgba(16, 185, 129, 0.08)',
+            padding: '3px 8px',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 1,
+            minWidth: 104,
+            boxShadow: '0 1px 2px rgba(15, 23, 42, 0.03)',
           }}
-          title={`Resting heart rate from patient clinical record (${pulseRate} bpm)`}
+          title={`Resting pulse rate from clinical telemetry: ${pulseRate} bpm`}
         >
-          <span
-            style={{
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              background: pulseStatus === 'Normal' ? '#10b981' : '#f59e0b',
-              animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-            }}
-          />
-          <span>{pulseRate} bpm ({pulseStatus})</span>
+          {/* Headline */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+            <span
+              style={{
+                fontSize: '0.56rem',
+                fontWeight: 700,
+                color: '#475569',
+                textTransform: 'uppercase',
+                letterSpacing: '0.03em',
+              }}
+            >
+              Heart Rate (BPM)
+            </span>
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: '50%',
+                background: pulseStatus === 'Normal' ? '#10b981' : '#f59e0b',
+                boxShadow: `0 0 0 2px ${pulseStatus === 'Normal' ? 'rgba(16, 185, 129, 0.2)' : 'rgba(245, 158, 11, 0.2)'}`,
+              }}
+            />
+          </div>
+
+          {/* Value Below: [Value unit] + [Status Badge] */}
+          <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', gap: 2 }}>
+              <span
+                style={{
+                  fontSize: '0.96rem',
+                  fontWeight: 900,
+                  color: '#0f172a',
+                  fontFamily: 'JetBrains Mono, monospace',
+                  lineHeight: 1,
+                }}
+              >
+                {pulseRate}
+              </span>
+              <span style={{ fontSize: '0.56rem', color: '#64748b', fontWeight: 600 }}>bpm</span>
+            </div>
+            <span
+              style={{
+                fontSize: '0.52rem',
+                fontWeight: 700,
+                color: pulseStatus === 'Normal' ? '#047857' : '#b45309',
+                background: '#ffffff',
+                border: `1px solid ${pulseStatus === 'Normal' ? '#a7f3d0' : '#fde68a'}`,
+                padding: '1px 5px',
+                borderRadius: 4,
+                lineHeight: 1.1,
+              }}
+            >
+              {pulseStatus}
+            </span>
+          </div>
         </div>
       </div>
 
@@ -404,7 +423,7 @@ export default function PatientBiomarkersPanel({
             {activeCadRisk}%
           </span>
           <span style={{ fontSize: '0.66rem', color: '#9f1239', fontWeight: 600 }}>
-            Moderate CAD Probability (Healthy Target &lt; 20%)
+            {activeCadRisk >= 75 ? 'High CAD Probability' : activeCadRisk >= 50 ? 'Moderate CAD Probability' : 'Low CAD Risk'} (Target &lt; 20%)
           </span>
         </div>
 

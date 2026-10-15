@@ -40,7 +40,7 @@ export const ANATOMICAL_PINS = [
     shortName: 'Front Artery (LAD)',
     tag: 'Coronary Artery',
     vesselKey: 'LAD',
-    position: [0.06, 0.40, 0.32],
+    position: [0.04, -0.08, 0.38],
     color: '#f43f5e', // Rose
     patientExpl: 'Runs directly down the front groove of your heart. It delivers oxygen-rich blood to the entire front muscle wall and the main pumping tip (apex). A healthy LAD is essential for your heart’s pumping strength.',
     pathology: 'Known clinically as the "Widow Maker". Stenosis restricts anterior blood flow, posing immediate risk of extensive anterior STEMI, apical aneurysm, and acute cardiogenic shock.',
@@ -55,7 +55,7 @@ export const ANATOMICAL_PINS = [
     shortName: 'Side Artery (LCX)',
     tag: 'Coronary Artery',
     vesselKey: 'LCX',
-    position: [0.22, 0.56, 0.14],
+    position: [0.28, 0.08, 0.16],
     color: '#0284c7', // Sky Blue
     patientExpl: 'Curves around the left side of the heart like a belt. It feeds the side and posterior walls of the heart muscle so it can relax and contract efficiently.',
     pathology: 'Stenosis often presents with subtle or silent exertional angina. Severe occlusion can provoke posterolateral ischemia and acute mitral valve regurgitation via papillary muscle hypoperfusion.',
@@ -70,7 +70,7 @@ export const ANATOMICAL_PINS = [
     shortName: 'Right Artery (RCA)',
     tag: 'Coronary Artery',
     vesselKey: 'RCA',
-    position: [-0.22, 0.50, 0.16],
+    position: [-0.24, 0.02, 0.24],
     color: '#10b981', // Emerald
     patientExpl: 'Travels down the right groove of your heart. It nourishes the right pumping chambers, the bottom of the heart, and powers your heart’s natural electrical pacemaker.',
     pathology: 'Occlusion causes inferior myocardial infarction and frequently interrupts cardiac conduction, resulting in severe sinus bradycardia and high-grade AV heart blocks.',
