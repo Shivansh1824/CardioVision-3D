@@ -13,7 +13,8 @@ import {
   Pencil, 
   ArrowLeft, 
   Trash2,
-  Activity
+  Activity,
+  Cpu
 } from 'lucide-react';
 import BrandLogo from '../../BrandLogo';
 
@@ -80,9 +81,9 @@ export default function DashboardSidebar({
     },
     {
       id: 'analytics',
-      label: 'Analytics',
-      sub: 'AI Model & Cohort',
-      icon: BarChart3,
+      label: 'AI Model & Evaluation',
+      sub: '5-Fold CV & Architecture',
+      icon: Cpu,
       badge: '0.914',
       badgeColor: '#059669',
     },

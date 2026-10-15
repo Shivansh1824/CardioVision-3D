@@ -25,6 +25,10 @@ import {
   SAMPLE_DOC_STORAGE_URLS,
   uploadClinicalDocumentToSupabase,
 } from '../../../services/clinicalDocumentStorageService';
+import {
+  analyzeDocumentWithGemini,
+  mapExtractedDataToPatient,
+} from '../../../services/documentAnalysisService';
 
 export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
   const [file, setFile] = useState(null);

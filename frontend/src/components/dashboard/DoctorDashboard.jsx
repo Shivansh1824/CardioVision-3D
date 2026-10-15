@@ -96,8 +96,8 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
       subtitle: 'Longitudinal EHR visit history & committed intervention protocols',
     },
     analytics: {
-      title: 'Analytics',
-      subtitle: 'Zero-leakage multi-modal AI model governance & ROC-AUC benchmarks',
+      title: 'AI Model & Evaluation',
+      subtitle: 'Zero-leakage 5-fold cross-validation, architecture pipeline & clinical benchmarks',
     },
   }[activeNav] || { title: 'Home', subtitle: 'Clinical workstation' };
 

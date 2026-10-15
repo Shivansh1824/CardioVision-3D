@@ -11,6 +11,7 @@ import {
   Layers,
   HelpCircle
 } from 'lucide-react';
+import ModelEvaluationExplainer from './ModelEvaluationExplainer';
 
 /**
  * CohortAnalyticsView — Clinical AI model governance & patient cohort analytics.
@@ -95,7 +96,7 @@ export default function CohortAnalyticsView({ onGoToPatients }) {
                 margin: 0,
               }}
             >
-              Clinical Intelligence & Cohort Analytics
+              AI Model Architecture & Clinical Evaluation
             </h2>
             <span
               style={{
@@ -138,6 +139,9 @@ export default function CohortAnalyticsView({ onGoToPatients }) {
           <ArrowRight style={{ width: 14, height: 14 }} />
         </button>
       </div>
+
+      {/* ── Evaluator Guide & Interactive Architecture Pipeline ── */}
+      <ModelEvaluationExplainer />
 
       {/* ── 4 KPI Metric Cards ── */}
       <div
