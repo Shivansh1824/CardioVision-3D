@@ -2,10 +2,10 @@ import { useState, useEffect } from 'react';
 import { Plus, Check, Trash2, ListChecks, User } from 'lucide-react';
 import HomeNewTaskModal from './HomeNewTaskModal';
 
-const STORAGE_KEY = 'cv_doctor_clinical_todos_v2';
+export const STORAGE_KEY = 'cv_doctor_clinical_todos_v2';
 
 // Top 1-3 most critical patients pre-filled as pending tasks (none auto-completed)
-const INITIAL_TODOS = [
+export const INITIAL_TODOS = [
   {
     id: 'td-1',
     task: 'Adjudicate proximal LAD stenosis (90%) and evaluate bifurcation stent geometry',
@@ -41,8 +41,14 @@ const INITIAL_TODOS = [
  * - Clean task completion toggling and persistence
  * - Global portaled modal to assign new tasks across all 303 patients
  */
-export default function HomeDoctorTodoList({ onOpenPatient }) {
-  const [todos, setTodos] = useState(() => {
+export default function HomeDoctorTodoList({
+  onOpenPatient,
+  todos: propTodos,
+  onToggle: propOnToggle,
+  onDelete: propOnDelete,
+  onAddTask: propOnAddTask,
+}) {
+  const [internalTodos, setInternalTodos] = useState(() => {
     try {
       const raw = localStorage.getItem(STORAGE_KEY);
       if (raw) {
@@ -53,18 +59,25 @@ export default function HomeDoctorTodoList({ onOpenPatient }) {
     return INITIAL_TODOS;
   });
 
+  const todos = propTodos || internalTodos;
   const [isModalOpen, setIsModalOpen] = useState(false);
 
-  // Persist todos to localStorage and notify listeners (e.g. Clinical Calendar)
+  // Persist todos to localStorage and notify listeners only when internally controlled
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
-      window.dispatchEvent(new Event('cv_activity_updated'));
-    } catch (_) {}
-  }, [todos]);
+    if (!propTodos) {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+        window.dispatchEvent(new Event('cv_activity_updated'));
+      } catch (_) {}
+    }
+  }, [todos, propTodos]);
 
   const handleToggle = (id) => {
-    setTodos((prev) =>
+    if (propOnToggle) {
+      propOnToggle(id);
+      return;
+    }
+    setInternalTodos((prev) =>
       prev.map((t) => {
         if (t.id === id) {
           const nextDone = !t.done;
@@ -81,11 +94,19 @@ export default function HomeDoctorTodoList({ onOpenPatient }) {
 
   const handleDelete = (id, e) => {
     e.stopPropagation();
-    setTodos((prev) => prev.filter((t) => t.id !== id));
+    if (propOnDelete) {
+      propOnDelete(id);
+      return;
+    }
+    setInternalTodos((prev) => prev.filter((t) => t.id !== id));
   };
 
   const handleAddTask = (newTask) => {
-    setTodos((prev) => [newTask, ...prev]);
+    if (propOnAddTask) {
+      propOnAddTask(newTask);
+      return;
+    }
+    setInternalTodos((prev) => [newTask, ...prev]);
   };
 
   const doneCount = todos.filter((t) => t.done).length;

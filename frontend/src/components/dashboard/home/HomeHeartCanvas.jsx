@@ -2,6 +2,7 @@ import React, { useRef, Suspense, useState, useEffect, useMemo } from 'react';
 import * as THREE from 'three';
 import { Canvas, useFrame } from '@react-three/fiber';
 import { OrbitControls, useGLTF } from '@react-three/drei';
+import { SkeletonUtils } from 'three-stdlib';
 import { HEART_MODELS } from '../../../services/heartModelService';
 import { Heart, Activity } from 'lucide-react';
 
@@ -42,11 +43,18 @@ class CanvasSafeWrapper extends React.Component {
 
 function SimpleHeartMesh() {
   const groupRef = useRef();
-  const { scene } = useGLTF(HEART_MODELS.realistic.url, '/draco/');
+  const { scene: rawScene } = useGLTF(HEART_MODELS.realistic.url, '/draco/');
+  const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
 
   // Center model based on actual geometry bounding box so it is fully in frame
   const { centerOffset, scaleFactor } = useMemo(() => {
     if (!scene) return { centerOffset: [0, -0.22, 0], scaleFactor: 0.85 };
+    // Guarantee pristine neutral transform state before computing bounding box
+    scene.position.set(0, 0, 0);
+    scene.rotation.set(0, 0, 0);
+    scene.scale.set(1, 1, 1);
+    scene.updateMatrixWorld(true);
+
     const box = new THREE.Box3().setFromObject(scene);
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());

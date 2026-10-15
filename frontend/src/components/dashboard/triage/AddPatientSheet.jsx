@@ -4,117 +4,32 @@ import {
   Upload,
   FileText,
   AlertCircle,
-  CheckCircle2,
   Loader2,
   ExternalLink,
-  Sparkles,
-  ArrowRight,
-  ShieldAlert,
-  FileCheck2,
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import JudgeDemoSamplesSection from './JudgeDemoSamplesSection';
+import ExtractedBiomarkersSummary from './ExtractedBiomarkersSummary';
 
 /**
- * AddPatientSheet — slide-over panel for multimodal patient ingestion.
- * Includes interactive demo samples for hackathon judging:
- * 1. Valid Cardiac Diagnostic Report (Blood Bio + ECG + Echo) -> Successful extraction
- * 2. Unrelated Dental Receipt -> Document classification error
+ * AddPatientSheet — slide-over panel for multimodal patient intake.
+ * Supports:
+ * - Direct file drop / upload (.pdf, .jpg, .png)
+ * - 1-Click Judge Demo Samples:
+ *   1) Valid Cardiac Diagnostic Report -> Extracts 59 biomarkers -> Launches 3D Heart Studio
+ *   2) Unrelated Dental Invoice -> Triggers safety rejection filter
  */
 
-const SUPPORTED_DOCS = [
-  {
-    icon: '🧪',
-    title: 'Blood Biochemistry / Lipid Profile',
-    fields: 'LDL, HDL, TG, FBS, Creatinine, CBC values',
-  },
-  {
-    icon: '📈',
-    title: '12-Lead ECG Report',
-    fields: 'ST-Elevation, ST-Depression, T-Inversion, Q-Wave, LVH, BBB',
-  },
-  {
-    icon: '🫀',
-    title: '2D Echocardiogram (TTE) Report',
-    fields: 'EF%, RWMA regions, VHD grade',
-  },
-];
-
-// Sample Patient object synthesized from the valid cardiac report
-const EXTRACTED_SAMPLE_PATIENT = {
-  id: 'PT-8842',
-  patient_code: 'PT-8842',
-  name: 'Robert H. Vance',
-  age: 61,
-  sex: 'Male',
-  weight: 84,
-  length: 174,
-  bmi: 27.7,
-  bp: 146,
-  pr: 78,
-  dm: 1,
-  htn: 1,
-  current_smoker: 0,
-  ex_smoker: 1,
-  fh: 1,
-  obesity: 'Y',
-  crf: 'N',
-  cva: 'N',
-  airway_disease: 'N',
-  thyroid_disease: 'N',
-  chf: 'N',
-  dlp: 'Y',
-  edema: 0,
-  weak_peripheral_pulse: 'N',
-  lung_rales: 'N',
-  systolic_murmur: 'N',
-  diastolic_murmur: 'N',
-  typical_chest_pain: 1,
-  dyspnea: 'N',
-  function_class: 2,
-  atypical: 'N',
-  nonanginal: 'N',
-  exertional_cp: 'Y',
-  lowth_ang: 'N',
-  q_wave: 1,
-  st_elevation: 0,
-  st_depression: 1,
-  tinversion: 1,
-  lvh: 'Y',
-  poor_r_progression: 'N',
-  bbb: 'N',
-  fbs: 148,
-  cr: 1.15,
-  tg: 228,
-  ldl: 164,
-  hdl: 34,
-  bun: 19,
-  esr: 12,
-  hb: 14.2,
-  k: 4.4,
-  na: 139,
-  wbc: 6800,
-  lymph: 32,
-  neut: 60,
-  plt: 235,
-  ef_tte: 46,
-  region_rwma: 2,
-  vhd: 'Mild',
-  cath: 'CAD',
-  lad: 'Stenotic',
-  lcx: 'Stenotic',
-  rca: 'Normal',
-  cad_probability: 0.88,
-  lad_probability: 0.82,
-  lcx_probability: 0.74,
-  rca_probability: 0.38,
-  source: 'OCR Ingestion (Metropolitan Cardiology Report)',
-};
+import { SUPPORTED_DOCS, EXTRACTED_SAMPLE_PATIENT } from './sampleIntakeData';
+import {
+  SAMPLE_DOC_STORAGE_URLS,
+  uploadClinicalDocumentToSupabase,
+} from '../../../services/clinicalDocumentStorageService';
 
 export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
   const [file, setFile] = useState(null);
   const [uploadState, setUploadState] = useState('idle'); // idle | uploading | processing | done | error
   const [errorMsg, setErrorMsg] = useState('');
-  const [activeSampleType, setActiveSampleType] = useState(null); // 'valid' | 'invalid' | null
   const fileInputRef = useRef(null);
 
   function startProcessing(docFile, isInvalid = false) {
@@ -140,9 +55,8 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
   function handleFileSelect(e) {
     const selected = e.target.files?.[0];
     if (!selected) return;
-    setActiveSampleType(null);
 
-    // Detect if user uploaded the sample invalid document or an unrelated document by name
+    // Detect if user uploaded an unrelated document by keywords
     const lowerName = selected.name.toLowerCase();
     const isInvalid =
       lowerName.includes('unrelated') ||
@@ -150,6 +64,9 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
       lowerName.includes('invoice') ||
       lowerName.includes('receipt') ||
       lowerName.includes('wrong');
+
+    // Asynchronously persist uploaded file into Supabase Storage
+    const uploadPromise = uploadClinicalDocumentToSupabase(selected);
 
     startProcessing(
       {
@@ -159,17 +76,24 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
       },
       isInvalid
     );
+
+    // Update with Supabase public URL once uploaded
+    uploadPromise.then((res) => {
+      if (res?.publicUrl) {
+        setFile((prev) => (prev ? { ...prev, url: res.publicUrl, isSupabase: res.success } : prev));
+      }
+    });
   }
 
   function handleSelectSample(type) {
-    setActiveSampleType(type);
     if (type === 'valid') {
       startProcessing(
         {
           name: 'sample_cardiac_diagnostic_report.pdf',
           size: 18222,
-          url: '/samples/sample_cardiac_diagnostic_report.pdf',
+          url: SAMPLE_DOC_STORAGE_URLS.valid,
           title: 'Metropolitan Cardiology - Comprehensive Biomarker Report',
+          isSupabase: true,
         },
         false
       );
@@ -178,8 +102,9 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
         {
           name: 'sample_unrelated_document.pdf',
           size: 13195,
-          url: '/samples/sample_unrelated_document.pdf',
+          url: SAMPLE_DOC_STORAGE_URLS.invalid,
           title: 'Apex Dental Studio - Hygiene Invoice & Receipt',
+          isSupabase: true,
         },
         true
       );
@@ -196,7 +121,6 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
   function resetUpload() {
     setFile(null);
-    setActiveSampleType(null);
     setUploadState('idle');
     setErrorMsg('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -335,10 +259,9 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
             {/* Body */}
             <div style={{ flex: 1, overflowY: 'auto', padding: '22px 24px' }}>
-              {/* Idle State: Upload & Sample Picker */}
+              {/* Idle State: Modalities, Dropzone & Sample Picker */}
               {uploadState === 'idle' && (
                 <>
-                  {/* Supported document types */}
                   <p
                     style={{
                       fontSize: '0.74rem',
@@ -479,235 +402,8 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
                     />
                   </div>
 
-                  {/* Judge & Hackathon Demo Sample PDFs Section */}
-                  <div
-                    style={{
-                      background: 'var(--dash-surface-2)',
-                      border: '1.5px solid var(--dash-border)',
-                      borderRadius: 12,
-                      padding: '16px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <Sparkles style={{ width: 15, height: 15, color: 'var(--ai-accent)' }} />
-                        <span
-                          style={{
-                            fontSize: '0.78rem',
-                            fontWeight: 800,
-                            color: 'var(--text-primary)',
-                            fontFamily: 'var(--font-display)',
-                          }}
-                        >
-                          Judge Demo Sample Documents
-                        </span>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: '0.64rem',
-                          padding: '2px 6px',
-                          background: 'rgba(100,116,139,0.1)',
-                          color: 'var(--text-muted)',
-                          borderRadius: 4,
-                          fontWeight: 600,
-                        }}
-                      >
-                        1-Click Test
-                      </span>
-                    </div>
-
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-                      {/* Sample 1: Valid Cardiac Diagnostic Report */}
-                      <div
-                        style={{
-                          padding: '12px 14px',
-                          background: 'rgba(2, 132, 199, 0.04)',
-                          border: '1.5px solid rgba(2, 132, 199, 0.22)',
-                          borderRadius: 10,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 8,
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <FileCheck2 style={{ width: 18, height: 18, color: 'var(--ai-accent)', flexShrink: 0 }} />
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: '0.8rem',
-                                  fontWeight: 800,
-                                  color: 'var(--text-primary)',
-                                  fontFamily: 'var(--font-display)',
-                                }}
-                              >
-                                Sample 1: Cardiac Diagnostic Report
-                              </div>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                                Valid · Blood Chemistry (LDL 164), 12-Lead ECG, Echo (EF 46%)
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '0.62rem',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              background: 'var(--vessel-safe-bg)',
-                              color: 'var(--vessel-safe)',
-                              border: '1px solid var(--vessel-safe-border)',
-                              flexShrink: 0,
-                            }}
-                          >
-                            Pass Expected
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectSample('valid')}
-                            style={{
-                              flex: 1,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 6,
-                              padding: '6px 12px',
-                              background: 'var(--ai-accent)',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: 7,
-                              fontSize: '0.74rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              fontFamily: 'var(--font-display)',
-                            }}
-                          >
-                            ⚡ Test Parsing
-                          </button>
-                          <a
-                            href="/samples/sample_cardiac_diagnostic_report.pdf"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '6px 12px',
-                              background: 'var(--dash-surface)',
-                              color: 'var(--text-secondary)',
-                              border: '1px solid var(--dash-border)',
-                              borderRadius: 7,
-                              fontSize: '0.74rem',
-                              fontWeight: 600,
-                              textDecoration: 'none',
-                              fontFamily: 'var(--font-body)',
-                            }}
-                          >
-                            <ExternalLink style={{ width: 12, height: 12 }} />
-                            View PDF
-                          </a>
-                        </div>
-                      </div>
-
-                      {/* Sample 2: Unrelated Dental Invoice */}
-                      <div
-                        style={{
-                          padding: '12px 14px',
-                          background: 'rgba(239, 68, 68, 0.04)',
-                          border: '1.5px solid rgba(239, 68, 68, 0.2)',
-                          borderRadius: 10,
-                          display: 'flex',
-                          flexDirection: 'column',
-                          gap: 8,
-                        }}
-                      >
-                        <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between' }}>
-                          <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                            <ShieldAlert style={{ width: 18, height: 18, color: 'var(--vessel-critical)', flexShrink: 0 }} />
-                            <div>
-                              <div
-                                style={{
-                                  fontSize: '0.8rem',
-                                  fontWeight: 800,
-                                  color: 'var(--text-primary)',
-                                  fontFamily: 'var(--font-display)',
-                                }}
-                              >
-                                Sample 2: Dental Hygiene Invoice
-                              </div>
-                              <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>
-                                Unrelated · Commercial dental invoice & routine periodontal cleaning
-                              </div>
-                            </div>
-                          </div>
-                          <span
-                            style={{
-                              fontSize: '0.62rem',
-                              fontWeight: 700,
-                              padding: '2px 6px',
-                              borderRadius: 4,
-                              background: 'var(--vessel-critical-bg)',
-                              color: 'var(--vessel-critical)',
-                              border: '1px solid var(--vessel-critical-border)',
-                              flexShrink: 0,
-                            }}
-                          >
-                            Rejection Test
-                          </span>
-                        </div>
-
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 2 }}>
-                          <button
-                            type="button"
-                            onClick={() => handleSelectSample('invalid')}
-                            style={{
-                              flex: 1,
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              gap: 6,
-                              padding: '6px 12px',
-                              background: 'var(--vessel-critical)',
-                              color: '#fff',
-                              border: 'none',
-                              borderRadius: 7,
-                              fontSize: '0.74rem',
-                              fontWeight: 700,
-                              cursor: 'pointer',
-                              fontFamily: 'var(--font-display)',
-                            }}
-                          >
-                            ⚡ Test Negative Filter
-                          </button>
-                          <a
-                            href="/samples/sample_unrelated_document.pdf"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: 4,
-                              padding: '6px 12px',
-                              background: 'var(--dash-surface)',
-                              color: 'var(--text-secondary)',
-                              border: '1px solid var(--dash-border)',
-                              borderRadius: 7,
-                              fontSize: '0.74rem',
-                              fontWeight: 600,
-                              textDecoration: 'none',
-                              fontFamily: 'var(--font-body)',
-                            }}
-                          >
-                            <ExternalLink style={{ width: 12, height: 12 }} />
-                            View PDF
-                          </a>
-                        </div>
-                      </div>
-                    </div>
-                  </div>
+                  {/* Judge & Hackathon Demo Samples Section */}
+                  <JudgeDemoSamplesSection onSelectSample={handleSelectSample} />
                 </>
               )}
 
@@ -767,172 +463,14 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
                 </div>
               )}
 
-              {/* Done State: Extraction Summary & Add to Dashboard */}
+              {/* Done State */}
               {uploadState === 'done' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
-                  {/* Success Banner */}
-                  <div
-                    style={{
-                      border: '1.5px solid var(--vessel-safe-border)',
-                      borderRadius: 12,
-                      padding: '16px',
-                      background: 'var(--vessel-safe-bg)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 12,
-                    }}
-                  >
-                    <CheckCircle2 style={{ width: 26, height: 26, color: 'var(--vessel-safe)', flexShrink: 0 }} />
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', fontSize: '0.88rem' }}>
-                        Document Verified & Biomarkers Extracted
-                      </div>
-                      <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)', marginTop: 2 }}>
-                        {file?.name} · Multi-lead ECG, Lipids, & Echo parameters parsed successfully
-                      </div>
-                    </div>
-                    {file?.url && (
-                      <a
-                        href={file.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        style={{
-                          fontSize: '0.7rem',
-                          color: 'var(--ai-accent)',
-                          fontWeight: 700,
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: 3,
-                          textDecoration: 'none',
-                        }}
-                      >
-                        PDF <ExternalLink style={{ width: 11, height: 11 }} />
-                      </a>
-                    )}
-                  </div>
-
-                  {/* Extracted Clinical Profile Box */}
-                  <div
-                    style={{
-                      background: 'var(--dash-surface-2)',
-                      border: '1px solid var(--dash-border)',
-                      borderRadius: 12,
-                      padding: '16px',
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
-                      <div>
-                        <div style={{ fontSize: '0.95rem', fontWeight: 800, color: 'var(--text-primary)', fontFamily: 'var(--font-display)' }}>
-                          {EXTRACTED_SAMPLE_PATIENT.name}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          {EXTRACTED_SAMPLE_PATIENT.patient_code} · {EXTRACTED_SAMPLE_PATIENT.age} Yrs · {EXTRACTED_SAMPLE_PATIENT.sex} · BP: 146/92 mmHg
-                        </div>
-                      </div>
-                      <span
-                        style={{
-                          fontSize: '0.68rem',
-                          fontWeight: 700,
-                          padding: '3px 8px',
-                          borderRadius: 6,
-                          background: 'var(--vessel-critical-bg)',
-                          color: 'var(--vessel-critical)',
-                          border: '1px solid var(--vessel-critical-border)',
-                        }}
-                      >
-                        High CAD Risk (88%)
-                      </span>
-                    </div>
-
-                    {/* Extracted metrics grid */}
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
-                      <div style={{ padding: '8px 10px', background: 'var(--dash-surface)', borderRadius: 8, border: '1px solid var(--dash-border)' }}>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                          🧪 Fasting Lipids
-                        </div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
-                          LDL: <span style={{ color: 'var(--vessel-critical)' }}>164</span> | HDL: 34 | TG: 228
-                        </div>
-                      </div>
-
-                      <div style={{ padding: '8px 10px', background: 'var(--dash-surface)', borderRadius: 8, border: '1px solid var(--dash-border)' }}>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                          🩸 Glycemia & Renal
-                        </div>
-                        <div style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
-                          FBS: <span style={{ color: 'var(--vessel-critical)' }}>148 mg/dL</span> | Cr: 1.15
-                        </div>
-                      </div>
-
-                      <div style={{ padding: '8px 10px', background: 'var(--dash-surface)', borderRadius: 8, border: '1px solid var(--dash-border)' }}>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                          📈 12-Lead ECG
-                        </div>
-                        <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
-                          ST-Depression (V4-V6), T-Inv, LVH (+)
-                        </div>
-                      </div>
-
-                      <div style={{ padding: '8px 10px', background: 'var(--dash-surface)', borderRadius: 8, border: '1px solid var(--dash-border)' }}>
-                        <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)', textTransform: 'uppercase', fontWeight: 700 }}>
-                          🫀 2D Echocardiogram
-                        </div>
-                        <div style={{ fontSize: '0.73rem', fontWeight: 700, color: 'var(--text-primary)', marginTop: 2 }}>
-                          LVEF: <span style={{ color: 'var(--vessel-critical)' }}>46%</span> | RWMA: Anterior
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)', background: 'rgba(2,132,199,0.06)', padding: '6px 10px', borderRadius: 6 }}>
-                      ℹ️ All 59 features normalized to the Z-Alizadeh Sani clinical standard for deterministic ML inference.
-                    </div>
-                  </div>
-
-                  {/* Action Buttons */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                    <button
-                      type="button"
-                      onClick={handleConfirmPatient}
-                      style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: 8,
-                        padding: '11px 18px',
-                        background: 'var(--ai-accent)',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 10,
-                        fontSize: '0.85rem',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-display)',
-                        boxShadow: '0 2px 10px rgba(2,132,199,0.28)',
-                      }}
-                    >
-                      <span>Add Patient & Launch 3D Heart Studio</span>
-                      <ArrowRight style={{ width: 16, height: 16 }} />
-                    </button>
-
-                    <button
-                      type="button"
-                      onClick={resetUpload}
-                      style={{
-                        padding: '8px 14px',
-                        background: 'transparent',
-                        border: '1.5px solid var(--dash-border)',
-                        borderRadius: 8,
-                        fontSize: '0.75rem',
-                        fontWeight: 600,
-                        color: 'var(--text-secondary)',
-                        cursor: 'pointer',
-                        fontFamily: 'var(--font-body)',
-                      }}
-                    >
-                      Test Another Document
-                    </button>
-                  </div>
-                </div>
+                <ExtractedBiomarkersSummary
+                  file={file}
+                  patient={EXTRACTED_SAMPLE_PATIENT}
+                  onConfirmPatient={handleConfirmPatient}
+                  onReset={resetUpload}
+                />
               )}
 
               {/* Error State: Unrelated Document Filter */}

@@ -492,17 +492,13 @@ export default function PatientCardsGridView({
                         gap: 6,
                         padding: '8px 12px',
                         borderRadius: 8,
-                        background: isCritical
-                          ? 'linear-gradient(135deg, #e11d48 0%, #be123c 100%)'
-                          : 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
+                        background: 'linear-gradient(135deg, #0f172a 0%, #334155 100%)',
                         color: '#ffffff',
                         border: 'none',
                         fontSize: '0.72rem',
                         fontWeight: 700,
                         cursor: 'pointer',
-                        boxShadow: isCritical
-                          ? '0 2px 6px rgba(225, 29, 72, 0.25)'
-                          : '0 2px 6px rgba(15, 23, 42, 0.15)',
+                        boxShadow: '0 2px 6px rgba(15, 23, 42, 0.15)',
                         transition: 'opacity 0.15s ease',
                       }}
                       onMouseOver={(e) => (e.currentTarget.style.opacity = '0.92')}

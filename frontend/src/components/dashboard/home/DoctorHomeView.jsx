@@ -1,10 +1,10 @@
-import { useRef, useMemo } from 'react';
+import { useRef, useMemo, useState, useEffect } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import HomeBanner from './HomeBanner';
 import HomePriorityQueue from './HomePriorityQueue';
 import HomeHeartHeroCard from './HomeHeartHeroCard';
-import HomeDoctorTodoList from './HomeDoctorTodoList';
+import HomeDoctorTodoList, { STORAGE_KEY, INITIAL_TODOS } from './HomeDoctorTodoList';
 import HomeClinicalCalendar from './HomeClinicalCalendar';
 import HomeRecentReports from './HomeRecentReports';
 
@@ -28,6 +28,58 @@ export default function DoctorHomeView({
 }) {
   const containerRef = useRef(null);
   const triageCounts = useMemo(() => getTriageCounts(), []);
+
+  // Shared reactive todos state synchronizing Action Plan & Clinical Calendar
+  const [todos, setTodos] = useState(() => {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+      }
+    } catch (_) {}
+    return INITIAL_TODOS;
+  });
+
+  // Dynamic current date (auto-focuses to day of action)
+  const todayNum = useMemo(() => new Date().getDate() || 15, []);
+  const [selectedCalendarDay, setSelectedCalendarDay] = useState(todayNum);
+
+  // Persist to localStorage and dispatch event for any external consumers
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(todos));
+      window.dispatchEvent(new Event('cv_activity_updated'));
+    } catch (_) {}
+  }, [todos]);
+
+  const handleToggleTodo = (id) => {
+    setTodos((prev) =>
+      prev.map((t) => {
+        if (t.id === id) {
+          const nextDone = !t.done;
+          const now = new Date();
+          if (nextDone) {
+            setSelectedCalendarDay(now.getDate());
+          }
+          return {
+            ...t,
+            done: nextDone,
+            completedAt: nextDone ? now.toISOString() : null,
+          };
+        }
+        return t;
+      })
+    );
+  };
+
+  const handleDeleteTodo = (id) => {
+    setTodos((prev) => prev.filter((t) => t.id !== id));
+  };
+
+  const handleAddTodo = (newTask) => {
+    setTodos((prev) => [newTask, ...prev]);
+  };
 
   // GSAP staggered entrance for glass cards
   useGSAP(() => {
@@ -107,12 +159,24 @@ export default function DoctorHomeView({
       >
         {/* Left: Doctor's Interactive Custom Clinical To-Do Planner */}
         <div className="home-glass-card lg:!col-span-4" style={{ gridColumn: 'span 12', height: '100%', minHeight: 0 }}>
-          <HomeDoctorTodoList onOpenPatient={onOpenPatient} />
+          <HomeDoctorTodoList
+            onOpenPatient={onOpenPatient}
+            todos={todos}
+            onToggle={handleToggleTodo}
+            onDelete={handleDeleteTodo}
+            onAddTask={handleAddTodo}
+          />
         </div>
 
         {/* Center: Interactive Clinical Tracking Calendar */}
         <div className="home-glass-card lg:!col-span-4" style={{ gridColumn: 'span 12', height: '100%', minHeight: 0 }}>
-          <HomeClinicalCalendar onOpenPatient={onOpenPatient} />
+          <HomeClinicalCalendar
+            onOpenPatient={onOpenPatient}
+            todos={todos}
+            onToggleTask={handleToggleTodo}
+            selectedDay={selectedCalendarDay}
+            onSelectDay={setSelectedCalendarDay}
+          />
         </div>
 
         {/* Right: Genuine Recent Committed Reports (with direct Modal trigger) */}

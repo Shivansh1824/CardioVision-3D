@@ -22,24 +22,37 @@ function formatActivityTime(isoString) {
  * 2. Real committed/saved EHR treatment plans
  * Zero hardcoded or pre-defined fake events.
  */
-export default function HomeClinicalCalendar({ onOpenPatient }) {
-  const [selectedDay, setSelectedDay] = useState(14); // Current date: Oct 14, 2026
-  const [todos, setTodos] = useState([]);
+export default function HomeClinicalCalendar({
+  onOpenPatient,
+  todos: propTodos,
+  onToggleTask,
+  selectedDay: propSelectedDay,
+  onSelectDay: propOnSelectDay,
+}) {
+  const todayDay = useMemo(() => new Date().getDate() || 15, []);
+  const [internalDay, setInternalDay] = useState(todayDay);
+  const [internalTodos, setInternalTodos] = useState([]);
   const [records, setRecords] = useState([]);
   const [activeReportModal, setActiveReportModal] = useState(null);
 
+  const selectedDay = propSelectedDay !== undefined ? propSelectedDay : internalDay;
+  const setSelectedDay = propOnSelectDay || setInternalDay;
+  const todos = propTodos || internalTodos;
+
   // Load and sync real activity from localStorage and events
   const loadActivities = () => {
-    // 1. Read to-do items
-    try {
-      const rawTodos = localStorage.getItem(TODOS_STORAGE_KEY);
-      if (rawTodos) {
-        const parsed = JSON.parse(rawTodos);
-        if (Array.isArray(parsed)) {
-          setTodos(parsed);
+    // 1. Read to-do items only if not controlled via props
+    if (!propTodos) {
+      try {
+        const rawTodos = localStorage.getItem(TODOS_STORAGE_KEY);
+        if (rawTodos) {
+          const parsed = JSON.parse(rawTodos);
+          if (Array.isArray(parsed)) {
+            setInternalTodos(parsed);
+          }
         }
-      }
-    } catch (_) {}
+      } catch (_) {}
+    }
 
     // 2. Read genuine committed EHR records
     try {
@@ -74,11 +87,12 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
         const dateStr = t.completedAt || t.createdAt || new Date().toISOString();
         const d = new Date(dateStr);
         // Default to current calendar day if date parsing defaults to today
-        const day = d.getDate() || 14;
+        const day = d.getDate() || todayDay;
 
         if (!map[day]) map[day] = [];
         map[day].push({
           id: `task-${t.id}`,
+          taskId: t.id,
           type: 'task',
           title: t.task,
           patientCode: t.patientCode,
@@ -93,7 +107,7 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
     records.forEach((r) => {
       const dateStr = r.created_at || new Date().toISOString();
       const d = new Date(dateStr);
-      const day = d.getDate() || 14;
+      const day = d.getDate() || todayDay;
 
       if (!map[day]) map[day] = [];
       map[day].push({
@@ -188,20 +202,20 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
           <button
-            onClick={() => setSelectedDay(14)}
+            onClick={() => setSelectedDay(todayDay)}
             style={{
               padding: '3px 8px',
               borderRadius: 5,
-              background: selectedDay === 14 ? '#0f172a' : '#f1f5f9',
-              border: selectedDay === 14 ? '1px solid #0f172a' : '1px solid #e2e8f0',
+              background: selectedDay === todayDay ? '#0f172a' : '#f1f5f9',
+              border: selectedDay === todayDay ? '1px solid #0f172a' : '1px solid #e2e8f0',
               fontSize: '0.68rem',
               fontWeight: 700,
-              color: selectedDay === 14 ? '#ffffff' : '#334155',
+              color: selectedDay === todayDay ? '#ffffff' : '#334155',
               cursor: 'pointer',
               transition: 'all 0.12s ease',
             }}
           >
-            Today (14th)
+            Today ({todayDay}th)
           </button>
         </div>
       </div>
@@ -249,7 +263,7 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
           {/* Actual days */}
           {Array.from({ length: daysInMonth }).map((_, i) => {
             const dayNum = i + 1;
-            const isToday = dayNum === 14;
+            const isToday = dayNum === todayDay;
             const isSelected = selectedDay === dayNum;
             const dayActs = activitiesByDay[dayNum] || [];
             const hasActivity = dayActs.length > 0;
@@ -434,6 +448,38 @@ export default function HomeClinicalCalendar({ onOpenPatient }) {
 
                   {/* Contextual Action Button */}
                   <div style={{ flexShrink: 0, display: 'flex', alignItems: 'center', gap: 4, marginTop: 2 }}>
+                    {isTask && onToggleTask && (
+                      <button
+                        onClick={() => onToggleTask(act.taskId)}
+                        title="Uncheck this task to remove from calendar"
+                        style={{
+                          padding: '3px 7px',
+                          borderRadius: 5,
+                          background: '#ffffff',
+                          border: '1px solid #cbd5e1',
+                          color: '#64748b',
+                          fontSize: '0.64rem',
+                          fontWeight: 700,
+                          cursor: 'pointer',
+                          display: 'flex',
+                          alignItems: 'center',
+                          gap: 3,
+                          transition: 'all 0.15s ease',
+                        }}
+                        onMouseOver={(e) => {
+                          e.currentTarget.style.color = '#dc2626';
+                          e.currentTarget.style.borderColor = '#fca5a5';
+                          e.currentTarget.style.background = '#fef2f2';
+                        }}
+                        onMouseOut={(e) => {
+                          e.currentTarget.style.color = '#64748b';
+                          e.currentTarget.style.borderColor = '#cbd5e1';
+                          e.currentTarget.style.background = '#ffffff';
+                        }}
+                      >
+                        <span>Uncheck</span>
+                      </button>
+                    )}
                     {!isTask && act.recordData && (
                       <button
                         onClick={() => setActiveReportModal(act.recordData)}
