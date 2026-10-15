@@ -10,86 +10,7 @@ import {
 } from 'lucide-react';
 import { supabase } from '../../../services/supabaseClient';
 import { getAllCommittedEhrRecords } from '../../../services/ehrStorageService';
-import patientNames from '../../../data/patientNames.json';
-
-const CACHE_KEY = 'cvq_patients_v1';
-
-const VESSEL_PATTERNS = {
-  critical: [
-    'LAD + LCX Bifurcation',
-    'RCA Occlusion (85%)',
-    'Triple-Vessel CAD',
-    'LAD Mid-Stenosis (80%)',
-    'Double-Vessel CAD',
-    'Left Main Equiv (70%)',
-    'LCX Circumflex Severe (75%)',
-    'RCA Critical Plaque (85%)',
-  ],
-  moderate: [
-    'LCX Mid-Plaque (55%)',
-    'RCA Diffuse Plaque',
-    'LAD Moderate Plaque (45%)',
-    'Bilateral Moderate Atheroma',
-    'Circumflex Intimal Thickening',
-    'Single-Vessel Intermediate CAD',
-  ],
-  stable: [
-    'Coronaries Patent',
-    'Normal Perfusion',
-    'Zero Stenosis',
-    'Minimal Sclerosis (< 15%)',
-    'Patent Graft / No Obstruction',
-    'LAD Patent Normal Flow',
-  ],
-};
-
-function getTriageLevel(p) {
-  if (p.st_elevation > 0 || p.typical_chest_pain > 0) return 'critical';
-  if (p.bp > 140 || p.ldl > 160 || (p.ef_tte && p.ef_tte < 45)) return 'moderate';
-  return 'stable';
-}
-
-function getBaselinePatients() {
-  const list = [];
-  for (let i = 1; i <= 303; i++) {
-    const code = `PT-${String(i).padStart(3, '0')}`;
-    const name = patientNames[code] || patientNames[String(i)] || `Patient ${code}`;
-    const isCritical = i <= 166;
-    const isModerate = i > 166 && i <= 214;
-    const tier = isCritical ? 'critical' : isModerate ? 'moderate' : 'stable';
-    
-    // Risk % calculation
-    const riskPct = isCritical
-      ? Math.max(76, Math.min(98, 98 - Math.round((i / 166) * 22)))
-      : isModerate
-      ? Math.max(42, Math.min(74, 74 - Math.round(((i - 166) / 48) * 32)))
-      : Math.max(8, Math.min(38, 38 - Math.round(((i - 214) / 89) * 30)));
-
-    const vesselPool = VESSEL_PATTERNS[tier];
-    const vessel = vesselPool[(i - 1) % vesselPool.length];
-
-    list.push({
-      id: i,
-      patient_code: code,
-      name,
-      age: 48 + ((i * 7) % 35),
-      sex: i % 3 === 0 ? 'Female' : 'Male',
-      bp: isCritical ? 148 + (i % 25) : isModerate ? 138 + (i % 15) : 118 + (i % 12),
-      ldl: isCritical ? 162 + (i % 38) : isModerate ? 135 + (i % 20) : 95 + (i % 25),
-      ef_tte: isCritical ? 38 + (i % 10) : isModerate ? 48 + (i % 8) : 58 + (i % 10),
-      st_elevation: isCritical ? 1 : 0,
-      typical_chest_pain: isCritical ? 1 : (i % 2 === 0 ? 1 : 0),
-      fbs: 95 + (i % 40),
-      htn: isCritical || isModerate ? 1 : 0,
-      dm: i % 4 === 0 ? 1 : 0,
-      current_smoker: i % 3 === 0 ? 1 : 0,
-      riskPct,
-      vessel,
-      _triage: tier,
-    });
-  }
-  return list;
-}
+import { getAllPatients, getTriageCounts } from '../../../services/patientDataService';
 
 export default function PatientCardsGridView({
   selectedId,
@@ -97,37 +18,14 @@ export default function PatientCardsGridView({
   onOpenStudio,
   onAddPatient,
 }) {
-  const [patients, setPatients] = useState(() => {
-    try {
-      const raw = localStorage.getItem(CACHE_KEY);
-      if (raw) {
-        const { data } = JSON.parse(raw);
-        if (Array.isArray(data) && data.length > 0) return data;
-      }
-    } catch (_) {}
-    return getBaselinePatients();
-  });
-
   const [activeFilter, setActiveFilter] = useState('all'); // 'all' | 'critical' | 'moderate' | 'stable'
   const [searchQuery, setSearchQuery] = useState('');
   const [ehrCountMap, setEhrCountMap] = useState({});
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  // Sync Supabase remote records & EHR counts
+  // Sync EHR counts & update on commit
   useEffect(() => {
-    async function load() {
-      try {
-        if (supabase) {
-          const { data, error } = await supabase
-            .from('patients')
-            .select('*')
-            .order('id', { ascending: true });
-          if (!error && Array.isArray(data) && data.length > 0) {
-            setPatients(data);
-            localStorage.setItem(CACHE_KEY, JSON.stringify({ data, ts: Date.now() }));
-          }
-        }
-      } catch (_) {}
-
+    async function loadEhr() {
       try {
         const ehrRecords = await getAllCommittedEhrRecords();
         const counts = {};
@@ -137,72 +35,22 @@ export default function PatientCardsGridView({
         setEhrCountMap(counts);
       } catch (_) {}
     }
-    load();
+    loadEhr();
+
+    const handleUpdate = () => {
+      setRefreshKey((k) => k + 1);
+      loadEhr();
+    };
+    window.addEventListener('cv_activity_updated', handleUpdate);
+    return () => window.removeEventListener('cv_activity_updated', handleUpdate);
   }, []);
 
-  // Compute resolved patients
-  const resolvedPatients = useMemo(() => {
-    return patients.map((p) => {
-      const code = p.patient_code || `PT-${String(p.id).padStart(3, '0')}`;
-      const name = p.name || patientNames[code] || patientNames[String(p.id)] || `Patient ${code}`;
-      const tier = p._triage || getTriageLevel(p);
-      const isCritical = tier === 'critical';
-      const isModerate = tier === 'moderate';
-      const riskPct = p.riskPct || (isCritical ? 88 : isModerate ? 58 : 22);
-      const vessel = p.vessel || (isCritical ? 'LAD Severe Stenosis' : isModerate ? 'Intermediate Stenosis' : 'Patent Vessels');
+  const counts = useMemo(() => getTriageCounts(), [refreshKey]);
 
-      return {
-        ...p,
-        patient_code: code,
-        name,
-        _triage: tier,
-        riskPct,
-        vessel,
-      };
-    });
-  }, [patients]);
-
-  // Cohort Counts
-  const counts = useMemo(() => {
-    let critical = 0;
-    let moderate = 0;
-    let stable = 0;
-    resolvedPatients.forEach((p) => {
-      if (p._triage === 'critical') critical++;
-      else if (p._triage === 'moderate') moderate++;
-      else stable++;
-    });
-    return {
-      all: resolvedPatients.length,
-      critical,
-      moderate,
-      stable,
-    };
-  }, [resolvedPatients]);
-
-  // Filtered & Searched List
+  // Strict clinical priority sorting: Critical -> Moderate -> Stable, then CAD risk % descending
   const filteredPatients = useMemo(() => {
-    let list = resolvedPatients;
-
-    if (activeFilter !== 'all') {
-      list = list.filter((p) => p._triage === activeFilter);
-    }
-
-    if (searchQuery.trim()) {
-      const q = searchQuery.toLowerCase().trim();
-      list = list.filter((p) => {
-        return (
-          p.name.toLowerCase().includes(q) ||
-          p.patient_code.toLowerCase().includes(q) ||
-          String(p.id).includes(q) ||
-          (p.vessel && p.vessel.toLowerCase().includes(q)) ||
-          String(p.age).includes(q)
-        );
-      });
-    }
-
-    return list;
-  }, [resolvedPatients, activeFilter, searchQuery]);
+    return getAllPatients({ filterTier: activeFilter, searchQuery });
+  }, [activeFilter, searchQuery, refreshKey]);
 
   const filterTabs = [
     { id: 'all', label: 'All Patients', count: counts.all, color: '#0f172a', bg: '#f1f5f9' },
@@ -593,9 +441,20 @@ export default function PatientCardsGridView({
                         }}
                       >
                         <div style={{ fontSize: '0.58rem', color: '#64748b', fontWeight: 600 }}>CAD Risk</div>
-                        <div style={{ fontSize: '0.74rem', fontWeight: 800, color: tierColor }}>
-                          {p.riskPct}%
-                        </div>
+                        {p.has_committed_plan ? (
+                          <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
+                            <span style={{ fontSize: '0.62rem', color: '#94a3b8', textDecoration: 'line-through' }}>
+                              {p.cad_risk_pct}%
+                            </span>
+                            <span style={{ fontSize: '0.74rem', fontWeight: 900, color: '#059669' }}>
+                              {p.projected_cad_risk}%
+                            </span>
+                          </div>
+                        ) : (
+                          <div style={{ fontSize: '0.74rem', fontWeight: 800, color: tierColor }}>
+                            {p.cad_risk_pct}%
+                          </div>
+                        )}
                       </div>
                     </div>
 

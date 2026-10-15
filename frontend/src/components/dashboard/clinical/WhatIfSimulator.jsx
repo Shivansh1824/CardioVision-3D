@@ -22,32 +22,19 @@ const API_BASE = import.meta.env.VITE_API_URL || 'http://localhost:8000';
  * High-precision local calibrated simulator fallback if FastAPI backend is offline
  */
 function calculateLocalSimulation(patient, targetBp, targetLdl, stopSmoking) {
-  const origBp = Number(patient.bp) || 140;
-  const origLdl = Number(patient.ldl) || 150;
-  const isSmoker = Number(patient.current_smoker) > 0;
+  const origBp = Number(patient?.bp) || 120;
+  const origLdl = Number(patient?.ldl) || 100;
+  const isSmoker = Number(patient?.current_smoker) > 0;
 
-  // Base risks
-  let baseLad = 0.45;
-  if (patient.st_elevation > 0) baseLad += 0.35;
-  if (origLdl > 130) baseLad += 0.15;
-  if (origBp > 140) baseLad += 0.10;
-  baseLad = Math.min(0.95, Math.max(0.08, baseLad));
-
-  let baseLcx = 0.35;
-  if (origLdl > 140) baseLcx += 0.18;
-  if (origBp > 145) baseLcx += 0.12;
-  baseLcx = Math.min(0.85, Math.max(0.06, baseLcx));
-
-  let baseRca = 0.22;
-  if (patient.age > 60) baseRca += 0.12;
-  if (origBp > 150) baseRca += 0.10;
-  baseRca = Math.min(0.75, Math.max(0.05, baseRca));
-
-  const baseCad = Math.min(0.96, Math.max(0.15, Math.max(baseLad, baseLcx, baseRca) * 1.05));
+  // Real calibrated model baseline anchors
+  const baseCad = (Number(patient?.cad_risk_pct) || 80) / 100;
+  const baseLad = (Number(patient?.lad_risk_pct) || 49) / 100;
+  const baseLcx = (Number(patient?.lcx_risk_pct) || 21) / 100;
+  const baseRca = (Number(patient?.rca_risk_pct) || 46) / 100;
 
   // Compute bidirectional changes (positive delta = lower risk, negative delta = higher risk)
-  const bpDeltaRatio = (origBp - targetBp) / origBp;
-  const ldlDeltaRatio = (origLdl - targetLdl) / origLdl;
+  const bpDeltaRatio = origBp > 0 ? (origBp - targetBp) / origBp : 0;
+  const ldlDeltaRatio = origLdl > 0 ? (origLdl - targetLdl) / origLdl : 0;
   const smokeFactor = (isSmoker && stopSmoking) ? 0.22 : 0;
 
   // Composite net clinical change score (-1.0 to +1.0)
@@ -58,7 +45,13 @@ function calculateLocalSimulation(patient, targetBp, targetLdl, stopSmoking) {
   let escalationPct = 0;
   let relativeRiskReduction = 0;
 
-  if (netScore >= 0) {
+  if (Math.abs(netScore) < 0.001) {
+    // Exact baseline
+    simCad = baseCad;
+    simLad = baseLad;
+    simLcx = baseLcx;
+    simRca = baseRca;
+  } else if (netScore > 0) {
     // Risk Reduction (Therapeutic Cooling)
     const reductionRatio = Math.min(0.70, netScore);
     simCad = Math.max(0.08, baseCad * (1 - reductionRatio * 0.95));
@@ -73,7 +66,6 @@ function calculateLocalSimulation(patient, targetBp, targetLdl, stopSmoking) {
     simCad = Math.min(0.98, baseCad + (1 - baseCad) * escalationRatio * 0.75);
     simLad = Math.min(0.98, baseLad + (1 - baseLad) * escalationRatio * 0.85);
     simLcx = Math.min(0.96, baseLcx + (1 - baseLcx) * escalationRatio * 0.90);
-    // RCA strongly escalates when BP/LDL enter severe hypertension & hyperlipidemia range
     simRca = Math.min(0.92, baseRca + (1 - baseRca) * escalationRatio * 1.30);
     escalationPct = Math.round(((simCad - baseCad) / baseCad) * 100);
   }
@@ -85,9 +77,9 @@ function calculateLocalSimulation(patient, targetBp, targetLdl, stopSmoking) {
     escalationPct,
     relativeRiskReduction,
     vessels: {
-      lad: { probability: simLad, is_blocked: simLad >= 0.50, status: simLad >= 0.50 ? 'Stenotic (>= 50%)' : (simLad >= 0.35 ? 'Moderate Plaque' : 'Patent / Controlled') },
-      lcx: { probability: simLcx, is_blocked: simLcx >= 0.50, status: simLcx >= 0.50 ? 'Stenotic (>= 50%)' : (simLcx >= 0.35 ? 'Moderate Plaque' : 'Patent') },
-      rca: { probability: simRca, is_blocked: simRca >= 0.50, status: simRca >= 0.50 ? 'Stenotic (>= 50%)' : (simRca >= 0.35 ? 'Moderate Plaque' : 'Patent') },
+      lad: { probability: simLad, is_blocked: simLad >= 0.5955, status: simLad >= 0.5955 ? 'Stenotic (>= 50%)' : (simLad >= 0.40 ? 'Moderate Plaque' : 'Patent / Controlled') },
+      lcx: { probability: simLcx, is_blocked: simLcx >= 0.4322, status: simLcx >= 0.4322 ? 'Stenotic (>= 50%)' : (simLcx >= 0.35 ? 'Moderate Plaque' : 'Patent') },
+      rca: { probability: simRca, is_blocked: simRca >= 0.3759, status: simRca >= 0.3759 ? 'Stenotic (>= 50%)' : (simRca >= 0.28 ? 'Moderate Plaque' : 'Patent') },
     },
   };
 }
@@ -102,14 +94,21 @@ export default function WhatIfSimulator({
   onOpenReport,
   onPlanCommitted,
 }) {
-  const origBp = Number(patient?.bp) || 140;
-  const origLdl = Number(patient?.ldl) || 145;
+  const origBp = Number(patient?.bp) || 120;
+  const origLdl = Number(patient?.ldl) || 100;
   const isSmoker = Number(patient?.current_smoker) > 0;
 
-  // Interventions state
-  const [targetBp, setTargetBp] = useState(Math.min(origBp, 120));
-  const [targetLdl, setTargetLdl] = useState(Math.min(origLdl, 70));
-  const [stopSmoking, setStopSmoking] = useState(isSmoker);
+  // Interventions state: strictly initialize at patient's baseline
+  const [targetBp, setTargetBp] = useState(origBp);
+  const [targetLdl, setTargetLdl] = useState(origLdl);
+  const [stopSmoking, setStopSmoking] = useState(false);
+
+  // Sync state whenever active patient changes
+  useEffect(() => {
+    setTargetBp(origBp);
+    setTargetLdl(origLdl);
+    setStopSmoking(false);
+  }, [patient?.id, origBp, origLdl]);
 
   const [savingPlan, setSavingPlan] = useState(false);
   const [savedSuccess, setSavedSuccess] = useState(false);

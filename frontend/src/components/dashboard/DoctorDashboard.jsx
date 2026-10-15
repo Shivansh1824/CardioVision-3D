@@ -21,22 +21,7 @@ import DoctorHomeView from './home/DoctorHomeView';
  * - Medical Records (Visit history & EHR registry)
  * - Analytics (AI model accuracy & cohort distribution)
  */
-const DEFAULT_DEMO_PATIENT = {
-  id: 1,
-  patient_code: 'PT-001',
-  name: 'James Smith',
-  age: 62,
-  sex: 'Male',
-  bp: 155,
-  ldl: 165,
-  ef_tte: 42,
-  st_elevation: 1,
-  typical_chest_pain: 1,
-  fbs: 110,
-  htn: 1,
-  dm: 0,
-  current_smoker: 1,
-};
+import { getPatientById } from '../../services/patientDataService';
 
 export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
   // Navigation: 'home' | 'patients' | '3d-studio' | 'records' | 'analytics'
@@ -50,7 +35,7 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
     }
     return 'home';
   });
-  const [selectedPatient, setSelectedPatient] = useState(DEFAULT_DEMO_PATIENT);
+  const [selectedPatient, setSelectedPatient] = useState(() => getPatientById(1));
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false);
 
   const viewContainerRef = useRef(null);

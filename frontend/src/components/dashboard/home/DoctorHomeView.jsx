@@ -1,4 +1,4 @@
-import { useRef } from 'react';
+import { useRef, useMemo } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
 import HomeBanner from './HomeBanner';
@@ -17,6 +17,8 @@ import HomeRecentReports from './HomeRecentReports';
  *   - Top Row: Compact Priority Queue (Critical/Moderate/Stable) + Zoomed 3D Heart Hero Card
  *   - Bottom Row: Doctor Custom To-Do Planner + Clinical Tracking Calendar + Genuine EHR Reports
  */
+import { getTriageCounts } from '../../../services/patientDataService';
+
 export default function DoctorHomeView({
   user,
   onOpenPatient,
@@ -25,6 +27,7 @@ export default function DoctorHomeView({
   onGoToRecords,
 }) {
   const containerRef = useRef(null);
+  const triageCounts = useMemo(() => getTriageCounts(), []);
 
   // GSAP staggered entrance for glass cards
   useGSAP(() => {
@@ -61,9 +64,9 @@ export default function DoctorHomeView({
       <div className="home-glass-card">
         <HomeBanner
           user={user}
-          totalPatients={303}
-          criticalPatients={166}
-          stablePatients={89}
+          totalPatients={triageCounts.all}
+          criticalPatients={triageCounts.critical}
+          stablePatients={triageCounts.stable}
           onGoToPatients={onGoToPatients}
         />
       </div>

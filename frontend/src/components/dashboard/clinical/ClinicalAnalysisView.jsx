@@ -24,53 +24,37 @@ import PatientSelectModal from './PatientSelectModal';
 import RiskBadge from '../shared/RiskBadge';
 import patientNames from '../../../data/patientNames.json';
 
+import { getPatientById } from '../../../services/patientDataService';
+
 /**
- * Derives initial baseline vessel risks from patient clinical fields
+ * Derives initial baseline vessel risks directly from genuine ML model outputs stored on patient
  */
 function deriveBaselineVessels(patient) {
   if (!patient) {
     return {
-      lad: { probability: 0.85, is_blocked: true, status: 'Stenotic (>= 50%)' },
-      lcx: { probability: 0.42, is_blocked: false, status: 'Moderate Plaque' },
-      rca: { probability: 0.14, is_blocked: false, status: 'Normal / Patent' },
-      cad: { probability: 0.88, is_blocked: true, status: 'Positive (CAD Confirmed)' },
+      lad: { probability: 0.49, is_blocked: false, status: 'Normal / Patent' },
+      lcx: { probability: 0.21, is_blocked: false, status: 'Normal / Patent' },
+      rca: { probability: 0.46, is_blocked: true, status: 'Stenotic (>= 50%)' },
+      cad: { probability: 0.80, is_blocked: true, status: 'Positive (CAD Confirmed)' },
     };
   }
 
-  const hasStElev = Number(patient.st_elevation) > 0;
-  const ldl = Number(patient.ldl) || 130;
-  const bp = Number(patient.bp) || 130;
+  const pCad = (Number(patient.cad_risk_pct) || 80) / 100;
+  const pLad = (Number(patient.lad_risk_pct) || 49) / 100;
+  const pLcx = (Number(patient.lcx_risk_pct) || 21) / 100;
+  const pRca = (Number(patient.rca_risk_pct) || 46) / 100;
 
-  let pLad = hasStElev ? 0.85 : (ldl > 140 ? 0.65 : 0.38);
-  let pLcx = ldl > 150 ? 0.58 : (bp > 145 ? 0.45 : 0.25);
-  let pRca = (patient.age > 60 && bp > 140) ? 0.52 : 0.18;
-
-  const pCad = Math.min(0.96, Math.max(0.20, Math.max(pLad, pLcx, pRca) * 1.05));
+  const isLadBlocked = Boolean(patient.is_lad_blocked ?? (pLad >= 0.5955));
+  const isLcxBlocked = Boolean(patient.is_lcx_blocked ?? (pLcx >= 0.4322));
+  const isRcaBlocked = Boolean(patient.is_rca_blocked ?? (pRca >= 0.3759));
 
   return {
-    lad: { probability: pLad, is_blocked: pLad >= 0.50, status: pLad >= 0.50 ? 'Stenotic (>= 50%)' : 'Patent' },
-    lcx: { probability: pLcx, is_blocked: pLcx >= 0.50, status: pLcx >= 0.50 ? 'Stenotic (>= 50%)' : 'Patent' },
-    rca: { probability: pRca, is_blocked: pRca >= 0.50, status: pRca >= 0.50 ? 'Stenotic (>= 50%)' : 'Patent' },
-    cad: { probability: pCad, is_blocked: pCad >= 0.50, status: pCad >= 0.50 ? 'Positive (CAD Confirmed)' : 'Normal Perfusion' },
+    lad: { probability: pLad, is_blocked: isLadBlocked, status: isLadBlocked ? 'Stenotic (>= 50%)' : 'Patent' },
+    lcx: { probability: pLcx, is_blocked: isLcxBlocked, status: isLcxBlocked ? 'Stenotic (>= 50%)' : 'Patent' },
+    rca: { probability: pRca, is_blocked: isRcaBlocked, status: isRcaBlocked ? 'Stenotic (>= 50%)' : 'Patent' },
+    cad: { probability: pCad, is_blocked: pCad >= 0.65, status: pCad >= 0.65 ? 'Positive (CAD Confirmed)' : 'Normal Perfusion' },
   };
 }
-
-const FALLBACK_PATIENT = {
-  id: 1,
-  patient_code: 'PT-001',
-  name: 'James Smith',
-  age: 62,
-  sex: 'Male',
-  bp: 155,
-  ldl: 165,
-  ef_tte: 42,
-  st_elevation: 1,
-  typical_chest_pain: 1,
-  fbs: 110,
-  htn: 1,
-  dm: 0,
-  current_smoker: 1,
-};
 
 /**
  * ClinicalAnalysisView — Master 3D Vascular Studio & Decision Support Environment.
@@ -81,7 +65,7 @@ export default function ClinicalAnalysisView({
   onBackToQueue,
   onSelectPatient,
 }) {
-  const activePatient = patient || FALLBACK_PATIENT;
+  const activePatient = patient || getPatientById(1);
   const displayName = activePatient.name || (activePatient.patient_code ? patientNames[activePatient.patient_code] : null) || activePatient.patient_code || 'James Smith';
   const rawSex = String(activePatient.sex || '').trim().toLowerCase();
   const normalizedSex = (rawSex === 'fmale' || rawSex === 'female' || rawSex === 'f') ? 'Female' : (rawSex ? 'Male' : 'Male');
@@ -243,7 +227,7 @@ export default function ClinicalAnalysisView({
                 Reason: Evaluating Exertional Angina & Coronary Perfusion
               </span>
               <span>•</span>
-              <span>Telemetry: Stable Sinus Rhythm (72 bpm)</span>
+              <span>Telemetry: Sinus Rhythm ({activePatient?.pr || activePatient?.pulse || activePatient?.heart_rate || activePatient?.hr || 72} bpm)</span>
               <span>•</span>
               <span>Non-Emergent Clinical Workstation</span>
             </div>

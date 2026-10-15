@@ -1,11 +1,11 @@
 import { useState, useMemo } from 'react';
 import { Search, X, User, Heart, AlertTriangle, CheckCircle2, ShieldAlert } from 'lucide-react';
-import patientNames from '../../../data/patientNames.json';
+import { getAllPatients, getTriageCounts } from '../../../services/patientDataService';
 
 /**
  * PatientSelectModal — In-Studio Patient Switcher Modal.
  * Allows instant search and filtering of all 303 cohort patients
- * into Critical, Medium (Moderate), and Okay (Stable) categories.
+ * into Critical, Moderate, and Stable categories with strict risk tier prioritization.
  */
 export default function PatientSelectModal({
   isOpen,
@@ -16,55 +16,11 @@ export default function PatientSelectModal({
   const [search, setSearch] = useState('');
   const [category, setCategory] = useState('all'); // 'all' | 'critical' | 'moderate' | 'stable'
 
-  // Generate deterministic 303 patients with clinical categorization
-  const patientRoster = useMemo(() => {
-    const list = [];
-    for (let i = 1; i <= 303; i++) {
-      const code = `PT-${String(i).padStart(3, '0')}`;
-      const name = patientNames[code] || patientNames[String(i)] || `Patient ${code}`;
-      const isCritical = i <= 166;
-      const isModerate = i > 166 && i <= 214;
-      const triage = isCritical ? 'critical' : isModerate ? 'moderate' : 'stable';
-      list.push({
-        id: i,
-        patient_code: code,
-        name,
-        age: 48 + ((i * 7) % 35),
-        sex: i % 3 === 0 ? 'Female' : 'Male',
-        bp: isCritical ? 148 + (i % 25) : isModerate ? 138 + (i % 15) : 118 + (i % 12),
-        ldl: isCritical ? 162 + (i % 38) : isModerate ? 135 + (i % 20) : 95 + (i % 25),
-        ef_tte: isCritical ? 38 + (i % 10) : isModerate ? 48 + (i % 8) : 58 + (i % 10),
-        st_elevation: isCritical ? 1 : 0,
-        typical_chest_pain: isCritical ? 1 : (i % 2 === 0 ? 1 : 0),
-        triage,
-      });
-    }
-    return list;
-  }, []);
-
-  const counts = useMemo(() => {
-    return {
-      all: 303,
-      critical: 166,
-      moderate: 48,
-      stable: 89,
-    };
-  }, []);
+  const counts = useMemo(() => getTriageCounts(), []);
 
   const filtered = useMemo(() => {
-    return patientRoster.filter((p) => {
-      if (category !== 'all' && p.triage !== category) return false;
-      if (search.trim()) {
-        const q = search.trim().toLowerCase();
-        return (
-          p.name.toLowerCase().includes(q) ||
-          p.patient_code.toLowerCase().includes(q) ||
-          String(p.age).includes(q)
-        );
-      }
-      return true;
-    });
-  }, [patientRoster, category, search]);
+    return getAllPatients({ filterTier: category, searchQuery: search });
+  }, [category, search]);
 
   if (!isOpen) return null;
 

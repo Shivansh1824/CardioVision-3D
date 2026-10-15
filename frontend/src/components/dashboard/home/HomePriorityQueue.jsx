@@ -1,119 +1,27 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useMemo } from 'react';
 import { useGSAP } from '@gsap/react';
 import gsap from 'gsap';
-import { ArrowRight } from 'lucide-react';
-import patientNames from '../../../data/patientNames.json';
-
-const VESSEL_PATTERNS = {
-  critical: [
-    'LAD Proximal (90% Stenosis)',
-    'LAD + LCX Bifurcation',
-    'RCA Occlusion (85%)',
-    'Triple-Vessel CAD',
-    'LAD Mid-Stenosis (80%)',
-    'Double-Vessel CAD',
-    'LCX Circumflex Severe (75%)',
-    'RCA Critical Plaque (85%)',
-  ],
-  moderate: [
-    'LCX Mid-Plaque (55%)',
-    'RCA Diffuse Plaque',
-    'LAD Moderate Plaque (45%)',
-    'Bilateral Moderate Atheroma',
-    'Circumflex Intimal Thickening',
-    'Single-Vessel Intermediate CAD',
-  ],
-  stable: [
-    'Coronaries Patent',
-    'Normal Perfusion',
-    'Zero Stenosis',
-    'Minimal Sclerosis (< 15%)',
-    'Patent Graft / No Obstruction',
-    'LAD Patent Normal Flow',
-  ],
-};
-
-function generateCohort() {
-  const critical = [];
-  for (let i = 1; i <= 166; i++) {
-    const code = `PT-${String(i).padStart(3, '0')}`;
-    const name = patientNames[code] || patientNames[String(i)] || `Patient ${code}`;
-    const riskPct = Math.max(76, Math.min(98, 98 - Math.round((i / 166) * 22)));
-    critical.push({
-      id: i,
-      patient_code: code,
-      name,
-      age: 50 + ((i * 3) % 32),
-      sex: i % 2 === 0 ? 'Female' : 'Male',
-      bp: 145 + (i % 25),
-      ldl: 155 + (i % 40),
-      ef_tte: 36 + (i % 12),
-      st_elevation: 1,
-      typical_chest_pain: 1,
-      riskPct,
-      vessel: VESSEL_PATTERNS.critical[i % VESSEL_PATTERNS.critical.length],
-      urgency: 'Cath Lab Review',
-    });
-  }
-
-  const moderate = [];
-  for (let i = 167; i <= 214; i++) {
-    const code = `PT-${String(i).padStart(3, '0')}`;
-    const name = patientNames[code] || patientNames[String(i)] || `Patient ${code}`;
-    const idx = i - 167;
-    const riskPct = Math.max(42, Math.min(74, 74 - Math.round((idx / 48) * 32)));
-    moderate.push({
-      id: i,
-      patient_code: code,
-      name,
-      age: 46 + ((i * 5) % 28),
-      sex: i % 3 === 0 ? 'Female' : 'Male',
-      bp: 132 + (i % 18),
-      ldl: 130 + (i % 25),
-      ef_tte: 46 + (i % 8),
-      st_elevation: 0,
-      typical_chest_pain: i % 2 === 0 ? 1 : 0,
-      riskPct,
-      vessel: VESSEL_PATTERNS.moderate[i % VESSEL_PATTERNS.moderate.length],
-      urgency: 'Therapy Optimization',
-    });
-  }
-
-  const stable = [];
-  for (let i = 215; i <= 303; i++) {
-    const code = `PT-${String(i).padStart(3, '0')}`;
-    const name = patientNames[code] || patientNames[String(i)] || `Patient ${code}`;
-    const idx = i - 215;
-    const riskPct = Math.max(8, Math.min(38, 38 - Math.round((idx / 89) * 30)));
-    stable.push({
-      id: i,
-      patient_code: code,
-      name,
-      age: 40 + ((i * 7) % 30),
-      sex: i % 2 === 0 ? 'Male' : 'Female',
-      bp: 115 + (i % 14),
-      ldl: 85 + (i % 30),
-      ef_tte: 56 + (i % 10),
-      st_elevation: 0,
-      typical_chest_pain: 0,
-      riskPct,
-      vessel: VESSEL_PATTERNS.stable[i % VESSEL_PATTERNS.stable.length],
-      urgency: 'Routine Follow-up',
-    });
-  }
-
-  return { critical, moderate, stable };
-}
-
-// Generate complete cohort data once
-const FULL_COHORT_DATA = generateCohort();
+import { ArrowRight, CheckCircle2 } from 'lucide-react';
+import { getAllPatients, getTriageCounts } from '../../../services/patientDataService';
 
 /**
- * HomePriorityQueue — Compact, half-height patient queue with smooth continuous scroll
- * containing all 166 Critical, all 48 Moderate, and all 89 Stable patients.
+ * HomePriorityQueue — Compact, half-height patient queue with smooth continuous scroll.
+ * Directly wired to authentic database-backed ML predictions and clinical triage tiers.
  */
 export default function HomePriorityQueue({ onOpenPatient, onGoToPatients }) {
   const [activeTab, setActiveTab] = useState('critical'); // 'critical' | 'moderate' | 'stable'
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // Listen for newly committed EHR plans
+  useEffect(() => {
+    const handleUpdate = () => setRefreshKey((k) => k + 1);
+    window.addEventListener('cv_activity_updated', handleUpdate);
+    return () => window.removeEventListener('cv_activity_updated', handleUpdate);
+  }, []);
+
+  const triageCounts = useMemo(() => getTriageCounts(), [refreshKey]);
+  const currentList = useMemo(() => getAllPatients({ filterTier: activeTab }), [activeTab, refreshKey]);
+
   const scrollContainerRef = useRef(null);
   const tabRefs = useRef({});
   const indicatorRef = useRef(null);
@@ -202,12 +110,10 @@ export default function HomePriorityQueue({ onOpenPatient, onGoToPatients }) {
   }, { dependencies: [activeTab] });
 
   const tabs = [
-    { id: 'critical', label: 'Critical', count: 166, accent: '#e11d48', bg: 'rgba(225, 29, 72, 0.1)' },
-    { id: 'moderate', label: 'Moderate', count: 48, accent: '#d97706', bg: 'rgba(217, 119, 6, 0.1)' },
-    { id: 'stable', label: 'Stable', count: 89, accent: '#059669', bg: 'rgba(5, 150, 105, 0.1)' },
+    { id: 'critical', label: 'Critical', count: triageCounts.critical, accent: '#e11d48', bg: 'rgba(225, 29, 72, 0.1)' },
+    { id: 'moderate', label: 'Moderate', count: triageCounts.moderate, accent: '#d97706', bg: 'rgba(217, 119, 6, 0.1)' },
+    { id: 'stable', label: 'Stable', count: triageCounts.stable, accent: '#059669', bg: 'rgba(5, 150, 105, 0.1)' },
   ];
-
-  const currentList = FULL_COHORT_DATA[activeTab] || [];
 
   return (
     <div
@@ -419,19 +325,38 @@ export default function HomePriorityQueue({ onOpenPatient, onGoToPatients }) {
             {/* Risk & Review Action */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexShrink: 0 }}>
               <div style={{ textAlign: 'right' }}>
-                <span
-                  style={{
-                    fontSize: '0.82rem',
-                    fontWeight: 800,
-                    fontFamily: 'JetBrains Mono, monospace',
-                    color: activeTab === 'critical' ? '#e11d48' : activeTab === 'moderate' ? '#d97706' : '#059669',
-                  }}
-                >
-                  {p.riskPct}%
-                </span>
-                <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>
-                  {activeTab === 'critical' ? 'CAD Risk' : 'Risk Index'}
-                </div>
+                {p.has_committed_plan ? (
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 4 }}>
+                      <span style={{ fontSize: '0.68rem', color: '#94a3b8', textDecoration: 'line-through', fontFamily: 'JetBrains Mono, monospace' }}>
+                        {p.cad_risk_pct}%
+                      </span>
+                      <span style={{ fontSize: '0.84rem', fontWeight: 900, fontFamily: 'JetBrains Mono, monospace', color: '#059669' }}>
+                        {p.projected_cad_risk}%
+                      </span>
+                    </div>
+                    <div style={{ fontSize: '0.58rem', color: '#059669', fontWeight: 700, display: 'flex', alignItems: 'center', gap: 2, justifyContent: 'flex-end' }}>
+                      <CheckCircle2 style={{ width: 9, height: 9 }} />
+                      <span>Plan Active</span>
+                    </div>
+                  </div>
+                ) : (
+                  <div>
+                    <span
+                      style={{
+                        fontSize: '0.84rem',
+                        fontWeight: 900,
+                        fontFamily: 'JetBrains Mono, monospace',
+                        color: activeTab === 'critical' ? '#e11d48' : activeTab === 'moderate' ? '#d97706' : '#059669',
+                      }}
+                    >
+                      {p.cad_risk_pct}%
+                    </span>
+                    <div style={{ fontSize: '0.6rem', color: '#94a3b8' }}>
+                      {activeTab === 'critical' ? 'CAD Risk' : 'Risk Index'}
+                    </div>
+                  </div>
+                )}
               </div>
 
               <button
