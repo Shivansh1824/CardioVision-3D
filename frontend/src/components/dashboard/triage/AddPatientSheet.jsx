@@ -34,54 +34,61 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
   const [file, setFile] = useState(null);
   const [uploadState, setUploadState] = useState('idle'); // idle | uploading | processing | done | error
   const [errorMsg, setErrorMsg] = useState('');
+  const [extractedPatient, setExtractedPatient] = useState(null);
+  const [analysisResult, setAnalysisResult] = useState(null);
   const fileInputRef = useRef(null);
 
-  function startProcessing(docFile, isInvalid = false) {
+  async function startProcessing(docFile) {
     setFile(docFile);
     setUploadState('uploading');
     setErrorMsg('');
+    setAnalysisResult(null);
 
-    setTimeout(() => {
-      setUploadState('processing');
-      setTimeout(() => {
-        if (isInvalid) {
-          setUploadState('error');
-          setErrorMsg(
-            'Document Classification Error: The uploaded document appears to be an unrelated commercial record (Dental Practice Prophylaxis & Billing Invoice). CardioVision 3D requires a Blood Biochemistry / Lipid Profile, 12-Lead ECG Report, or 2D Echocardiogram.'
-          );
-        } else {
-          setUploadState('done');
-        }
-      }, 1500);
-    }, 850);
+    // Initial upload progress delay for UX
+    await new Promise((r) => setTimeout(r, 650));
+    setUploadState('processing');
+
+    try {
+      const source = docFile.url || docFile.fileInstance;
+      const analysis = await analyzeDocumentWithGemini(source, {
+        fileName: docFile.name,
+        mimeType: docFile.mimeType,
+      });
+
+      setAnalysisResult(analysis);
+
+      if (analysis.is_cardiac === false) {
+        setUploadState('error');
+        setErrorMsg(
+          analysis.rejection_reason ||
+            'Document Classification Error: The uploaded document appears to be an unrelated record. CardioVision 3D requires a Blood Biochemistry / Lipid Profile, 12-Lead ECG Report, or 2D Echocardiogram.'
+        );
+      } else {
+        const patientData = mapExtractedDataToPatient(analysis.extracted_data, docFile.name);
+        setExtractedPatient(patientData);
+        setUploadState('done');
+      }
+    } catch (err) {
+      console.error('[AddPatientSheet Error]:', err);
+      setUploadState('error');
+      setErrorMsg(`AI Document Analysis encountered an issue: ${err.message}. Please try again.`);
+    }
   }
 
   function handleFileSelect(e) {
     const selected = e.target.files?.[0];
     if (!selected) return;
 
-    // Detect if user uploaded an unrelated document by keywords
-    const lowerName = selected.name.toLowerCase();
-    const isInvalid =
-      lowerName.includes('unrelated') ||
-      lowerName.includes('dental') ||
-      lowerName.includes('invoice') ||
-      lowerName.includes('receipt') ||
-      lowerName.includes('wrong');
-
-    // Asynchronously persist uploaded file into Supabase Storage
     const uploadPromise = uploadClinicalDocumentToSupabase(selected);
 
-    startProcessing(
-      {
-        name: selected.name,
-        size: selected.size,
-        url: null,
-      },
-      isInvalid
-    );
+    startProcessing({
+      name: selected.name,
+      size: selected.size,
+      mimeType: selected.type,
+      fileInstance: selected,
+      url: null,
+    });
 
-    // Update with Supabase public URL once uploaded
     uploadPromise.then((res) => {
       if (res?.publicUrl) {
         setFile((prev) => (prev ? { ...prev, url: res.publicUrl, isSupabase: res.success } : prev));
@@ -91,27 +98,23 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
   function handleSelectSample(type) {
     if (type === 'valid') {
-      startProcessing(
-        {
-          name: 'sample_cardiac_diagnostic_report.pdf',
-          size: 18222,
-          url: SAMPLE_DOC_STORAGE_URLS.valid,
-          title: 'Metropolitan Cardiology - Comprehensive Biomarker Report',
-          isSupabase: true,
-        },
-        false
-      );
+      startProcessing({
+        name: 'sample_cardiac_diagnostic_report.pdf',
+        size: 18222,
+        url: SAMPLE_DOC_STORAGE_URLS.valid,
+        title: 'Metropolitan Cardiology - Comprehensive Biomarker Report',
+        mimeType: 'application/pdf',
+        isSupabase: true,
+      });
     } else {
-      startProcessing(
-        {
-          name: 'sample_unrelated_document.pdf',
-          size: 13195,
-          url: SAMPLE_DOC_STORAGE_URLS.invalid,
-          title: 'Apex Dental Studio - Hygiene Invoice & Receipt',
-          isSupabase: true,
-        },
-        true
-      );
+      startProcessing({
+        name: 'sample_unrelated_document.pdf',
+        size: 13195,
+        url: SAMPLE_DOC_STORAGE_URLS.invalid,
+        title: 'Apex Dental Studio - Hygiene Invoice & Receipt',
+        mimeType: 'application/pdf',
+        isSupabase: true,
+      });
     }
   }
 
@@ -125,6 +128,8 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
   function resetUpload() {
     setFile(null);
+    setExtractedPatient(null);
+    setAnalysisResult(null);
     setUploadState('idle');
     setErrorMsg('');
     if (fileInputRef.current) fileInputRef.current.value = '';
@@ -132,17 +137,13 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
   function handleConfirmPatient() {
     if (onPatientAdded) {
-      onPatientAdded(EXTRACTED_SAMPLE_PATIENT);
+      onPatientAdded(extractedPatient || EXTRACTED_SAMPLE_PATIENT);
     } else if (onClose) {
       onClose();
     }
   }
 
-  const overlayVariants = {
-    hidden: { opacity: 0 },
-    visible: { opacity: 1 },
-  };
-
+  const overlayVariants = { hidden: { opacity: 0 }, visible: { opacity: 1 } };
   const sheetVariants = {
     hidden: { x: '100%' },
     visible: { x: 0, transition: { type: 'spring', stiffness: 340, damping: 34 } },
@@ -413,22 +414,10 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
 
               {/* Uploading State */}
               {uploadState === 'uploading' && (
-                <div
-                  style={{
-                    border: '1.5px solid var(--ai-accent-border)',
-                    borderRadius: 14,
-                    padding: '32px 24px',
-                    textAlign: 'center',
-                    background: 'var(--ai-accent-bg)',
-                  }}
-                >
+                <div style={{ border: '1.5px solid var(--ai-accent-border)', borderRadius: 14, padding: '32px 24px', textAlign: 'center', background: 'var(--ai-accent-bg)' }}>
                   <FileText style={{ width: 32, height: 32, color: 'var(--ai-accent)', margin: '0 auto 12px', display: 'block' }} />
-                  <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', margin: '0 0 6px', fontSize: '0.92rem' }}>
-                    {file?.name}
-                  </p>
-                  <p style={{ fontSize: '0.75rem', color: 'var(--ai-accent)', fontFamily: 'var(--font-body)', margin: '0 0 16px' }}>
-                    Uploading report to ingestion pipeline…
-                  </p>
+                  <p style={{ fontWeight: 700, color: 'var(--text-primary)', fontFamily: 'var(--font-display)', margin: '0 0 6px', fontSize: '0.92rem' }}>{file?.name}</p>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--ai-accent)', fontFamily: 'var(--font-body)', margin: '0 0 16px' }}>Uploading report to ingestion pipeline…</p>
                   <div style={{ height: 4, background: 'rgba(2,132,199,0.15)', borderRadius: 2, overflow: 'hidden' }}>
                     <div style={{ height: '100%', background: 'var(--ai-accent)', borderRadius: 2, animation: 'uploadBar 0.85s ease-out forwards' }} />
                   </div>
@@ -471,7 +460,8 @@ export default function AddPatientSheet({ isOpen, onClose, onPatientAdded }) {
               {uploadState === 'done' && (
                 <ExtractedBiomarkersSummary
                   file={file}
-                  patient={EXTRACTED_SAMPLE_PATIENT}
+                  patient={extractedPatient || EXTRACTED_SAMPLE_PATIENT}
+                  analysis={analysisResult}
                   onConfirmPatient={handleConfirmPatient}
                   onReset={resetUpload}
                 />

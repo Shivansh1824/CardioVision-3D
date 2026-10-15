@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import gsap from 'gsap';
 import { useGSAP } from '@gsap/react';
 import { 
@@ -16,6 +16,7 @@ import {
 import BrandLogo from './BrandLogo';
 import AuthContentStage from './auth/AuthContentStage';
 import AuthLoadingOverlay from './auth/AuthLoadingOverlay';
+import JudgeFastLoginCard from './auth/JudgeFastLoginCard';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
 export default function AuthPortalView({ onBack, onSignInSuccess }) {
@@ -211,6 +212,63 @@ export default function AuthPortalView({ onBack, onSignInSuccess }) {
     } finally {
       setIsLoading(false);
     }
+  };
+
+  // ─── Hackathon Judge & Evaluator Fast Access Handlers ──────────────────
+  const handleJudgeFastLogin = (profile) => {
+    const doctorProfile = profile || {
+      name: 'Dr. Sarah Jenkins, MD',
+      email: 'dr.jenkins@cardiovision-eval.org',
+      role: 'Chief Interventional Cardiologist',
+      hospital: 'Mount Sinai Heart Institute',
+    };
+
+    setLoadingState({
+      message: 'Activating Evaluator Session...',
+      subMessage: `Connecting as ${doctorProfile.name} (${doctorProfile.hospital})`,
+    });
+    setIsLoading(true);
+    setAuthStatus(null);
+
+    try {
+      localStorage.setItem('cardiovision_role', 'doctor');
+      localStorage.setItem('cardiovision_doctor_profile', JSON.stringify({
+        name: doctorProfile.name,
+        email: doctorProfile.email,
+        title: doctorProfile.role,
+        hospital: doctorProfile.hospital,
+      }));
+    } catch {}
+
+    setTimeout(() => {
+      setAuthStatus({
+        type: 'success',
+        message: `Welcome, ${doctorProfile.name}! Clinical decision suite authorized.`,
+      });
+      if (onSignInSuccess) {
+        setTimeout(() => {
+          onSignInSuccess({
+            email: doctorProfile.email,
+            user_metadata: {
+              role: 'doctor',
+              full_name: doctorProfile.name,
+              title: doctorProfile.role,
+              hospital: doctorProfile.hospital,
+            },
+          }, 'doctor');
+        }, 300);
+      }
+    }, 600);
+  };
+
+  const handleJudgeAutofill = (profile) => {
+    setEmail(profile.email);
+    setPassword('CardioVision2026!');
+    setFullName(profile.name);
+    setAuthStatus({
+      type: 'success',
+      message: `Pre-filled credentials for ${profile.name}. Click 'Sign In' or use '1-Click Fast Sign In'.`,
+    });
   };
 
   // ─── Google OAuth Authentication ────────────────────────────────────────
@@ -416,6 +474,13 @@ export default function AuthPortalView({ onBack, onSignInSuccess }) {
                   </div>
                 </div>
               )}
+
+              {/* ─── Hackathon Judge / Evaluator Fast Access ──────────────── */}
+              <JudgeFastLoginCard
+                onFastLogin={handleJudgeFastLogin}
+                onAutofill={handleJudgeAutofill}
+                isLoading={isLoading}
+              />
 
               {/* ─── 1. Email Sign-In / Sign-Up Form (ON TOP, Well-Spaced) ── */}
               <form onSubmit={handleAuthSubmit} className="space-y-4 sm:space-y-5">

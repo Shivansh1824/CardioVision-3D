@@ -135,7 +135,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    const url = `${GEMINI_API_BASE}/${GEMINI_MODEL}:generateContent?key=${apiKey}`;
+    const CANDIDATE_MODELS = [
+      "gemini-3.8-flash",
+      "gemini-3.1-flash-lite",
+      "gemini-flash-lite-latest",
+      "gemini-3.5-flash-lite",
+    ];
+
     const payload = {
       contents: [
         {
@@ -157,38 +163,45 @@ Deno.serve(async (req) => {
     };
 
     let resultJson = null;
+    let modelUsed = null;
     let lastError = null;
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
-      try {
-        const response = await fetch(url, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        });
+    for (const model of CANDIDATE_MODELS) {
+      const url = `${GEMINI_API_BASE}/${model}:generateContent?key=${apiKey}`;
 
-        if (response.ok) {
-          const json = await response.json();
-          const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
-          resultJson = JSON.parse(candidateText);
+      for (let attempt = 1; attempt <= 2; attempt++) {
+        try {
+          const response = await fetch(url, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+
+          if (response.ok) {
+            const json = await response.json();
+            const candidateText = json.candidates?.[0]?.content?.parts?.[0]?.text;
+            if (candidateText) {
+              resultJson = JSON.parse(candidateText);
+              modelUsed = model;
+              break;
+            }
+          }
+
+          const errText = await response.text();
+          lastError = `${model} HTTP ${response.status}: ${errText}`;
+          if (response.status === 503 || response.status === 429) {
+            break;
+          }
+        } catch (e) {
+          lastError = e.message;
           break;
         }
-
-        const errText = await response.text();
-        lastError = `Gemini HTTP ${response.status}: ${errText}`;
-        if ((response.status === 503 || response.status === 429) && attempt < 3) {
-          await new Promise((r) => setTimeout(r, attempt * 1500));
-          continue;
-        }
-        break;
-      } catch (e) {
-        lastError = e.message;
-        if (attempt < 3) await new Promise((r) => setTimeout(r, attempt * 1500));
       }
+      if (resultJson) break;
     }
 
     if (!resultJson) {
-      throw new Error(lastError || "Failed to process document with Gemini AI");
+      throw new Error(lastError || "All Gemini candidate models failed.");
     }
 
     return new Response(
@@ -197,7 +210,7 @@ Deno.serve(async (req) => {
         analysis: resultJson,
         meta: {
           fileName: fileName || "uploaded_document",
-          model: GEMINI_MODEL,
+          model: modelUsed,
           processedAt: new Date().toISOString(),
         },
       }),
