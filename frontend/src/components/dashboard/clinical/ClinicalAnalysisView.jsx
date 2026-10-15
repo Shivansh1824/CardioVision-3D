@@ -130,40 +130,41 @@ export default function ClinicalAnalysisView({
     .toUpperCase() || 'PT';
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+    <div style={{ display: 'flex', flexDirection: 'column', gap: 10, height: '100%', minHeight: 0, overflow: 'hidden' }}>
       {/* ─── R1: Executive Clinical Patient Header (Translucent Glassmorphism) ─── */}
       <div
         style={{
-          background: 'rgba(255, 255, 255, 0.90)',
+          background: 'rgba(255, 255, 255, 0.92)',
           backdropFilter: 'blur(20px)',
-          borderRadius: 20,
+          borderRadius: 16,
           border: '1.5px solid var(--dash-border)',
           boxShadow: 'var(--dash-shadow-sm)',
-          padding: '16px 22px',
+          padding: '12px 18px',
           display: 'flex',
           flexWrap: 'wrap',
           alignItems: 'center',
           justifyContent: 'space-between',
-          gap: 16,
+          gap: 12,
+          flexShrink: 0,
         }}
       >
         {/* Patient Profile & Clinical Diagnosis Overview */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
           {/* Patient Avatar Badge */}
           <div
             style={{
-              width: 46,
-              height: 46,
-              borderRadius: 14,
+              width: 42,
+              height: 42,
+              borderRadius: 12,
               background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
               color: '#ffffff',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               fontFamily: 'var(--font-display)',
-              fontSize: '1.05rem',
+              fontSize: '1rem',
               fontWeight: 800,
-              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.3)',
+              boxShadow: '0 4px 12px rgba(2, 132, 199, 0.25)',
               flexShrink: 0,
             }}
           >
@@ -171,11 +172,11 @@ export default function ClinicalAnalysisView({
           </div>
 
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
               <h2
                 style={{
                   fontFamily: 'var(--font-display)',
-                  fontSize: '1.30rem',
+                  fontSize: '1.20rem',
                   fontWeight: 900,
                   color: '#0f172a',
                   letterSpacing: '-0.02em',
@@ -189,12 +190,12 @@ export default function ClinicalAnalysisView({
                 <span
                   style={{
                     fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '0.72rem',
+                    fontSize: '0.70rem',
                     fontWeight: 700,
                     color: '#0284c7',
                     background: '#e0f2fe',
-                    padding: '2px 8px',
-                    borderRadius: 6,
+                    padding: '2px 7px',
+                    borderRadius: 5,
                     border: '1px solid #bae6fd',
                   }}
                 >
@@ -202,70 +203,68 @@ export default function ClinicalAnalysisView({
                 </span>
               )}
 
-              <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#475569' }}>
-                {activePatient?.age ? `${activePatient.age}y` : '62y'} • {normalizedSex}
+              <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569' }}>
+                {activePatient?.age ? `${activePatient.age} yrs` : '62 yrs'} • {normalizedSex}
               </span>
 
               <RiskBadge level={triageCategory} size="sm" />
 
               <span
                 style={{
-                  fontSize: '0.70rem',
+                  fontSize: '0.68rem',
                   fontWeight: 800,
-                  color: '#be123c',
-                  background: '#ffe4e6',
-                  padding: '3px 8px',
+                  color: blockedCount > 0 ? '#be123c' : '#047857',
+                  background: blockedCount > 0 ? '#ffe4e6' : '#ecfdf5',
+                  padding: '2px 8px',
                   borderRadius: 6,
-                  border: '1px solid #fecdd3',
+                  border: `1px solid ${blockedCount > 0 ? '#fecdd3' : '#a7f3d0'}`,
                 }}
+                title="Coronary Artery Disease Stage: Number of main arteries with >= 50% stenosis"
               >
-                Stage: {vesselStage} ({blockedCount}/3 Occluded)
+                {blockedCount === 0 
+                  ? '0 of 3 Arteries Blocked (≥50% Stenosis)'
+                  : `${blockedCount} of 3 Arteries Blocked (${vesselStage})`}
               </span>
             </div>
 
+            {/* Informative Clinical Diagnosis Subline (No buzzwords / filler) */}
             <div
               style={{
                 display: 'flex',
                 alignItems: 'center',
                 gap: 8,
-                marginTop: 4,
-                fontSize: '0.74rem',
+                marginTop: 2,
+                fontSize: '0.72rem',
                 color: '#64748b',
                 flexWrap: 'wrap',
               }}
             >
               <span style={{ fontWeight: 600, color: '#334155' }}>
-                Longitudinal 3D Vascular Perfusion & Hemodynamic Studio
+                Reason: Evaluating Exertional Angina & Coronary Perfusion
               </span>
               <span>•</span>
-              <span>Primary Case Evaluation</span>
+              <span>Telemetry: Stable Sinus Rhythm (72 bpm)</span>
               <span>•</span>
-              <span>
-                Baseline BP: <strong style={{ color: '#0f172a' }}>{activePatient?.bp || 140} mmHg</strong>
-              </span>
-              <span>•</span>
-              <span>
-                Baseline LDL: <strong style={{ color: '#0f172a' }}>{activePatient?.ldl || 150} mg/dL</strong>
-              </span>
+              <span>Non-Emergent Clinical Workstation</span>
             </div>
           </div>
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <button
             type="button"
             onClick={onBackToQueue}
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 14px',
-              borderRadius: 10,
+              gap: 5,
+              padding: '7px 12px',
+              borderRadius: 8,
               background: '#f8fafc',
               border: '1.5px solid #cbd5e1',
               color: '#334155',
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               cursor: 'pointer',
               transition: 'all 0.15s ease',
@@ -273,7 +272,7 @@ export default function ClinicalAnalysisView({
             onMouseEnter={(e) => (e.currentTarget.style.background = '#f1f5f9')}
             onMouseLeave={(e) => (e.currentTarget.style.background = '#f8fafc')}
           >
-            <ArrowLeft style={{ width: 14, height: 14 }} />
+            <ArrowLeft style={{ width: 13, height: 13 }} />
             <span>Patient Roster</span>
           </button>
 
@@ -283,20 +282,20 @@ export default function ClinicalAnalysisView({
             style={{
               display: 'flex',
               alignItems: 'center',
-              gap: 6,
-              padding: '8px 16px',
-              borderRadius: 10,
+              gap: 5,
+              padding: '7px 14px',
+              borderRadius: 8,
               background: 'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
               color: '#ffffff',
               border: 'none',
-              fontSize: '0.76rem',
+              fontSize: '0.74rem',
               fontWeight: 700,
               cursor: 'pointer',
-              boxShadow: '0 4px 14px rgba(2, 132, 199, 0.28)',
+              boxShadow: '0 3px 10px rgba(2, 132, 199, 0.25)',
               transition: 'all 0.15s ease',
             }}
           >
-            <Users style={{ width: 14, height: 14 }} />
+            <Users style={{ width: 13, height: 13 }} />
             <span>Select / Switch Patient</span>
           </button>
         </div>
@@ -315,23 +314,47 @@ export default function ClinicalAnalysisView({
       {/* ─── Main Unified 3-Column Workstation (Left Vitals • Center 3D Heart • Right Treatment Suite) ─ */}
       <div
         style={{
+          flex: 1,
+          minHeight: 0,
           display: 'grid',
           gridTemplateColumns: 'repeat(12, 1fr)',
-          gap: 16,
+          gap: 12,
+          overflow: 'hidden',
         }}
       >
-        {/* Left Column (3 cols): Comprehensive Patient Biomarkers & Vitals */}
-        <div style={{ gridColumn: 'span 12' }} className="lg:!col-span-3">
+        {/* Left Column (3 cols): Compact Patient Biomarkers & Vitals + Committed EHR History */}
+        <div
+          className="lg:!col-span-3 custom-scrollbar"
+          style={{
+            gridColumn: 'span 12',
+            height: '100%',
+            minHeight: 0,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 10,
+            paddingRight: 3,
+          }}
+        >
           <PatientBiomarkersPanel
             patient={activePatient}
             activeCadRisk={activeCadRisk}
             vesselStage={vesselStage}
             blockedCount={blockedCount}
           />
+
+          <CommittedEhrSection
+            patient={activePatient}
+            refreshTrigger={refreshEhrTrigger}
+            onOpenReportModal={(record) => {
+              setSelectedReportRecord(record);
+              setIsReportOpen(true);
+            }}
+          />
         </div>
 
         {/* Center Column (5 cols): 3D Heart Studio with 360° Rotation & Radial Compass Dial */}
-        <div style={{ gridColumn: 'span 12', minHeight: 620 }} className="lg:!col-span-5">
+        <div style={{ gridColumn: 'span 12', height: '100%', minHeight: 0, overflow: 'hidden' }} className="lg:!col-span-5">
           <HeartViewerPanel
             vessels={activeVessels}
             isSimulated={simulationState?.isSimulated}
@@ -339,15 +362,19 @@ export default function ClinicalAnalysisView({
           />
         </div>
 
-        {/* Right Column (4 cols): Unified SHAP AI Explainability + What-If Simulator + Committed EHR History */}
+        {/* Right Column (4 cols): Unified SHAP AI Explainability + What-If Simulator */}
         <div
+          className="lg:!col-span-4 custom-scrollbar"
           style={{
             gridColumn: 'span 12',
+            height: '100%',
+            minHeight: 0,
+            overflowY: 'auto',
             display: 'flex',
             flexDirection: 'column',
-            gap: 14,
+            gap: 10,
+            paddingRight: 3,
           }}
-          className="lg:!col-span-4"
         >
           {/* Card 1: SHAP AI Explainability & Risk Attribution */}
           <ShapExplainerCard
@@ -366,16 +393,6 @@ export default function ClinicalAnalysisView({
             }}
             onPlanCommitted={() => {
               setRefreshEhrTrigger((prev) => prev + 1);
-            }}
-          />
-
-          {/* Card 3: Dedicated Committed EHR History Section */}
-          <CommittedEhrSection
-            patient={activePatient}
-            refreshTrigger={refreshEhrTrigger}
-            onOpenReportModal={(record) => {
-              setSelectedReportRecord(record);
-              setIsReportOpen(true);
             }}
           />
         </div>

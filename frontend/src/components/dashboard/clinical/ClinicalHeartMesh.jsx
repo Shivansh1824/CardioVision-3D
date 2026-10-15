@@ -37,15 +37,15 @@ export default function ClinicalHeartMesh({
     const center = box.getCenter(new THREE.Vector3());
     const size = box.getSize(new THREE.Vector3());
     const maxDim = Math.max(size.x, size.y, size.z);
-    // Adjusted scale 1.22 provides perfect headroom so aorta and apex never clip
-    const targetScale = 1.22 / (maxDim || 1);
+    // Scale 1.02 gives full breathing room so both top aorta and bottom apex stay inside frame
+    const targetScale = 1.02 / (maxDim || 1);
 
     if (groupRef.current) {
       groupRef.current.scale.set(targetScale * 0.75, targetScale * 0.75, targetScale * 0.75);
-      // Clean geometric centering on all 3 axes
+      // Lift slightly (+0.08) so apex floats cleanly above bottom HUD and compass dial
       groupRef.current.position.set(
         -center.x * targetScale,
-        -center.y * targetScale,
+        -center.y * targetScale + 0.08,
         -center.z * targetScale
       );
       groupRef.current.rotation.y = -0.45;

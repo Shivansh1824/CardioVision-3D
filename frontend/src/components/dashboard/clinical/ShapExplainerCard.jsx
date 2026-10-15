@@ -359,12 +359,34 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
         </div>
       )}
 
+      {/* Plain-English Explanation Banner */}
+      <div
+        style={{
+          margin: '10px 16px 4px',
+          padding: '8px 12px',
+          borderRadius: 10,
+          background: '#f0f9ff',
+          border: '1px solid #bae6fd',
+          display: 'flex',
+          alignItems: 'flex-start',
+          gap: 8,
+          fontSize: '0.71rem',
+          color: '#0369a1',
+          lineHeight: 1.4,
+        }}
+      >
+        <Info style={{ width: 14, height: 14, color: '#0284c7', flexShrink: 0, marginTop: 2 }} />
+        <span>
+          <strong>What is SHAP?</strong> Explains <em>why</em> the AI calculated this risk score. Factors in <strong>Red (🔺)</strong> increase heart disease risk, while factors in <strong>Green (🟢)</strong> protect the heart.
+        </span>
+      </div>
+
       {/* Target Artery Switcher */}
       <div
         style={{
           display: 'flex',
           gap: 6,
-          padding: '10px 18px',
+          padding: '8px 16px',
           borderBottom: '1px solid var(--dash-border)',
           background: 'var(--dash-surface)',
         }}
@@ -383,9 +405,9 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
               onClick={() => setSelectedVessel(tab.key)}
               style={{
                 flex: 1,
-                padding: '5px 8px',
-                borderRadius: 8,
-                fontSize: '0.72rem',
+                padding: '4px 8px',
+                borderRadius: 7,
+                fontSize: '0.70rem',
                 fontWeight: 700,
                 border: isActive ? '1px solid #cbd5e1' : '1px solid transparent',
                 background: isActive ? '#f8fafc' : 'transparent',
@@ -400,129 +422,110 @@ export default function ShapExplainerCard({ patient, simulationState = null, bac
         })}
       </div>
 
-      {/* SHAP Waterfall Bars List */}
-      <div style={{ padding: '16px 20px', display: 'flex', flexDirection: 'column', gap: 12 }}>
+      {/* SHAP Waterfall Bars List with Internal Scrollbar */}
+      <div style={{ padding: '10px 16px 12px', display: 'flex', flexDirection: 'column', gap: 6 }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
-            Biomarker Factor
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+            Biomarker Factor (Scroll for all {drivers.length} drivers)
           </span>
-          <span style={{ fontSize: '0.72rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
+          <span style={{ fontSize: '0.68rem', fontWeight: 700, color: 'var(--text-secondary)' }}>
             Attribution Impact
           </span>
         </div>
 
-        {visibleDrivers.map((driver, idx) => {
-          const isElevator = driver.type === 'elevator';
-          const absImpact = Math.abs(driver.impact);
-          const maxScale = 40; // max expected SHAP %
-          const barWidth = Math.min(100, Math.max(12, (absImpact / maxScale) * 100));
+        {/* Scrollable list container */}
+        <div
+          className="custom-scrollbar"
+          style={{
+            maxHeight: 180,
+            overflowY: 'auto',
+            display: 'flex',
+            flexDirection: 'column',
+            gap: 7,
+            paddingRight: 4,
+          }}
+        >
+          {drivers.map((driver, idx) => {
+            const isElevator = driver.type === 'elevator';
+            const absImpact = Math.abs(driver.impact);
+            const maxScale = 40; // max expected SHAP %
+            const barWidth = Math.min(100, Math.max(12, (absImpact / maxScale) * 100));
 
-          return (
-            <div
-              key={idx}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 5,
-                padding: '8px 12px',
-                borderRadius: 12,
-                background: isElevator ? '#fef2f2' : '#f0fdf4',
-                border: isElevator ? '1px solid #fee2e2' : '1px solid #dcfce7',
-              }}
-            >
-              {/* Feature Name & Value */}
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                  {isElevator ? (
-                    <TrendingUp style={{ width: 14, height: 14, color: '#ef4444' }} />
-                  ) : (
-                    <TrendingDown style={{ width: 14, height: 14, color: '#10b981' }} />
-                  )}
+            return (
+              <div
+                key={idx}
+                style={{
+                  display: 'flex',
+                  flexDirection: 'column',
+                  gap: 4,
+                  padding: '7px 10px',
+                  borderRadius: 10,
+                  background: isElevator ? '#fef2f2' : '#f0fdf4',
+                  border: isElevator ? '1px solid #fee2e2' : '1px solid #dcfce7',
+                }}
+              >
+                {/* Feature Name & Value */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    {isElevator ? (
+                      <TrendingUp style={{ width: 13, height: 13, color: '#ef4444' }} />
+                    ) : (
+                      <TrendingDown style={{ width: 13, height: 13, color: '#10b981' }} />
+                    )}
+                    <span
+                      style={{
+                        fontSize: '0.74rem',
+                        fontWeight: 700,
+                        color: isElevator ? '#991b1b' : '#166534',
+                      }}
+                    >
+                      {driver.feature}
+                    </span>
+                  </div>
                   <span
                     style={{
-                      fontSize: '0.78rem',
-                      fontWeight: 700,
-                      color: isElevator ? '#991b1b' : '#166534',
+                      fontFamily: 'JetBrains Mono, monospace',
+                      fontSize: '0.74rem',
+                      fontWeight: 800,
+                      color: isElevator ? '#dc2626' : '#16a34a',
                     }}
                   >
-                    {driver.feature}
+                    {isElevator ? `+${driver.impact}%` : `${driver.impact}%`}
                   </span>
                 </div>
 
-                <span
+                {/* Animated Progress Bar */}
+                <div
                   style={{
-                    fontFamily: 'JetBrains Mono, monospace',
-                    fontSize: '0.76rem',
-                    fontWeight: 800,
-                    color: isElevator ? '#dc2626' : '#16a34a',
+                    height: 5,
+                    width: '100%',
+                    borderRadius: 3,
+                    background: isElevator ? '#fecaca' : '#bbf7d0',
+                    overflow: 'hidden',
                   }}
                 >
-                  {isElevator ? `+${driver.impact}%` : `${driver.impact}%`}
-                </span>
-              </div>
+                  <motion.div
+                    initial={{ width: 0 }}
+                    animate={{ width: `${barWidth}%` }}
+                    transition={{ duration: 0.6, ease: 'easeOut' }}
+                    style={{
+                      height: '100%',
+                      borderRadius: 3,
+                      background: isElevator
+                        ? 'linear-gradient(90deg, #f87171 0%, #ef4444 100%)'
+                        : 'linear-gradient(90deg, #34d399 0%, #10b981 100%)',
+                    }}
+                  />
+                </div>
 
-              {/* Animated Progress Bar */}
-              <div
-                style={{
-                  height: 6,
-                  width: '100%',
-                  borderRadius: 3,
-                  background: isElevator ? '#fecaca' : '#bbf7d0',
-                  overflow: 'hidden',
-                }}
-              >
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${barWidth}%` }}
-                  transition={{ duration: 0.6, ease: 'easeOut' }}
-                  style={{
-                    height: '100%',
-                    borderRadius: 3,
-                    background: isElevator
-                      ? 'linear-gradient(90deg, #f87171 0%, #ef4444 100%)'
-                      : 'linear-gradient(90deg, #34d399 0%, #10b981 100%)',
-                  }}
-                />
+                {/* Clinical rationale subline in simple terms */}
+                <div style={{ fontSize: '0.64rem', color: '#64748b', lineHeight: 1.35 }}>
+                  {driver.clinicalRationale}
+                </div>
               </div>
-
-              {/* Clinical rationale subline */}
-              <div style={{ fontSize: '0.67rem', color: '#64748b', lineHeight: 1.35, marginTop: 1 }}>
-                {driver.clinicalRationale}
-              </div>
-            </div>
-          );
-        })}
-
-        {/* Expand / Collapse Button */}
-        {drivers.length > 5 && (
-          <button
-            type="button"
-            onClick={() => setExpanded(!expanded)}
-            style={{
-              alignSelf: 'center',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 4,
-              marginTop: 4,
-              padding: '6px 14px',
-              borderRadius: 8,
-              border: '1px solid var(--dash-border)',
-              background: '#ffffff',
-              fontSize: '0.72rem',
-              fontWeight: 700,
-              color: 'var(--text-secondary)',
-              cursor: 'pointer',
-              boxShadow: 'var(--dash-shadow-xs)',
-            }}
-          >
-            <span>{expanded ? 'Show Top 5 Drivers' : `Show All ${drivers.length} Drivers`}</span>
-            {expanded ? (
-              <ChevronUp style={{ width: 13, height: 13 }} />
-            ) : (
-              <ChevronDown style={{ width: 13, height: 13 }} />
-            )}
-          </button>
-        )}
+            );
+          })}
+        </div>
       </div>
 
       {/* Summary Footer */}

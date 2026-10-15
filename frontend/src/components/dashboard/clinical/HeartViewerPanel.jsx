@@ -19,11 +19,11 @@ import ClinicalHeartMesh from './ClinicalHeartMesh';
  * 3D Camera Orbit Presets for each clinical focus point
  */
 const CAMERA_PRESETS = {
-  overview: { pos: [2.85, 0.05, 0.10], target: [0, 0, 0] },
-  lad: { pos: [1.45, 0.28, 2.25], target: [0.06, 0.22, 0.16] },
-  lcx: { pos: [1.85, 0.28, 2.10], target: [0.15, 0.15, 0.05] },
-  rca: { pos: [2.20, 0.20, -1.80], target: [-0.15, 0.15, 0.05] },
-  beating_overview: { pos: [0, 0, 2.85], target: [0, 0, 0] },
+  overview: { pos: [3.05, 0.10, 0.12], target: [0, 0.06, 0] },
+  lad: { pos: [1.55, 0.28, 2.30], target: [0.06, 0.22, 0.16] },
+  lcx: { pos: [1.90, 0.28, 2.15], target: [0.15, 0.15, 0.05] },
+  rca: { pos: [2.25, 0.20, -1.85], target: [-0.15, 0.15, 0.05] },
+  beating_overview: { pos: [0, 0.06, 3.05], target: [0, 0.06, 0] },
 };
 
 /**
@@ -78,7 +78,7 @@ export default function HeartViewerPanel({
   onResetSimulation,
 }) {
   const [modelType, setModelType] = useState('realistic'); // 'realistic' | 'beating'
-  const [activeVessel, setActiveVessel] = useState('lad');
+  const [activeVessel, setActiveVessel] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isAutoRotating, setIsAutoRotating] = useState(true);
   const controlsRef = useRef();
@@ -157,9 +157,9 @@ export default function HeartViewerPanel({
         display: 'flex',
         flexDirection: 'column',
         height: '100%',
-        minHeight: 520,
+        minHeight: 0,
         background: 'linear-gradient(180deg, #f8fafc 0%, #f1f5f9 100%)',
-        borderRadius: 24,
+        borderRadius: 20,
         border: '1.5px solid var(--dash-border)',
         boxShadow: 'var(--dash-shadow-sm)',
         overflow: 'hidden',
@@ -459,7 +459,7 @@ export default function HeartViewerPanel({
       {/* 3D WebGL Canvas Centerpiece */}
       <div style={{ flex: 1, position: 'relative', width: '100%', height: '100%' }}>
         <Canvas
-          camera={{ position: [2.85, 0.05, 0.10], fov: 38, near: 0.1, far: 100 }}
+          camera={{ position: [3.05, 0.10, 0.12], fov: 40, near: 0.1, far: 100 }}
           style={{ width: '100%', height: '100%', cursor: 'grab' }}
           gl={{ antialias: true, alpha: true, powerPreference: 'high-performance' }}
         >

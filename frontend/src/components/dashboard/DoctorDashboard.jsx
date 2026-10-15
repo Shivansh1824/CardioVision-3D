@@ -184,8 +184,8 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
           style={{
             flex: 1,
             minHeight: 0,
-            padding: activeNav === '3d-studio' ? '12px 20px 16px' : (activeNav === 'home' ? '0' : '14px 24px 16px'),
-            overflow: activeNav === '3d-studio' ? 'auto' : (activeNav === 'home' ? 'hidden' : 'hidden'),
+            padding: activeNav === '3d-studio' ? '10px 18px 12px' : (activeNav === 'home' ? '0' : '14px 24px 16px'),
+            overflow: 'hidden',
             boxSizing: 'border-box',
             display: 'flex',
             flexDirection: 'column',

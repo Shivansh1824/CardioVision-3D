@@ -8,17 +8,18 @@ import {
   ShieldAlert, 
   ShieldCheck, 
   AlertCircle,
-  Zap
+  Zap,
+  Info
 } from 'lucide-react';
 
 /**
- * PatientBiomarkersPanel — Comprehensive clinical biomarkers and hemodynamics panel.
- * Displays all key cardiovascular biomarkers in high-contrast, translucent glass cards
- * inspired by modern clinical decision workstations (Dribbble Healthlog reference).
+ * PatientBiomarkersPanel — Comprehensive clinical biomarkers panel.
+ * Displays plain-English names, current patient values, healthy normal ranges,
+ * and simple medical explanations for why each biomarker matters.
  */
 export default function PatientBiomarkersPanel({
   patient,
-  activeCadRisk = 88,
+  activeCadRisk = 54,
   vesselStage = '0-VD',
   blockedCount = 0,
 }) {
@@ -29,55 +30,174 @@ export default function PatientBiomarkersPanel({
   const isSmoker = Number(patient?.current_smoker) > 0;
   const hasStElev = Number(patient?.st_elevation) > 0;
   const hasAngina = Number(patient?.typical_chest_pain) > 0;
-  const hasHtn = Number(patient?.htn) > 0;
 
-  // BP clinical status
+  // BP clinical status & simple explanation
   const bpStatus = useMemo(() => {
-    if (bp >= 160) return { label: 'Stage 2 HTN', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
-    if (bp >= 140) return { label: 'Stage 1 HTN', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    if (bp >= 120) return { label: 'Elevated', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return { label: 'Optimal', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' };
+    if (bp >= 160) {
+      return { 
+        label: 'Very High (Stage 2)', 
+        color: '#dc2626', 
+        bg: '#fef2f2', 
+        border: '#fecaca',
+        normal: '90 – 120 mmHg',
+        note: 'High pressure damages artery lining and forces heart to overwork.'
+      };
+    }
+    if (bp >= 140) {
+      return { 
+        label: 'High (Stage 1)', 
+        color: '#d97706', 
+        bg: '#fffbeb', 
+        border: '#fde68a',
+        normal: '90 – 120 mmHg',
+        note: 'High pressure creates micro-tears where cholesterol deposits.'
+      };
+    }
+    if (bp >= 120) {
+      return { 
+        label: 'Elevated', 
+        color: '#d97706', 
+        bg: '#fffbeb', 
+        border: '#fde68a',
+        normal: '90 – 120 mmHg',
+        note: 'Slightly above normal; lifestyle management recommended.'
+      };
+    }
+    return { 
+      label: 'Healthy Normal', 
+      color: '#059669', 
+      bg: '#ecfdf5', 
+      border: '#a7f3d0',
+      normal: '90 – 120 mmHg',
+      note: 'Optimal arterial pressure protecting coronary blood flow.'
+    };
   }, [bp]);
 
-  // LDL status
+  // LDL Cholesterol status
   const ldlStatus = useMemo(() => {
-    if (ldl >= 160) return { label: 'Severe High', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
-    if (ldl >= 130) return { label: 'Borderline', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return { label: 'Optimal (<100)', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' };
+    if (ldl >= 160) {
+      return { 
+        label: 'Very High', 
+        color: '#dc2626', 
+        bg: '#fef2f2', 
+        border: '#fecaca',
+        normal: 'Under 100 mg/dL',
+        note: 'Excess "bad" cholesterol sticks to artery walls, forming fatty plaques.'
+      };
+    }
+    if (ldl >= 130) {
+      return { 
+        label: 'Borderline High', 
+        color: '#d97706', 
+        bg: '#fffbeb', 
+        border: '#fde68a',
+        normal: 'Under 100 mg/dL',
+        note: 'Increases plaque buildup risk inside coronary arteries.'
+      };
+    }
+    return { 
+      label: 'Optimal Healthy', 
+      color: '#059669', 
+      bg: '#ecfdf5', 
+      border: '#a7f3d0',
+      normal: 'Under 100 mg/dL',
+      note: 'Safe lipid level, preventing arterial narrowing.'
+    };
   }, [ldl]);
 
-  // EF status
+  // Heart Pumping Power (EF) status
   const efStatus = useMemo(() => {
-    if (ef < 40) return { label: 'Reduced EF', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
-    if (ef < 50) return { label: 'Mild-Mod Dysfunction', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return { label: 'Preserved EF (>50%)', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' };
+    if (ef < 40) {
+      return { 
+        label: 'Reduced Pump Power', 
+        color: '#dc2626', 
+        bg: '#fef2f2', 
+        border: '#fecaca',
+        normal: '50% – 70%',
+        note: 'Heart pumps significantly less blood per beat than normal.'
+      };
+    }
+    if (ef < 50) {
+      return { 
+        label: 'Mildly Reduced', 
+        color: '#d97706', 
+        bg: '#fffbeb', 
+        border: '#fde68a',
+        normal: '50% – 70%',
+        note: 'Pumping efficiency is slightly lowered (42% vs healthy 50%+).'
+      };
+    }
+    return { 
+      label: 'Normal Pumping', 
+      color: '#059669', 
+      bg: '#ecfdf5', 
+      border: '#a7f3d0',
+      normal: '50% – 70%',
+      note: 'Ventricle pumps a healthy volume of oxygenated blood per contraction.'
+    };
   }, [ef]);
 
-  // Blood sugar status
+  // Fasting Blood Sugar (FBS) status
   const fbsStatus = useMemo(() => {
-    if (fbs >= 126) return { label: 'Diabetic Range', color: '#dc2626', bg: '#fef2f2', border: '#fecaca' };
-    if (fbs >= 100) return { label: 'Pre-Diabetic', color: '#d97706', bg: '#fffbeb', border: '#fde68a' };
-    return { label: 'Normal (<100)', color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' };
+    if (fbs >= 126) {
+      return { 
+        label: 'Diabetic Range', 
+        color: '#dc2626', 
+        bg: '#fef2f2', 
+        border: '#fecaca',
+        normal: '70 – 99 mg/dL',
+        note: 'High blood sugar damages blood vessels and triples cardiac risk.'
+      };
+    }
+    if (fbs >= 100) {
+      return { 
+        label: 'Pre-Diabetic Range', 
+        color: '#d97706', 
+        bg: '#fffbeb', 
+        border: '#fde68a',
+        normal: '70 – 99 mg/dL',
+        note: 'Elevated fasting sugar accelerates arterial stiffness and plaque.'
+      };
+    }
+    return { 
+      label: 'Healthy Normal', 
+      color: '#059669', 
+      bg: '#ecfdf5', 
+      border: '#a7f3d0',
+      normal: '70 – 99 mg/dL',
+      note: 'Normal glucose metabolism protects vascular endothelial health.'
+    };
   }, [fbs]);
+
+  // Dynamic CAD explanation based on actual blocked count
+  const blockageExplanation = useMemo(() => {
+    if (blockedCount === 0) {
+      return 'None of the 3 main coronary arteries (LAD, LCX, RCA) have severe critical narrowing (≥50%), though moderate plaque exists.';
+    }
+    if (blockedCount === 1) {
+      return '1 of the 3 main coronary arteries has severe critical narrowing (≥50%), creating localized myocardial ischemia.';
+    }
+    return `${blockedCount} of the 3 main coronary arteries have severe critical narrowing (≥50%), requiring urgent revascularization evaluation.`;
+  }, [blockedCount]);
 
   return (
     <div
       style={{
         display: 'flex',
         flexDirection: 'column',
-        gap: 14,
-        background: 'rgba(255, 255, 255, 0.92)',
-        backdropFilter: 'blur(16px)',
-        borderRadius: 20,
+        gap: 11,
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        borderRadius: 18,
         border: '1.5px solid var(--dash-border)',
-        boxShadow: 'var(--dash-shadow-sm)',
-        padding: '18px 16px',
-        height: '100%',
-        minHeight: 520,
+        boxShadow: '0 4px 20px rgba(15, 23, 42, 0.05)',
+        padding: '14px 14px',
+        height: 'auto',
+        minHeight: 0,
       }}
     >
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 10, borderBottom: '1px solid #f1f5f9' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', paddingBottom: 8, borderBottom: '1px solid #f1f5f9' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
           <div
             style={{
@@ -89,24 +209,26 @@ export default function PatientBiomarkersPanel({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
+              boxShadow: '0 2px 6px rgba(2, 132, 199, 0.12)',
             }}
           >
-            <Activity style={{ width: 17, height: 17, color: '#0284c7' }} />
+            <Activity style={{ width: 16, height: 16, color: '#0284c7' }} />
           </div>
           <div>
             <h3
               style={{
                 fontFamily: 'var(--font-display)',
-                fontSize: '0.90rem',
+                fontSize: '0.88rem',
                 fontWeight: 800,
                 color: '#0f172a',
                 margin: 0,
+                letterSpacing: '-0.01em',
               }}
             >
-              Patient Biomarkers
+              Patient Vitals & Biomarkers
             </h3>
-            <span style={{ fontSize: '0.68rem', color: '#64748b' }}>
-              Hemodynamics & Laboratory Profile
+            <span style={{ fontSize: '0.64rem', color: '#64748b' }}>
+              Current Readings vs Healthy Target Ranges
             </span>
           </div>
         </div>
@@ -121,9 +243,10 @@ export default function PatientBiomarkersPanel({
             borderRadius: 8,
             background: '#ecfdf5',
             border: '1px solid #a7f3d0',
-            fontSize: '0.68rem',
+            fontSize: '0.66rem',
             fontWeight: 700,
             color: '#047857',
+            boxShadow: '0 1px 3px rgba(16, 185, 129, 0.1)',
           }}
         >
           <span
@@ -135,173 +258,218 @@ export default function PatientBiomarkersPanel({
               animation: 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
             }}
           />
-          <span>Sinus 72 bpm</span>
+          <span>72 bpm (Normal)</span>
         </div>
       </div>
 
+      {/* Clinical Color Spectrum Legend */}
+      <div
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '5px 10px',
+          borderRadius: 8,
+          background: '#f8fafc',
+          border: '1px solid #e2e8f0',
+          fontSize: '0.62rem',
+          fontWeight: 600,
+        }}
+      >
+        <span style={{ color: '#64748b', fontWeight: 700 }}>Risk Guide:</span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#047857' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#10b981' }} />
+          Healthy Normal
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#b45309' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#f59e0b' }} />
+          Warning / Moderate
+        </span>
+        <span style={{ display: 'flex', alignItems: 'center', gap: 4, color: '#b91c1c' }}>
+          <span style={{ width: 6, height: 6, borderRadius: '50%', background: '#ef4444' }} />
+          High Risk / Danger
+        </span>
+      </div>
+
       {/* Grid of Key Diagnostic Vitals */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8 }}>
         {/* Blood Pressure Card */}
         <div
           style={{
-            padding: '12px 12px',
-            borderRadius: 14,
-            background: '#ffffff',
+            padding: '9px 11px',
+            borderRadius: 12,
+            background: bpStatus.bg,
             border: `1.5px solid ${bpStatus.border}`,
-            boxShadow: '0 2px 6px rgba(15,23,42,0.03)',
+            boxShadow: '0 1px 4px rgba(15,23,42,0.03)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
+            gap: 3,
+            transition: 'all 0.18s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              Systolic BP
+            <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#475569' }}>
+              Blood Pressure
             </span>
-            <Activity style={{ width: 13, height: 13, color: bpStatus.color }} />
+            <Activity style={{ width: 12, height: 12, color: bpStatus.color }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-            <span style={{ fontSize: '1.22rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '1.18rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.1 }}>
               {bp}
             </span>
-            <span style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 600 }}>mmHg</span>
+            <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600 }}>mmHg</span>
           </div>
           <span
             style={{
-              fontSize: '0.62rem',
-              fontWeight: 700,
+              fontSize: '0.60rem',
+              fontWeight: 800,
               color: bpStatus.color,
-              background: bpStatus.bg,
+              background: '#ffffff',
               padding: '2px 6px',
-              borderRadius: 6,
+              borderRadius: 5,
+              border: `1px solid ${bpStatus.border}`,
               alignSelf: 'flex-start',
-              marginTop: 2,
             }}
           >
             {bpStatus.label}
+          </span>
+          <span style={{ fontSize: '0.60rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+            Target: <strong>{bpStatus.normal}</strong>
           </span>
         </div>
 
         {/* Ejection Fraction (EF) Card */}
         <div
           style={{
-            padding: '12px 12px',
-            borderRadius: 14,
-            background: '#ffffff',
+            padding: '9px 11px',
+            borderRadius: 12,
+            background: efStatus.bg,
             border: `1.5px solid ${efStatus.border}`,
-            boxShadow: '0 2px 6px rgba(15,23,42,0.03)',
+            boxShadow: '0 1px 4px rgba(15,23,42,0.03)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
+            gap: 3,
+            transition: 'all 0.18s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              EF (Echo)
+            <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#475569' }}>
+              Heart Pump (EF)
             </span>
-            <Heart style={{ width: 13, height: 13, color: efStatus.color }} />
+            <Heart style={{ width: 12, height: 12, color: efStatus.color }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-            <span style={{ fontSize: '1.22rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '1.18rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.1 }}>
               {ef}%
             </span>
-            <span style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 600 }}>TTE</span>
+            <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600 }}>Echo</span>
           </div>
           <span
             style={{
-              fontSize: '0.62rem',
-              fontWeight: 700,
+              fontSize: '0.60rem',
+              fontWeight: 800,
               color: efStatus.color,
-              background: efStatus.bg,
+              background: '#ffffff',
               padding: '2px 6px',
-              borderRadius: 6,
+              borderRadius: 5,
+              border: `1px solid ${efStatus.border}`,
               alignSelf: 'flex-start',
-              marginTop: 2,
             }}
           >
             {efStatus.label}
+          </span>
+          <span style={{ fontSize: '0.60rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+            Target: <strong>{efStatus.normal}</strong>
           </span>
         </div>
 
         {/* LDL Cholesterol Card */}
         <div
           style={{
-            padding: '12px 12px',
-            borderRadius: 14,
-            background: '#ffffff',
+            padding: '9px 11px',
+            borderRadius: 12,
+            background: ldlStatus.bg,
             border: `1.5px solid ${ldlStatus.border}`,
-            boxShadow: '0 2px 6px rgba(15,23,42,0.03)',
+            boxShadow: '0 1px 4px rgba(15,23,42,0.03)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
+            gap: 3,
+            transition: 'all 0.18s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              Serum LDL
+            <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#475569' }}>
+              Bad Cholesterol (LDL)
             </span>
-            <Droplet style={{ width: 13, height: 13, color: ldlStatus.color }} />
+            <Droplet style={{ width: 12, height: 12, color: ldlStatus.color }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-            <span style={{ fontSize: '1.22rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '1.18rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.1 }}>
               {ldl}
             </span>
-            <span style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 600 }}>mg/dL</span>
+            <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600 }}>mg/dL</span>
           </div>
           <span
             style={{
-              fontSize: '0.62rem',
-              fontWeight: 700,
+              fontSize: '0.60rem',
+              fontWeight: 800,
               color: ldlStatus.color,
-              background: ldlStatus.bg,
+              background: '#ffffff',
               padding: '2px 6px',
-              borderRadius: 6,
+              borderRadius: 5,
+              border: `1px solid ${ldlStatus.border}`,
               alignSelf: 'flex-start',
-              marginTop: 2,
             }}
           >
             {ldlStatus.label}
+          </span>
+          <span style={{ fontSize: '0.60rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+            Target: <strong>{ldlStatus.normal}</strong>
           </span>
         </div>
 
         {/* Fasting Blood Sugar Card */}
         <div
           style={{
-            padding: '12px 12px',
-            borderRadius: 14,
-            background: '#ffffff',
+            padding: '9px 11px',
+            borderRadius: 12,
+            background: fbsStatus.bg,
             border: `1.5px solid ${fbsStatus.border}`,
-            boxShadow: '0 2px 6px rgba(15,23,42,0.03)',
+            boxShadow: '0 1px 4px rgba(15,23,42,0.03)',
             display: 'flex',
             flexDirection: 'column',
-            gap: 4,
+            gap: 3,
+            transition: 'all 0.18s ease',
           }}
         >
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <span style={{ fontSize: '0.68rem', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>
-              Fasting Glucose
+            <span style={{ fontSize: '0.66rem', fontWeight: 700, color: '#475569' }}>
+              Blood Sugar (Fasting)
             </span>
-            <Flame style={{ width: 13, height: 13, color: fbsStatus.color }} />
+            <Flame style={{ width: 12, height: 12, color: fbsStatus.color }} />
           </div>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 3 }}>
-            <span style={{ fontSize: '1.22rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace' }}>
+            <span style={{ fontSize: '1.18rem', fontWeight: 900, color: '#0f172a', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1.1 }}>
               {fbs}
             </span>
-            <span style={{ fontSize: '0.66rem', color: '#64748b', fontWeight: 600 }}>mg/dL</span>
+            <span style={{ fontSize: '0.64rem', color: '#64748b', fontWeight: 600 }}>mg/dL</span>
           </div>
           <span
             style={{
-              fontSize: '0.62rem',
-              fontWeight: 700,
+              fontSize: '0.60rem',
+              fontWeight: 800,
               color: fbsStatus.color,
-              background: fbsStatus.bg,
+              background: '#ffffff',
               padding: '2px 6px',
-              borderRadius: 6,
+              borderRadius: 5,
+              border: `1px solid ${fbsStatus.border}`,
               alignSelf: 'flex-start',
-              marginTop: 2,
             }}
           >
             {fbsStatus.label}
+          </span>
+          <span style={{ fontSize: '0.60rem', color: '#64748b', marginTop: 2, fontWeight: 500 }}>
+            Target: <strong>{fbsStatus.normal}</strong>
           </span>
         </div>
       </div>
@@ -309,40 +477,41 @@ export default function PatientBiomarkersPanel({
       {/* CAD Diagnostic Burden Card */}
       <div
         style={{
-          padding: '12px 14px',
+          padding: '11px 13px',
           borderRadius: 14,
           background: 'linear-gradient(135deg, #fff1f2 0%, #ffe4e6 100%)',
           border: '1.5px solid #fecdd3',
           display: 'flex',
           flexDirection: 'column',
           gap: 6,
+          boxShadow: '0 2px 8px rgba(225, 29, 72, 0.05)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
           <span style={{ fontSize: '0.70rem', fontWeight: 800, color: '#9f1239' }}>
-            Predicted CAD Burden
+            Predicted Heart Disease Risk (CAD)
           </span>
           <span
             style={{
               fontSize: '0.66rem',
               fontWeight: 800,
-              color: '#be123c',
+              color: blockedCount > 0 ? '#be123c' : '#047857',
               background: '#ffffff',
               padding: '2px 7px',
               borderRadius: 6,
-              border: '1px solid #fda4af',
+              border: `1px solid ${blockedCount > 0 ? '#fda4af' : '#a7f3d0'}`,
             }}
           >
-            Stage: {vesselStage} ({blockedCount}/3 Occluded)
+            {blockedCount} of 3 Arteries Blocked
           </span>
         </div>
 
         <div style={{ display: 'flex', alignItems: 'baseline', gap: 6 }}>
-          <span style={{ fontSize: '1.6rem', fontWeight: 900, color: '#be123c', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>
+          <span style={{ fontSize: '1.50rem', fontWeight: 900, color: '#be123c', fontFamily: 'JetBrains Mono, monospace', lineHeight: 1 }}>
             {activeCadRisk}%
           </span>
-          <span style={{ fontSize: '0.72rem', color: '#9f1239', fontWeight: 600 }}>
-            Probability of Significant Stenosis
+          <span style={{ fontSize: '0.70rem', color: '#9f1239', fontWeight: 600 }}>
+            Moderate CAD Probability (Healthy Target &lt; 20%)
           </span>
         </div>
 
@@ -358,20 +527,23 @@ export default function PatientBiomarkersPanel({
             }}
           />
         </div>
+        <p style={{ margin: 0, fontSize: '0.64rem', color: '#9f1239', lineHeight: 1.4 }}>
+          <strong>Artery Status:</strong> {blockageExplanation}
+        </p>
       </div>
 
       {/* Clinical Risk Factors Checklist */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginTop: 'auto' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
         <span
           style={{
-            fontSize: '0.66rem',
+            fontSize: '0.64rem',
             fontWeight: 800,
             textTransform: 'uppercase',
             color: '#64748b',
-            letterSpacing: '0.05em',
+            letterSpacing: '0.04em',
           }}
         >
-          Clinical Flags & History
+          Key Patient Risk Factors
         </span>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
@@ -383,17 +555,17 @@ export default function PatientBiomarkersPanel({
               justifyContent: 'space-between',
               padding: '6px 10px',
               borderRadius: 8,
-              background: isSmoker ? '#fff1f2' : '#f8fafc',
-              border: `1px solid ${isSmoker ? '#fecaca' : '#e2e8f0'}`,
-              fontSize: '0.72rem',
+              background: isSmoker ? '#fff1f2' : '#f0fdf4',
+              border: `1px solid ${isSmoker ? '#fecaca' : '#bbf7d0'}`,
+              fontSize: '0.70rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Wind style={{ width: 13, height: 13, color: isSmoker ? '#dc2626' : '#64748b' }} />
-              <span style={{ fontWeight: 600, color: '#334155' }}>Tobacco Use</span>
+              <Wind style={{ width: 13, height: 13, color: isSmoker ? '#dc2626' : '#16a34a' }} />
+              <span style={{ fontWeight: 600, color: '#334155' }}>Smoking Status:</span>
             </div>
-            <span style={{ fontWeight: 700, color: isSmoker ? '#dc2626' : '#059669' }}>
-              {isSmoker ? 'Active Smoker (+14.5% risk)' : 'Non-Smoker'}
+            <span style={{ fontWeight: 800, color: isSmoker ? '#dc2626' : '#16a34a' }}>
+              {isSmoker ? 'Active Smoker (+14.5% Risk)' : 'Non-Smoker (Protected)'}
             </span>
           </div>
 
@@ -405,17 +577,17 @@ export default function PatientBiomarkersPanel({
               justifyContent: 'space-between',
               padding: '6px 10px',
               borderRadius: 8,
-              background: hasStElev ? '#fff1f2' : '#f8fafc',
-              border: `1px solid ${hasStElev ? '#fecaca' : '#e2e8f0'}`,
-              fontSize: '0.72rem',
+              background: hasStElev ? '#fff1f2' : '#f0fdf4',
+              border: `1px solid ${hasStElev ? '#fecaca' : '#bbf7d0'}`,
+              fontSize: '0.70rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Zap style={{ width: 13, height: 13, color: hasStElev ? '#dc2626' : '#64748b' }} />
-              <span style={{ fontWeight: 600, color: '#334155' }}>ECG Leads V1-V4</span>
+              <Zap style={{ width: 13, height: 13, color: hasStElev ? '#dc2626' : '#16a34a' }} />
+              <span style={{ fontWeight: 600, color: '#334155' }}>ECG Leads V1-V4:</span>
             </div>
-            <span style={{ fontWeight: 700, color: hasStElev ? '#dc2626' : '#059669' }}>
-              {hasStElev ? 'ST-Elevation (+)' : 'Normal Perfusion'}
+            <span style={{ fontWeight: 800, color: hasStElev ? '#dc2626' : '#16a34a' }}>
+              {hasStElev ? 'ST-Elevation (Oxygen Shortage)' : 'Normal Perfusion'}
             </span>
           </div>
 
@@ -427,17 +599,17 @@ export default function PatientBiomarkersPanel({
               justifyContent: 'space-between',
               padding: '6px 10px',
               borderRadius: 8,
-              background: hasAngina ? '#fffbeb' : '#f8fafc',
-              border: `1px solid ${hasAngina ? '#fde68a' : '#e2e8f0'}`,
-              fontSize: '0.72rem',
+              background: hasAngina ? '#fffbeb' : '#f0fdf4',
+              border: `1px solid ${hasAngina ? '#fde68a' : '#bbf7d0'}`,
+              fontSize: '0.70rem',
             }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <AlertCircle style={{ width: 13, height: 13, color: hasAngina ? '#d97706' : '#64748b' }} />
-              <span style={{ fontWeight: 600, color: '#334155' }}>Exertional Angina</span>
+              <AlertCircle style={{ width: 13, height: 13, color: hasAngina ? '#d97706' : '#16a34a' }} />
+              <span style={{ fontWeight: 600, color: '#334155' }}>Chest Tightness:</span>
             </div>
-            <span style={{ fontWeight: 700, color: hasAngina ? '#d97706' : '#059669' }}>
-              {hasAngina ? 'Typical Angina (+)' : 'Atypical / Absent'}
+            <span style={{ fontWeight: 800, color: hasAngina ? '#d97706' : '#16a34a' }}>
+              {hasAngina ? 'Exertional Angina Present' : 'No Chest Pain Reported'}
             </span>
           </div>
         </div>
