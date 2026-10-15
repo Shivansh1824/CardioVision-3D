@@ -35,31 +35,6 @@ export default function PersonaComparison({ onOpenSignIn }) {
           scrollTrigger: { trigger: '.doctor-cards-grid', start: 'top 85%', once: true },
         }
       );
-
-      // Patient section staggered entrance
-      gsap.fromTo(
-        '.patient-header',
-        { y: 30, autoAlpha: 0 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.75,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '.patient-block', start: 'top 85%', once: true },
-        }
-      );
-      gsap.fromTo(
-        '.patient-card',
-        { y: 35, autoAlpha: 0 },
-        {
-          y: 0,
-          autoAlpha: 1,
-          duration: 0.65,
-          stagger: 0.1,
-          ease: 'power3.out',
-          scrollTrigger: { trigger: '.patient-cards-grid', start: 'top 85%', once: true },
-        }
-      );
     },
     { scope: sectionRef }
   );

@@ -61,13 +61,7 @@ export default function Footer({ onOpenSignIn, onScrollToSection, onOpenPrivacy 
             onClick={() => handleNav('doctor-section')}
             className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0"
           >
-            Doctor View
-          </button>
-          <button
-            onClick={() => handleNav('patient-section')}
-            className="hover:text-rose-600 transition-colors bg-transparent border-0 cursor-pointer p-0"
-          >
-            Patient View
+            Clinical Suite
           </button>
           <button
             onClick={() => handleNav('clinical-workflow')}

@@ -1,6 +1,6 @@
 import { useState, useEffect, useLayoutEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { useGLTF, useAnimations, Html } from '@react-three/drei';
+import { useGLTF, Html } from '@react-three/drei';
 import * as THREE from 'three';
 import { SkeletonUtils } from 'three-stdlib';
 import gsap from 'gsap';
@@ -198,9 +198,8 @@ export default function ClinicalHeartMesh({
     onLoadedRef.current = onLoaded;
   }, [onLoaded]);
 
-  const { scene: rawScene, animations } = useGLTF(modelConfig.url, '/draco/');
+  const { scene: rawScene } = useGLTF(modelConfig.url, '/draco/');
   const scene = useMemo(() => SkeletonUtils.clone(rawScene), [rawScene]);
-  const { actions, names } = useAnimations(animations, groupRef);
 
   // Auto-center and smooth, non-jarring entrance (only on scene/model change, never on props/slider update)
   useLayoutEffect(() => {
@@ -268,26 +267,9 @@ export default function ClinicalHeartMesh({
     onLoadedRef.current?.();
   }, [scene]);
 
-  // Contraction animation if animated model (Dissected Heart)
-  useEffect(() => {
-    if (modelConfig.hasAnimation && names.length > 0) {
-      const actionName = names[0];
-      const action = actions[actionName];
-      if (action) {
-        action.reset().fadeIn(0.3).play();
-        action.setEffectiveTimeScale(1.1);
-      }
-      return () => action?.fadeOut(0.2);
-    }
-  }, [actions, names, modelConfig.hasAnimation]);
-
   // Procedural Lub-Dub heartbeat for Human Heart model
   useFrame(({ clock }) => {
     if (!beatRef.current) return;
-    if (modelConfig.id !== 'realistic') {
-      beatRef.current.scale.set(1, 1, 1);
-      return;
-    }
 
     const t = clock.getElapsedTime();
     const period = 0.8333; // ~72 BPM
@@ -344,7 +326,7 @@ export default function ClinicalHeartMesh({
         <primitive object={scene} />
 
         {/* 3D Arterial Diagnostic Pins with Pointer Leader Lines */}
-        {modelConfig.id === 'realistic' && pinMarkers.map((marker) => (
+        {pinMarkers.map((marker) => (
           <ArteryPin
             key={marker.id}
             marker={marker}

@@ -9,7 +9,6 @@ const SECTIONS = [
   { id: 'hero-section', label: 'Heart 3D & Overview' },
   { id: 'vessel-explorer', label: 'Coronary Artery Simulator' },
   { id: 'doctor-section', label: 'Clinician Triage' },
-  { id: 'patient-section', label: 'Patient Health Literacy' },
   { id: 'clinical-workflow', label: '4-Step Clinical Workflow' },
   { id: 'model-metrics', label: 'AI Accuracy & Validation' },
   { id: 'testimonials', label: 'Cath Lab Reviews' },

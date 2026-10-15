@@ -21,7 +21,6 @@ import ErrorBoundary from './components/ErrorBoundary';
 
 import AuthPortalView from './components/AuthPortalView';
 import DoctorDashboard from './components/dashboard/DoctorDashboard';
-import PatientDashboard from './components/dashboard/PatientDashboard';
 import { supabase } from './services/supabaseClient';
 
 // Clean up malformed double-hash if OAuth redirected with #dashboard#access_token
@@ -47,25 +46,7 @@ export default function App() {
     return 'landing';
   });
 
-  const [authRole, setAuthRole] = useState(() => {
-    try {
-      return localStorage.getItem('cardiovision_role') || 'doctor';
-    } catch {
-      return 'doctor';
-    }
-  });
-
   const [currentUser, setCurrentUser] = useState(null);
-  const [userRole, setUserRole] = useState(() => {
-    if (typeof window !== 'undefined' && (window.location.hash.includes('role=patient') || window.location.hash === '#patient' || window.location.hash.startsWith('#patient-'))) {
-      return 'patient';
-    }
-    try {
-      return localStorage.getItem('cardiovision_role') || 'doctor';
-    } catch {
-      return 'doctor';
-    }
-  });
 
   // Shared state for the 3 coronary vessels across Anatomical Heart & Explorer
   const [vesselStates, setVesselStates] = useState({
@@ -83,7 +64,7 @@ export default function App() {
   // Privacy Policy modal state
   const [privacyOpen, setPrivacyOpen] = useState(false);
 
-  // Sync hash navigation (#portal-signin, #login, #dashboard, #dashboard-patient, access_token)
+  // Sync hash navigation (#portal-signin, #login, #dashboard, access_token)
   useEffect(() => {
     const handleHashSync = () => {
       const hash = window.location.hash;
@@ -92,15 +73,6 @@ export default function App() {
         hash.includes('access_token') || 
         hash.includes('refresh_token')
       ) {
-        if (hash.startsWith('#dashboard-patient')) {
-          setUserRole('patient');
-        } else if (hash.startsWith('#dashboard')) {
-          setUserRole('doctor');
-        } else if (localStorage.getItem('cardiovision_role') === 'patient') {
-          setUserRole('patient');
-        } else {
-          setUserRole('doctor');
-        }
         setCurrentView('dashboard');
       } else if (hash.startsWith('#portal-signin') || hash === '#login') {
         setCurrentView('auth');
@@ -134,10 +106,8 @@ export default function App() {
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         setCurrentUser(session.user);
-        const resolvedRole = localStorage.getItem('cardiovision_role') || session.user.user_metadata?.role || 'doctor';
-        setUserRole(resolvedRole);
         setCurrentView('dashboard');
-        window.history.replaceState(null, '', resolvedRole === 'patient' ? '#dashboard-patient' : '#dashboard');
+        window.history.replaceState(null, '', '#dashboard');
       }
     });
 
@@ -145,10 +115,8 @@ export default function App() {
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'USER_UPDATED' || event === 'TOKEN_REFRESHED') && session?.user) {
         setCurrentUser(session.user);
-        const resolvedRole = localStorage.getItem('cardiovision_role') || session.user.user_metadata?.role || 'doctor';
-        setUserRole(resolvedRole);
         setCurrentView('dashboard');
-        window.history.replaceState(null, '', resolvedRole === 'patient' ? '#dashboard-patient' : '#dashboard');
+        window.history.replaceState(null, '', '#dashboard');
       } else if (event === 'SIGNED_OUT') {
         setCurrentUser(null);
         setCurrentView('landing');
@@ -208,13 +176,12 @@ export default function App() {
     };
   }, [currentView]);
 
-  const handleOpenSignIn = (role = 'doctor') => {
+  const handleOpenSignIn = () => {
     const apiUrl = import.meta.env.VITE_API_URL || 'https://cardiovision-3d.onrender.com';
     try { fetch(`${apiUrl}/`, { method: 'GET', mode: 'cors' }).catch(() => {}); } catch {}
-    setAuthRole(role);
-    setSignInRole(role);
+    setSignInRole('doctor');
     setCurrentView('auth');
-    window.history.pushState({ view: 'auth', role }, '', '#portal-signin');
+    window.history.pushState({ view: 'auth' }, '', '#portal-signin');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
@@ -228,15 +195,13 @@ export default function App() {
     }, 100);
   };
 
-  const handleSignInSuccess = (user, role) => {
+  const handleSignInSuccess = (user) => {
     setCurrentUser(user);
-    const targetRole = role || user?.user_metadata?.role || userRole || 'doctor';
-    setUserRole(targetRole);
     try {
-      localStorage.setItem('cardiovision_role', targetRole);
+      localStorage.setItem('cardiovision_role', 'doctor');
     } catch {}
     setCurrentView('dashboard');
-    window.history.pushState({ view: 'dashboard', role: targetRole }, '', '#dashboard');
+    window.history.pushState({ view: 'dashboard' }, '', '#dashboard');
     window.scrollTo({ top: 0, behavior: 'instant' });
   };
 
@@ -281,23 +246,15 @@ export default function App() {
     }
   };
 
-  // Render Doctor or Patient Dashboard when authenticated
+  // Render Doctor Clinical Suite when authenticated
   if (currentView === 'dashboard') {
     return (
       <ErrorBoundary>
-        {userRole === 'patient' ? (
-          <PatientDashboard
-            user={currentUser}
-            onSignOut={handleSignOut}
-            onBackToLanding={handleBackToLanding}
-          />
-        ) : (
-          <DoctorDashboard
-            user={currentUser}
-            onSignOut={handleSignOut}
-            onBackToLanding={handleBackToLanding}
-          />
-        )}
+        <DoctorDashboard
+          user={currentUser}
+          onSignOut={handleSignOut}
+          onBackToLanding={handleBackToLanding}
+        />
       </ErrorBoundary>
     );
   }
@@ -306,7 +263,6 @@ export default function App() {
     return (
       <AuthPortalView
         onBack={handleBackToLanding}
-        initialRole={authRole}
         onSignInSuccess={handleSignInSuccess}
       />
     );

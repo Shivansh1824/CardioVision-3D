@@ -87,19 +87,17 @@ export default function HeroConceptA({
           <div className="lg:col-span-5 space-y-6">
             <div className="hero-anim-item ca-overline inline-flex items-center gap-2">
               <span className="font-mono text-xs font-bold text-rose-600 uppercase tracking-widest">
-                Interactive Heart &amp; Artery Health Guide
+                Multimodal AI Decision Support · Track A
               </span>
             </div>
 
             <h1 className="hero-anim-item ca-headline font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-slate-900 tracking-tight leading-[1.06]">
-              Understand Your Heart and <br />
-              <span className="text-gradient-vivid">Coronary Arteries</span>
+              Cardiovascular Risk &amp; <br />
+              <span className="text-gradient-vivid">Coronary Artery Triage</span>
             </h1>
 
             <p className="hero-anim-item ca-sub text-base sm:text-lg text-slate-600 leading-relaxed max-w-md">
-              An intuitive visual platform that helps doctors triage coronary disease
-              and helps patients clearly see how blood flows through their heart.
-              Explore the three main arteries with zero medical confusion.
+              An interactive 3D clinical decision support system that maps machine learning predictions onto the coronary tree, giving cardiologists spatial intuition for LAD, LCX, and RCA stenosis triage.
             </p>
 
             <div className="hero-anim-item ca-cta flex flex-wrap items-center gap-3">
@@ -116,7 +114,7 @@ export default function HeroConceptA({
                 className="ca-cta btn-secondary-glass text-sm cursor-pointer"
                 id="concept-a-signin-btn"
               >
-                <span>Sign In to Portal</span>
+                <span>Doctor Portal Access</span>
               </button>
             </div>
 

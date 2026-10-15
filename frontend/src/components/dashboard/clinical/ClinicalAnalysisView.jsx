@@ -93,8 +93,9 @@ export default function ClinicalAnalysisView({
     ? simulationState.simulatedCad
     : Math.round((baselineVessels.cad?.probability ?? 0.8) * 100);
 
-  // Multi-vessel blocked count
-  const blockedCount = Object.values(activeVessels).filter((v) => v.is_blocked).length;
+  // Multi-vessel blocked count: strictly evaluate the 3 coronary arteries (LAD, LCX, RCA)
+  const coronaryKeys = ['lad', 'lcx', 'rca'];
+  const blockedCount = coronaryKeys.filter((k) => activeVessels?.[k]?.is_blocked).length;
   const vesselStage = blockedCount === 3 ? 'TVD' : blockedCount === 2 ? 'DVD' : blockedCount === 1 ? 'SVD' : '0-VD';
 
   const triageCategory = blockedCount >= 2 || activeCadRisk >= 75
@@ -387,8 +388,24 @@ export default function ClinicalAnalysisView({
             patient={activePatient}
             onSimulationChange={setSimulationState}
             onResetSimulation={handleResetSimulation}
-            onOpenReport={() => {
+            onOpenReport={(reportPayload) => {
               setSelectedReportRecord(null);
+              if (reportPayload) {
+                setSimulationState((prev) => ({
+                  ...(prev || {}),
+                  ...reportPayload,
+                  isSimulated: reportPayload.isSimulated,
+                  vessels: reportPayload.simulationResult?.vessels || prev?.vessels,
+                  simulatedCad: reportPayload.simulationResult?.simCad ?? prev?.simulatedCad,
+                  baseCad: reportPayload.simulationResult?.baseCad ?? prev?.baseCad,
+                  relativeReduction: reportPayload.simulationResult?.relativeRiskReduction ?? prev?.relativeReduction,
+                  simulatedBp: reportPayload.targetBp,
+                  simulatedLdl: reportPayload.targetLdl,
+                  simulatedFbs: reportPayload.targetFbs,
+                  simulatedSmoker: reportPayload.stopSmoking ? 0 : 1,
+                  stopSmoking: reportPayload.stopSmoking,
+                }));
+              }
               setIsReportOpen(true);
             }}
             onPlanCommitted={() => {
@@ -407,31 +424,40 @@ export default function ClinicalAnalysisView({
           setSelectedReportRecord(null);
         }}
         patient={activePatient}
+        baselineVessels={baselineVessels}
         simulationResult={
           selectedReportRecord
             ? {
                 isSimulated: true,
                 simulatedBp: selectedReportRecord.target_bp,
                 simulatedLdl: selectedReportRecord.target_ldl,
+                simulatedFbs: selectedReportRecord.target_fbs || activePatient?.fbs || 80,
                 simulatedSmoker: selectedReportRecord.stop_smoking ? 0 : 1,
                 relativeRiskReduction: selectedReportRecord.relative_risk_reduction,
+                baseCad: selectedReportRecord.baseline_cad_risk,
+                simCad: selectedReportRecord.simulated_cad_risk,
               }
             : simulationState
         }
         targetBp={
           selectedReportRecord
             ? selectedReportRecord.target_bp
-            : (simulationState?.simulatedBp || activePatient?.bp || 140)
+            : (simulationState?.simulatedBp ?? activePatient?.bp ?? 140)
         }
         targetLdl={
           selectedReportRecord
             ? selectedReportRecord.target_ldl
-            : (simulationState?.simulatedLdl || activePatient?.ldl || 150)
+            : (simulationState?.simulatedLdl ?? activePatient?.ldl ?? 121)
+        }
+        targetFbs={
+          selectedReportRecord
+            ? (selectedReportRecord.target_fbs ?? activePatient?.fbs ?? 80)
+            : (simulationState?.simulatedFbs ?? activePatient?.fbs ?? 80)
         }
         stopSmoking={
           selectedReportRecord
             ? Boolean(selectedReportRecord.stop_smoking)
-            : (simulationState?.simulatedSmoker === 0)
+            : (simulationState?.stopSmoking ?? (simulationState?.simulatedSmoker === 0))
         }
       />
     </div>

@@ -265,7 +265,23 @@ export default function WhatIfSimulator({
 
           <button
             type="button"
-            onClick={onOpenReport ? onOpenReport : () => window.print()}
+            onClick={() => {
+              if (onOpenReport) {
+                onOpenReport({
+                  isSimulated,
+                  targetBp,
+                  targetLdl,
+                  targetFbs,
+                  stopSmoking,
+                  baselineBp: origBp,
+                  baselineLdl: origLdl,
+                  baselineFbs: origFbs,
+                  simulationResult,
+                });
+              } else {
+                window.print();
+              }
+            }}
             style={{
               display: 'flex',
               alignItems: 'center',

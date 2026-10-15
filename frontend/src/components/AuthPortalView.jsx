@@ -18,17 +18,16 @@ import AuthContentStage from './auth/AuthContentStage';
 import AuthLoadingOverlay from './auth/AuthLoadingOverlay';
 import { supabase, isSupabaseConfigured } from '../services/supabaseClient';
 
-export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignInSuccess }) {
+export default function AuthPortalView({ onBack, onSignInSuccess }) {
   const authContainerRef = useRef(null);
   const cardRef = useRef(null);
   const cardGlowRef = useRef(null);
-  const tabIndicatorRef = useRef(null);
 
   // Auth Mode: false = Sign In, true = Create Account
   const [isSignUp, setIsSignUp] = useState(false);
 
-  // Role Switcher: 'doctor' or 'patient'
-  const [role, setRole] = useState(initialRole);
+  // Fixed Role: 100% Doctor / Cardiologist Decision Support
+  const role = 'doctor';
 
   // Form State
   const [fullName, setFullName] = useState('');
@@ -42,16 +41,12 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     subMessage: 'Redirecting to Google to sign in to your clinical portal.'
   });
 
-  // Persist role whenever changed so OAuth callback retains context
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-    setAuthStatus(null);
+  // Ensure role is persisted as doctor
+  useEffect(() => {
     try {
-      localStorage.setItem('cardiovision_role', newRole);
-    } catch {
-      // ignore storage errors
-    }
-  };
+      localStorage.setItem('cardiovision_role', 'doctor');
+    } catch {}
+  }, []);
 
   // GSAP Smooth Card Entrance Timeline (Rock-Solid Clinical Standard)
   useGSAP(() => {
@@ -106,7 +101,6 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     tl.fromTo(
       [
         '.auth-card-header',
-        '.auth-role-tabs',
         '.auth-form-field',
         '.auth-submit-btn',
         '.auth-divider-line',
@@ -119,27 +113,17 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
     );
   }, { scope: authContainerRef });
 
-  // GSAP Smooth Tab Slider Animation
-  useGSAP(() => {
-    if (!tabIndicatorRef.current) return;
-    gsap.to(tabIndicatorRef.current, {
-      xPercent: role === 'doctor' ? 0 : 100,
-      duration: 0.35,
-      ease: 'power3.out'
-    });
-  }, { scope: authContainerRef, dependencies: [role] });
-
   // ─── Email & Password Authentication (Sign In & Sign Up) ───────────────
   const handleAuthSubmit = async (e) => {
     e.preventDefault();
     setLoadingState({
       message: isSignUp ? 'Creating your Account...' : 'Authenticating Credentials...',
-      subMessage: `Connecting you to the ${role === 'doctor' ? 'Cardiologist Clinical Suite' : 'Patient Heart Guide'}.`
+      subMessage: 'Connecting you to the Cardiologist Clinical Suite.'
     });
     setIsLoading(true);
     setAuthStatus(null);
     try {
-      localStorage.setItem('cardiovision_role', role);
+      localStorage.setItem('cardiovision_role', 'doctor');
     } catch {
       // ignore
     }
@@ -153,7 +137,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
             password,
             options: {
               data: {
-                role,
+                role: 'doctor',
                 full_name: fullName,
               },
             },
@@ -164,13 +148,11 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
           if (data.session) {
             setAuthStatus({
               type: 'success',
-              message: `Account created! Accessing the ${
-                role === 'doctor' ? 'Cardiologist Clinical Suite' : 'Patient Heart Guide'
-              }...`,
+              message: 'Account created! Accessing the Cardiologist Clinical Suite...',
             });
             if (onSignInSuccess) {
               setTimeout(() => {
-                onSignInSuccess(data.user, role);
+                onSignInSuccess(data.user, 'doctor');
               }, 500);
             }
           } else {
@@ -180,7 +162,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
             });
             if (onSignInSuccess) {
               setTimeout(() => {
-                onSignInSuccess(data.user || { email, user_metadata: { role, full_name: fullName } }, role);
+                onSignInSuccess(data.user || { email, user_metadata: { role: 'doctor', full_name: fullName } }, 'doctor');
               }, 600);
             }
           }
@@ -195,14 +177,12 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
 
           setAuthStatus({
             type: 'success',
-            message: `Welcome back, ${data.user?.email || email}! Accessing ${
-              role === 'doctor' ? 'Cardiologist Clinical Suite' : 'Patient Heart Guide'
-            }...`,
+            message: `Welcome back, ${data.user?.email || email}! Accessing Cardiologist Clinical Suite...`,
           });
 
           if (onSignInSuccess) {
             setTimeout(() => {
-              onSignInSuccess(data.user, role);
+              onSignInSuccess(data.user, 'doctor');
             }, 500);
           }
         }
@@ -211,16 +191,14 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
         setTimeout(() => {
           setAuthStatus({
             type: 'success',
-            message: `${isSignUp ? 'Account created' : 'Welcome back'}! Redirecting to ${
-              role === 'doctor' ? 'Cardiologist Clinical Suite' : 'Patient Heart Guide'
-            }...`,
+            message: `${isSignUp ? 'Account created' : 'Welcome back'}! Redirecting to Cardiologist Clinical Suite...`,
           });
           if (onSignInSuccess) {
             setTimeout(() => {
               onSignInSuccess({
                 email: email || 'demo@hospital.org',
-                user_metadata: { role, full_name: fullName || (role === 'doctor' ? 'Dr. Sarah Jenkins' : 'Alex Johnson') },
-              }, role);
+                user_metadata: { role: 'doctor', full_name: fullName || 'Dr. Sarah Jenkins' },
+              }, 'doctor');
             }, 600);
           }
         }, 700);
@@ -239,12 +217,12 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
   const handleGoogleSignIn = async () => {
     setLoadingState({
       message: 'Connecting to Google...',
-      subMessage: `Redirecting to Google to sign in to your ${role === 'doctor' ? 'Cardiologist' : 'Patient'} portal.`
+      subMessage: 'Redirecting to Google to sign in to your Cardiologist Clinical Suite.'
     });
     setIsLoading(true);
     setAuthStatus(null);
     try {
-      localStorage.setItem('cardiovision_role', role);
+      localStorage.setItem('cardiovision_role', 'doctor');
     } catch {
       // ignore
     }
@@ -383,11 +361,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               {/* Luminous Ambient Depth Glow */}
               <div 
                 ref={cardGlowRef}
-                className={`absolute -inset-2.5 rounded-[36px] blur-2xl transition-colors duration-700 pointer-events-none ${
-                  role === 'doctor'
-                    ? 'bg-gradient-to-tr from-sky-400/25 via-indigo-300/20 to-teal-200/20'
-                    : 'bg-gradient-to-tr from-rose-400/25 via-amber-300/20 to-pink-200/20'
-                }`}
+                className="absolute -inset-2.5 rounded-[36px] blur-2xl transition-colors duration-700 pointer-events-none bg-gradient-to-tr from-sky-400/25 via-indigo-300/20 to-teal-200/20"
               />
 
               {/* Smooth Frosted Card */}
@@ -398,55 +372,18 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
               
               {/* Card Header: Welcome Back */}
               <div className="auth-card-header mb-6">
+                <div className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-sky-50 border border-sky-100 text-[11px] font-bold text-sky-700 uppercase tracking-wider mb-2.5">
+                  <Stethoscope className="w-3.5 h-3.5 text-sky-600" />
+                  <span>Cardiologist Portal</span>
+                </div>
                 <h2 className="text-2xl sm:text-3xl font-bold font-display text-slate-900 tracking-tight">
                   Welcome Back
                 </h2>
                 <p className="text-sm text-slate-500 mt-1.5 leading-relaxed">
                   {isSignUp 
-                    ? `Create an account to access the ${role === 'doctor' ? 'Cardiologist Suite' : 'Patient Portal'}.` 
-                    : `Sign in to access your ${role === 'doctor' ? 'Cardiologist Clinical Suite' : 'Patient Heart Guide'}.`}
+                    ? 'Create an account to access the Cardiologist Clinical Suite.' 
+                    : 'Sign in to access your clinical decision support workstation.'}
                 </p>
-              </div>
-
-              {/* ─── Portal Role Switcher: Apple-grade Sliding Pill ─────────── */}
-              <div className="auth-role-tabs relative grid grid-cols-2 p-1.5 rounded-2xl bg-slate-100/90 border border-slate-200/80 mb-6 select-none">
-                {/* GSAP Sliding Indicator Pill */}
-                <div 
-                  ref={tabIndicatorRef}
-                  className={`absolute top-1.5 bottom-1.5 left-1.5 w-[calc(50%-6px)] rounded-xl pointer-events-none transition-colors duration-300 ${
-                    role === 'doctor'
-                      ? 'bg-white shadow-sm border border-slate-200/60'
-                      : 'bg-rose-600 shadow-sm shadow-rose-600/30'
-                  }`} 
-                />
-
-                <button
-                  type="button"
-                  onClick={() => handleRoleChange('doctor')}
-                  className={`relative z-10 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
-                    role === 'doctor'
-                      ? 'text-slate-900'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                  id="auth-doctor-tab-btn"
-                >
-                  <Stethoscope className={`w-4 h-4 transition-colors duration-200 ${role === 'doctor' ? 'text-sky-600' : 'text-slate-400'}`} />
-                  <span>Cardiologist</span>
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => handleRoleChange('patient')}
-                  className={`relative z-10 py-2.5 px-4 rounded-xl text-xs sm:text-sm font-bold flex items-center justify-center gap-2 transition-colors duration-200 cursor-pointer ${
-                    role === 'patient'
-                      ? 'text-white'
-                      : 'text-slate-500 hover:text-slate-800'
-                  }`}
-                  id="auth-patient-tab-btn"
-                >
-                  <HeartHandshake className={`w-4 h-4 transition-colors duration-200 ${role === 'patient' ? 'text-white' : 'text-slate-400'}`} />
-                  <span>Heart Patient</span>
-                </button>
               </div>
 
               {/* Feedback Alert for Success / Error / Notice */}
@@ -500,10 +437,8 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         required
                         value={fullName}
                         onChange={(e) => setFullName(e.target.value)}
-                        placeholder={role === 'doctor' ? 'Dr. Sarah Jenkins, MD' : 'Alex Johnson'}
-                        className={`w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                          role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
-                        }`}
+                        placeholder="Dr. Sarah Jenkins, MD"
+                        className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all focus:border-sky-500 focus:ring-sky-500/20"
                       />
                     </div>
                   </div>
@@ -515,7 +450,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                     htmlFor="login-email" 
                     className="block text-xs sm:text-sm font-semibold text-slate-700 mb-1.5"
                   >
-                    {role === 'doctor' ? 'Institutional Email' : 'Email Address'}
+                    Institutional Email
                   </label>
                   <div className="relative">
                     <Mail className="w-4 h-4 absolute left-3.5 top-3.5 text-slate-400 pointer-events-none" />
@@ -525,10 +460,8 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       required
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
-                      placeholder={role === 'doctor' ? 'doctor@hospital.org' : 'patient@example.com'}
-                      className={`w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                        role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
-                      }`}
+                      placeholder="doctor@hospital.org"
+                      className="w-full pl-10 pr-4 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all focus:border-sky-500 focus:ring-sky-500/20"
                     />
                   </div>
                 </div>
@@ -546,9 +479,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       <button 
                         type="button"
                         onClick={handleForgotPassword}
-                        className={`text-xs font-semibold cursor-pointer bg-transparent border-0 p-0 transition-colors ${
-                          role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
-                        }`}
+                        className="text-xs font-semibold cursor-pointer bg-transparent border-0 p-0 transition-colors text-sky-600 hover:text-sky-700"
                       >
                         Forgot?
                       </button>
@@ -564,9 +495,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                       onChange={(e) => setPassword(e.target.value)}
                       placeholder="••••••••••••"
                       minLength={6}
-                      className={`w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all ${
-                        role === 'doctor' ? 'focus:border-sky-500 focus:ring-sky-500/20' : 'focus:border-rose-500 focus:ring-rose-500/20'
-                      }`}
+                      className="w-full pl-10 pr-10 py-3 rounded-xl bg-slate-50/70 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:bg-white transition-all focus:border-sky-500 focus:ring-sky-500/20"
                     />
                     <button
                       type="button"
@@ -583,11 +512,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className={`auth-submit-btn w-full mt-2 justify-center cursor-pointer disabled:opacity-50 ${
-                    role === 'doctor'
-                      ? 'btn-cardiologist-vibrant'
-                      : 'btn-primary-vibrant'
-                  }`}
+                  className="auth-submit-btn w-full mt-2 justify-center cursor-pointer disabled:opacity-50 btn-cardiologist-vibrant"
                   id="auth-submit-btn"
                 >
                   {isLoading ? (
@@ -598,8 +523,8 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                   ) : (
                     <span className="text-white">
                       {isSignUp
-                        ? `Create ${role === 'doctor' ? 'Cardiologist' : 'Patient'} Account`
-                        : `Sign In to ${role === 'doctor' ? 'Cardiologist Portal' : 'Patient Heart Guide'}`}
+                        ? 'Create Cardiologist Account'
+                        : 'Sign In to Cardiologist Portal'}
                     </span>
                   )}
                 </button>
@@ -656,9 +581,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         setIsSignUp(false);
                         setAuthStatus(null);
                       }}
-                      className={`font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors ${
-                        role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
-                      }`}
+                      className="font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors text-sky-600 hover:text-sky-700"
                       id="auth-toggle-signin-btn"
                     >
                       Sign In
@@ -673,9 +596,7 @@ export default function AuthPortalView({ onBack, initialRole = 'doctor', onSignI
                         setIsSignUp(true);
                         setAuthStatus(null);
                       }}
-                      className={`font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors ${
-                        role === 'doctor' ? 'text-sky-600 hover:text-sky-700' : 'text-rose-600 hover:text-rose-700'
-                      }`}
+                      className="font-bold cursor-pointer bg-transparent border-0 p-0 ml-1 transition-colors text-sky-600 hover:text-sky-700"
                       id="auth-toggle-signup-btn"
                     >
                       Create an Account

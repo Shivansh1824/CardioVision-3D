@@ -72,6 +72,7 @@ export default function DoctorDashboard({ user, onSignOut, onBackToLanding }) {
   const handlePatientAdded = (newPatient) => {
     setSelectedPatient(newPatient);
     setIsAddSheetOpen(false);
+    handleNavChange('3d-studio');
   };
 
   // Section header meta for TopBar breadcrumb

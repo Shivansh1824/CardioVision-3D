@@ -42,13 +42,7 @@ export default function Header({ onOpenSignIn, onScrollToSection }) {
             onClick={() => handleNavClick('doctor-section')}
             className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
           >
-            Doctors
-          </button>
-          <button
-            onClick={() => handleNavClick('patient-section')}
-            className="nav-link cursor-pointer bg-transparent border-0 text-xs font-semibold text-slate-700 hover:text-slate-900 px-3 py-1"
-          >
-            Patients
+            Clinical Suite
           </button>
           <button
             onClick={() => handleNavClick('clinical-workflow')}
@@ -129,13 +123,7 @@ export default function Header({ onOpenSignIn, onScrollToSection }) {
             onClick={() => handleNavClick('doctor-section')}
             className="w-full text-left py-2 text-slate-800 text-sm font-medium"
           >
-            For Doctors
-          </button>
-          <button
-            onClick={() => handleNavClick('patient-section')}
-            className="w-full text-left py-2 text-slate-800 text-sm font-medium"
-          >
-            For Patients
+            Clinical Suite
           </button>
           <button
             onClick={() => handleNavClick('clinical-workflow')}
